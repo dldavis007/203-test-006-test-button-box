@@ -1,0 +1,225 @@
+Revision 1.00  3-1-11
+
+    Initial release, Syringe Coater (Head Controller) 1.01
+	
+Revision 1.01   7-25-11
+
+    Changed COPCTL from 0x05 to 0x07 to allow
+    
+    cleared gProcImg[OUT_digi_0] so that it can exit
+    
+    change PWM to 100% for 24vdc compressor motor
+    	
+Revision 1.02   4-30-12
+
+    Added Menu Setting to allow for 24V Compressor
+
+Revision 1.03   5-29-12
+
+    Made unit operate even though the 2-Wire may not be connected.
+	
+Revision 1.00   2-1-13
+
+
+Revision 1.01	6-1-13
+
+    Added titler functions
+
+Revision 1.02	10-21-13
+
+    added function to bring up menus
+
+Revision 2.00	6-24-15
+
+	Modified for board with matrix keypad
+	
+Revision 2.01	7-30-15
+
+	Added Alarm (record function) when F1 is selected and Trigger is pushed.
+	The pre-record and post-record times must be setup along with enabling the
+	alarm input.
+	
+Revision 2.02	10-20-15
+
+	Added bootloader code.
+	Added Menu System. Scans Units and Cameras. Toggle button switches cameras.
+	Added Controller Switch functions.
+
+Revision 2.03   2-5-15
+
+	Fixed problem with button box menu coming up when exiting unit menus when not suppose to	
+	
+Revision 2.04   2-14-18
+
+	Added an additional 1.5 second delay before doing scan
+	Changed Scan function to accept 0x32 and 0xA6 (actually !0xff) in to main menu.
+	Previously, it was just accepting 0x32. This would prevent the WIM from showing up.
+	
+Revision 2.05   2-14-18
+
+	Added Settings to allow position of the messages from the machine to be repositioned.
+
+Revision 2.06   4-23-19
+
+	Change operation to require Controller to continuously send switch data (100ms)
+	Must be used with Controller Revision 2.18 or later.
+	
+Revision 2.07    9-18-19
+
+    Fixed problem where "Warn" message is not displayed
+	
+Revision 2.08    12-13-19	dld
+
+    Made messages default to top row if a menu is displayed
+	blocked button box data from sending menu command when internal menu is active
+	Also blocked output of "Up" and "Down" while internal menu is active
+	
+Revision 2.09    01-13-20    dld
+
+    Added call to MCO_ProcessStack in ClearTitler function, changed wait time from 0.2 sec to 0.05 sec
+	This fixes a problem where the menu is scrambled when first entered.
+	
+Revision 2.10    02-27-20    VJB
+   
+    - Added character array and write memory function to allow displaying the "+" and "%" symbols on the BBox.	
+	- Added a function to determine if the character array is already written to the MAX7456 memory so that writing to the EEPROM doesn't constantly happen 
+	  upon program bootup/reset.
+	- Refined the SPI communications algorithms.
+	- The CMDI character array is now stored in non-volatile memory so it doesn't use up all the RAM.
+	
+Revision 2.11    03-13-20    VJB
+
+	- Fixed the problem of rotating upon bootup when using the ButtonBox as the main controller.
+	- Fixed ClearTitler so it does not activate the MCO_ProcessStack when no CAN node is connected.  
+	
+Revision 2.12	 03-23-20    DLD
+
+	- Temporarily changed CAN Baud Rate to 250K (code is commented and can be used as needed).
+	- Added functions for SmartBattery
+	- Changed the Menu Scan function to start with NodeID 0x10 instead of 0x01.  This was done to skip over NodeID for the Harmonic Drive Controllers.
+	
+Revision 2.13	 02-04-21    VJB
+
+	- Added a controller bool variable for detection if the ButtonBox is acting as a controller.
+	- Made a defaultMenuc and defaultMenuStackc structure to store the default structures of the menu in flash so that I could create a function that restores the Menu to its 
+	     default values.
+	Made the following changes for when the ButtonBox acts as a controller:
+	- The Unit Number of each CNT-031 now shows up beside "GRINDER" in every Menu except the Main Menu which already indicates the master grinder.  	  
+    - Now when a Unit Number is changed and the CNT-031 menu is exited, the ButtonBox receives a message to rescan which restructures the menu with the new Unit Numbers.
+    - The ButtonBox now broadcasts 0x34 messages on the CAN bus to tell every CNT-031 which Unit Numbers are currently being used. 
+	- When the ButtonBox detects duplicate unit numbers it now coordinates with every CNT-031 to randomize, and then restructure in numerical order.
+	- Expanded the structure of how the ButtonBox communicates via the MicroCANopen protocol so that it can communicate effectively with every CNT-031 on the CAN bus for Unit Number
+	     coordination/deconfliction.
+	- Moved the Battery Scan from the main startup function into the doevents under the power on section
+
+Revision 2.14    02-14-21    VJB
+
+	- Corrected an error introduced in the last revision that prevented the WIM menu from loading in the ButtonBox when the ButtonBox is used as the controller.
+	
+Revision 2.15    10-13-22   DLD
+
+    - Reconfigured Options so the program could be used on either processor; 9S12Dx128 or 9S12Dx256
+	- Removed all "resetTitler()" calls except during initialization and during resets. Added a short delay in "resetTitler()" to give time for the titler to be reset before 
+	      enabling display mode.
+		  
+Revision 2.16	 08-10-23   DLD
+
+	- Added Feature where F1 and F2 enables a up/dn/left/right/menu using Slow,Down,Menu,Up,CW
+	
+Revision 3.00    10-6-23    VJB              ****NEW HD SYSTEM INITIAL RELEASE****       
+
+	- Changed the MenuTimer from 1/3 of a second to 1/4 of a second.
+	- The Reactivate_Timer is now only used in controller mode.
+	- When the ReActivate_Timer runs out it will now clear the Extern Menu flag along with setting the Menu Active flag.
+	- When in controller mode, moved the make menu active command to before the Scan().
+	- The program now continuously sets the External Menu flag based on the 0x01 received from an electric unit on the CAN bus indicating an active external menu (only in controller mode).
+	- Changed the disable of the Up and Down buttons on the CAN bus to only occur when the internal BBox Menu is active and an External Menu is inactive.
+	- Removed the InitXmit function.
+	- Moved all the initialization functions to Controller.c
+	- Fixed the bug where the text would flicker when scrolling Up or Down through the Menus.
+	- Fixed the bug where the screen would blank out or scramble the menu intermittently when scrolling Up or Down through the Menus.
+	- Added the ability to receive Camera Tags from each C48 HD Camera and list them in the camera menu after a camera scan when in controller mode.
+	- When in controller mode, reset will now go over the CAN bus.	
+	
+Revision 3.01    03-4-24    DLD
+
+	
+	- Fixed an issue where the Buttonbox would quit transmitting if there was a brief interruption
+	  in the CAN messages (temporary disconnection).
+	   
+MAX33011 Fault changes  
+	- Changes to Controller.c file to accommodate changes to the mco stack
+		- (Controller.c) moved InitCANopen() function from before INTR_ON() to after INTR_ON();
+		- (Controller.c) changed InitCANopen() function to call Reset_Max33011() before calling MCOUSER_ResetCommunication(), deleted while 
+	- Changes to MCO Stack to increase robustness and clear faults in the MAX330112
+		- (mco.c) added #include "mc9s12a128.h", int No2WireCnt = 0; and extern char Gen_Flags;
+		- (mco.c) added code to check for Gen_Flags_No2Wire flag in MCO_ProcessStack() to reinitialize the mco stack
+		- (mco.c) added Reset_Max33011() function, this redirects the CAN, then reads and clears the fault from the MAX33011
+		- (mco.h) added Reset_Max33011() protype
+		- (mcohw.c) added Timer1 to while loops when waiting for CAN status with calls to COP (4 places)
+		- (user.c) added INTR_ON() to MCOUSER_ResetCommunication() function
+		- (user.c) changed MCOUSER_FatalError() function to call InitCANopen() instead of error_state() (got rid of 2Wio.c)
+		
+		- removed 2Wio.c and 2Wio.h and all references to include the header file
+		
+	Button Box operation changes	
+	- Changes to buttonbox operation
+		- (Interrupts.c) added extern bool legacy_mode;
+		- (Interrupts.c) changed timer that calls MCOHW_TimerISR() to check legacy_mode (instead of no-2wire)flag before calling MCOHW_TimerISR()
+		- (Subroutines.c) added char _bss_end[20], bool legacy_mode = false
+		- (Subroutines.c) added if statement after MCOHW_PushMessage(&gTxMsg) to check for errors in Controller mode reset code
+		- (Subroutines.c) added call to ResetProc() in Controller mode reset code
+		- (Subroutines.c) changed If to check for !legacy_mode instead of no2wire flag
+		- (Subroutines.c) added a string compare to If statement to look for "Cntrl" in unused RAM area, soft resets goes back to Cntrl mode
+		- (Subroutines.c) added a string write to put "Cntrl" in unused RAM area, soft resets goes back to Cntrl mode
+		- (Subroutines.c) added If statement to check for power_on, if true while in no2wire mode, sets legacy_mode
+		- (Subroutines.c) changed if in ClearTitler() function to look for !legacy_mode instead of no2wire mode
+	
+	
+Revision 3.02   10-9-24   VJB
+
+	- Fixed the SPI initial write bug evident on the Freescale 256K microprocessor by adding a dummy write prior to the first time the SPI bus is written to.
+	- Turned off the bottom row Display when another menu is active.
+	
+	
+
+Revision 3.03 11/15/24 DWM
+
+	Changes to update for MAX33011 and new CAN filtering
+	- (mcohw.c) Change MCOHW_SEtCanFilter() to new version. Also added setFilters[] to keep track of each filter. is 0x80 by default and represents a "NONE" values
+	- (user.c) Changed cleaning gProcImg[] in MCOUSER_ResetCommunication() so that it only clears on startup using clearProc.
+	- (user.c) Added clearing setFilters[] in MCOUSER_ResetCommunication() so that when MAX33011 resets it reinitializes RPDO/TRDOs properly
+	
+	
+Revision 3.04   6/3/25   VJB  
+
+	- Changed timers in mcohw.c to 0.01 seconds (down from 0.5 seconds).	
+	- Fixed a bug that was cutting off the last character when adding HD Cameras to the camera tag list.
+	- findCameras() and scan_cameras() will now properly update the menu display once complete.
+	- When only one camera is active in the setup and a user exits the ButtonBox menu and presses up or down, it will now display the Camera Tag.
+	- Added the capability to automatically receive a message from a VID-018 to update the camera list once a new camera tag has been entered or RestoreDefaults.
+		Increased RPDO 3 to 3 bytes and adjusted gProcImg offset accordingly to make room for this change.
+    - When an RPDO successfully receives a message, it will now clear the CAN receive buffer after transferring the data to gProcImg.
+	- Converted the old button menu defines to the new ones (eg. TeleData_Cam1 to TeleData_F1) for easier troubleshooting/coding.
+	
+	
+Revision 3.05      VJB  
+
+    - Fixed an issue where the AUX menu didn't work properly past 7 electric units. It now works up to 10 electric units which is currently the maximum auxiliary units the
+	    current menu structure will support.
+    - The system now prevents additional AUX devices from being added once the maximum limit of 10 entries has been reached, avoiding writes beyond the allocated menu space.
+	- Added the hardware watchdog code so the latest MC9S12 microprocessor modules can be used with the Button Box.
+
+
+	
+	
+	
+	
+To work on:
+
+Some messages ("Holiday") do not stay on the monitor.
+
+
+
+
+ 
