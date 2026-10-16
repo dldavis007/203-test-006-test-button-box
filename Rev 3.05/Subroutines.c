@@ -2241,7 +2241,7 @@ void doevents ( void )
 		SwitchData = ButtonBoxData;
 		
 		//Keep all latched data
-		SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (SwitchData & TeleData_F1 || SwitchData & TeleData_F2?0:TeleData_Slow) | TeleData_Fast );
+		SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast );
 
 		
 		//Data Port T     Port B     Port P     Port T     Port J
@@ -2257,7 +2257,7 @@ void doevents ( void )
 			while (Timer1);
 			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0b00000111)) )
 			{   //Switch is pressed
-				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (SwitchData & TeleData_F1 || SwitchData & TeleData_F2?0:TeleData_Slow) | TeleData_Fast ) )
+				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
 				{   //Switch is a toggle function 
 					if (SwitchUpData & Keypad_Matrix[Sw_Index].BB_Data) 
 					{	//Switch is pressed and was previously released
@@ -2338,7 +2338,7 @@ void doevents ( void )
 		    SwitchData &= ~(TeleData_Fwd | TeleData_Rev);
 			
 		if ( !(SwitchData & TeleData_Rev) && !(SwitchData & TeleData_Fwd) ) //No Reverse or Forward
-		    SwitchData &= ~(TeleData_ExSlow | (SwitchData & TeleData_F1 || SwitchData & TeleData_F2?0:TeleData_Slow) | TeleData_Fast);
+		    SwitchData &= ~(TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast);
 		
 		if ( SwitchData & TeleData_Fwd && SwitchUpData & TeleData_Rev ) //FORWARD
 		    SwitchData &= ~TeleData_Rev;
