@@ -203,14 +203,18 @@ Revision 3.04   6/3/25   VJB
 	- Converted the old button menu defines to the new ones (eg. TeleData_Cam1 to TeleData_F1) for easier troubleshooting/coding.
 	
 	
-Revision 3.05      VJB  
+Revision 3.05     
 
+	VJB  
     - Fixed an issue where the AUX menu didn't work properly past 7 electric units. It now works up to 10 electric units which is currently the maximum auxiliary units the
 	    current menu structure will support.
     - The system now prevents additional AUX devices from being added once the maximum limit of 10 entries has been reached, avoiding writes beyond the allocated menu space.
 	- Added the hardware watchdog code so the latest MC9S12 microprocessor modules can be used with the Button Box.
 
-
+	DLD
+	- Reverted back to using both F1 and F2 for the "highlighted button mode".  F2 was previously disabled.  
+	- The older code that included F2 used the older defines for the TeleData_xxx. This code uses TeleData_F# insted of Data_Cam#.
+	_ Added parenthesis to several "if" statements for clarity of operator precedence.
 	
 	
 	
