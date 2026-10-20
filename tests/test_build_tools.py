@@ -11,6 +11,12 @@ build = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build)
 
 class LayoutTests(unittest.TestCase):
+    def test_expected_linker_symbols_are_not_missing_runtime_hooks(self):
+        symbols = " U __bss_size\n U __bss_start\n U __data_load\n U __data_size\n U __data_start\n U fstat\n"
+        self.assertEqual(build.unresolved_runtime_symbols(symbols), " U fstat")
+        self.assertEqual(build.unresolved_runtime_symbols(" U __bss_start\n"), "")
+        self.assertIn('unexpected', build.unresolved_runtime_symbols(' U unexpected'))
+
     def test_default_near_call_probe(self):
         build.check_near_assembly("bb_probe:\n jsr bb_external\n addd #1\n rts\n")
         with self.assertRaises(RuntimeError):

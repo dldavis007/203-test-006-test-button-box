@@ -1,5 +1,7 @@
 #include "Controller.h"
 #include "mc9s12a128.h"
+#include <sys/stat.h>
+#include <string.h>
 
 /* Reserved by the linker and deliberately not cleared at reset. */
 char _bss_end[20] __attribute__((section(".noinit")));
@@ -42,3 +44,13 @@ typedef char assert_long32[(sizeof(long) == 4) ? 1 : -1];
 typedef char assert_pointer16[(sizeof(void *) == 2) ? 1 : -1];
 typedef char assert_double32[(sizeof(double) == 4) ? 1 : -1];
 #endif
+
+/* stdio queries the SCI stream type before selecting its buffering strategy. */
+int fstat(int fd, struct stat *status)
+{
+    (void)fd;
+    memset(status, 0, sizeof(*status));
+    status->st_mode = S_IFCHR;
+    return 0;
+}
+int _fstat(int fd, struct stat *status) { return fstat(fd, status); }

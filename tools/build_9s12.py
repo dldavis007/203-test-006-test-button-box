@@ -141,6 +141,14 @@ def check_near_assembly(text):
         raise RuntimeError('Could not verify near-call instruction in compiler probe.')
 
 
+def unresolved_runtime_symbols(text):
+    # These addresses/sizes are deliberately supplied by the final linker script.
+    linker_defined = {'__bss_size', '__bss_start', '__data_load',
+                      '__data_size', '__data_start'}
+    return '\n'.join(line for line in text.splitlines()
+                     if line.split() and line.split()[-1] not in linker_defined)
+
+
 def main():
     BUILD.mkdir(parents=True, exist_ok=True)
     # Remove stale deliverables before any compiler/compile/link failure.
@@ -182,7 +190,7 @@ def main():
     # participate in fixed-bank layout (rather than guessing library footprint).
     print(run([gcc] + flags + ['-nostdlib', '-Wl,-r', '-o', 'merged.o'] +
               objects + ['-Wl,--start-group', '-lc', '-lgcc', '-Wl,--end-group'], cwd=BUILD))
-    undefined = run([tool('nm'), '-u', BUILD/'merged.o']).strip()
+    undefined = unresolved_runtime_symbols(run([tool('nm'), '-u', BUILD/'merged.o'])).strip()
     if undefined:
         raise RuntimeError('Unresolved symbols before final link:\n' + undefined)
     info = sections(run([tool('objdump'), '-h', BUILD/'merged.o']))
