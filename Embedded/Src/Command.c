@@ -22,8 +22,7 @@ extern char SW1[];
 
 void command ( char CmdBuf[] )
 {
-    char ParseBuf[64] = "\0", TmpStr[64];
-	int CmdBufptr;
+    char ParseBuf[64] = "\0";
 	
 	if ( CmdBuf == SIN0Buf )
 	    printf ( "\r\n" );
@@ -43,7 +42,7 @@ void command ( char CmdBuf[] )
             printf ( "|GO                                                                   |\r\n" );			
 			printf ( "|REVISION                                                             |\r\n" );			
 			printf ( "\\---------------------------------------------------------------------/\r\n" );
-            ParseBuf[0]=NULL;
+            ParseBuf[0]='\0';
         }
         else if( !( strncmp( ParseBuf, "RESET", 5 ) ) || !( strncmp( ParseBuf, "#RESET", 6 ) ) )
         {
@@ -53,7 +52,7 @@ void command ( char CmdBuf[] )
         else if( !( strncmp( ParseBuf, "LOAD", 4 ) ) )
         {
 		 	 char tmpstr[8];
-			 int ByteCnt, DataByte, i,j;
+			 int ByteCnt, i,j;
 			 char *Address;
 			 
 			 while (1)
@@ -61,7 +60,7 @@ void command ( char CmdBuf[] )
     			 Gen_Flags &= ~Gen_Flags_SIN0Rcvd;
     			 while ( !(Gen_Flags & Gen_Flags_SIN0Rcvd) );
     			 
-                 if ( CmdBuf[0] == 'S' & CmdBuf[1] == '1')
+                 if ( (CmdBuf[0] == 'S') && (CmdBuf[1] == '1'))
                  {
                     tmpstr[0]= CmdBuf[2];
                     tmpstr[1]= CmdBuf[3];
@@ -81,10 +80,10 @@ void command ( char CmdBuf[] )
                         *Address++ = (char)hextoi ( tmpstr );
                     }
                  }
-    			 else if ( CmdBuf[0] == 'S' & CmdBuf[1] == '9' )
+    			 else if ( (CmdBuf[0] == 'S') && (CmdBuf[1] == '9') )
     			   	break;
 			 }
-			 ParseBuf[0]=NULL;
+			 ParseBuf[0]='\0';
 		}
         else if( !( strncmp( ParseBuf, "GO", 2 ) ) )
         {
@@ -100,18 +99,18 @@ void command ( char CmdBuf[] )
 			 asm ("jsr 0,x");
 			 asm ("pulx");
 #endif
-			 ParseBuf[0]=NULL;
+			 ParseBuf[0]='\0';
 		}
         else if( !( strncmp( ParseBuf, "REVISION", 8 ) ) )
         {
 			printf (  "Revision %s\r\n", Revision );
-            ParseBuf[0]=NULL;
+            ParseBuf[0]='\0';
 		}
         if (strlen(ParseBuf))
         {
 			//printf ( "Command not recognized\r\n" );
 			CmdBuf[0] = '\0';
-			ParseBuf[0]=NULL;
+			ParseBuf[0]='\0';
         }
     }		   
     //printf ( "\r\n>" );
@@ -141,24 +140,24 @@ void parse(char *pbuf, char *str)
      ltrim (str);
      ptr = (char *)memchr (str, '\n', strlen(str));
 	 if (ptr)
-	 	*ptr = NULL;
+	 	*ptr = '\0';
      ptr = (char *)memchr (str, '\r', strlen(str));
 	 if (ptr)
-	 	*ptr = NULL;
+	 	*ptr = '\0';
      ptr = (char *)memchr (str, ' ', strlen(str));
      if (ptr)
      {
-        *ptr = NULL;
+        *ptr = '\0';
 
         strcpy (pbuf, str);
         ptr++;
-        strcpy (str, ptr);
+        memmove(str, ptr, strlen(ptr) + 1);
         return;
       }
       else
       {
         strcpy (pbuf,str);
-        *str = NULL;
+        *str = '\0';
         return;
       }
 }
@@ -176,8 +175,11 @@ void ucase (char *str)
 
 void ltrim (char *c_ptr)
 {
-     while ((c_ptr[0] == ' ') && (c_ptr[0] != NULL))
-        strcpy (c_ptr, c_ptr+1);
+    char *first = c_ptr;
+    while (*first == ' ')
+        ++first;
+    if (first != c_ptr)
+        memmove(c_ptr, first, strlen(first) + 1);
 }
 
 int hextoi(char *string)

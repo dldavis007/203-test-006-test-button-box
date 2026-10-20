@@ -115,7 +115,7 @@ void TC0_Int_Handler ( void )
 
 void TC3_Int_Handler ( void )
 {
-    static char Sw_Index;
+    static unsigned char Sw_Index;
     
     TFLG1 = 0x08;	   		//clear interrupt
     TC3 = TCNT + TC_1ms;
@@ -148,7 +148,7 @@ void TC3_Int_Handler ( void )
 	    PTP = (PTP & ~0x0E); //Output a Low on the Columns
 	}
 	
-	if (++Sw_Index > 18)
+	if (++Sw_Index >= 18)
 	    Sw_Index=0;
 	
 	if (Sw_Index == 6)

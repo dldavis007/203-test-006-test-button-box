@@ -23,6 +23,20 @@ Check fresh NoICE source paths, startup to main, all four F1/F2 settings,
 function toggles, cross LEDs, normal navigation/travel/stop, and EEPROM after
 power cycling. Also build the relocated ImageCraft project before merging.
 
+## First source corrections
+
+- The timer LED scanner accessed entry 18 of an 18-entry table. It now wraps
+  before that invalid index and uses an unsigned index. A host test executes
+  1000 real handler calls with undefined-behavior bounds checks on Linux.
+- Serial parser shifts used overlapping strcpy, which has undefined behavior.
+  They now use memmove, with tests for chained commands, leading spaces,
+  line endings and empty input under both signed and unsigned char.
+- Character terminators use '\0' rather than pointer NULL; serial S-record
+  checks use logical AND; unused parser locals were removed.
+
+Host checks pass (14 unit tests, both scan regression char modes and syntax).
+Windows build/load and hardware regression remain outstanding for this branch.
+
 ## Remaining review
 
 - CANRxISR writes through an uninitialized pointer. CAN reception currently
