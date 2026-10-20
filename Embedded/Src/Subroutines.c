@@ -473,8 +473,8 @@ char FirstVar[]       = "xxx";
 char MessageRow[]	  = "  1";
 char MessageCol[]	  = "  1";
 char SerialNum[]      = "-----";
-char F1Enable[4]      = "ON";
-char F2Enable[4]      = "ON";
+char F1Enable[4]      = " ON";
+char F2Enable[4]      = " ON";
 char NullVar[]        = "";
 
 //The following Menu Variables are NOT saved in EEPROM
@@ -539,7 +539,7 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
                                             "                    ",
                                             "                    ",
                                             "                    ",
-                                            15,15,12,12,0,0,0,0,0,0,0,
+                                            15,15,15,15,0,0,0,0,0,0,0,
                                             MessageRow,
                                             MessageCol,
                                             F1Enable,
@@ -1013,8 +1013,8 @@ int setSerial ( void )
 /* Select active alternate-key modes without changing latched/output bits. */
 unsigned int EnabledFunctionData(unsigned int data)
 {
-    if (strcmp(F1Enable, "ON")) data &= ~TeleData_F1;
-    if (strcmp(F2Enable, "ON")) data &= ~TeleData_F2;
+    if (strcmp(F1Enable, " ON")) data &= ~TeleData_F1;
+    if (strcmp(F2Enable, " ON")) data &= ~TeleData_F2;
     return data;
 }
 
@@ -1022,18 +1022,18 @@ void NormalizeFunctionSettings(void)
 {
     /* Old EEPROM has no valid strings in these newly added fields. */
     F1Enable[3] = F2Enable[3] = 0;
-    if (strcmp(F1Enable, "ON") && strcmp(F1Enable, "OFF"))
-        strcpy(F1Enable, "ON");
-    if (strcmp(F2Enable, "ON") && strcmp(F2Enable, "OFF"))
-        strcpy(F2Enable, "ON");
-    AlternateFunctionMask = (!strcmp(F1Enable, "ON") ? TeleData_F1 : 0) |
-                            (!strcmp(F2Enable, "ON") ? TeleData_F2 : 0);
+    if (strcmp(F1Enable, " ON") && strcmp(F1Enable, "OFF"))
+        strcpy(F1Enable, " ON");
+    if (strcmp(F2Enable, " ON") && strcmp(F2Enable, "OFF"))
+        strcpy(F2Enable, " ON");
+    AlternateFunctionMask = (!strcmp(F1Enable, " ON") ? TeleData_F1 : 0) |
+                            (!strcmp(F2Enable, " ON") ? TeleData_F2 : 0);
 }
 
 int ToggleF1Enable(void)
 {
-    if (!strcmp(F1Enable, "ON")) strcpy(F1Enable, "OFF");
-    else strcpy(F1Enable, "ON");
+    if (!strcmp(F1Enable, " ON")) strcpy(F1Enable, "OFF");
+    else strcpy(F1Enable, " ON");
     NormalizeFunctionSettings();
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
@@ -1043,8 +1043,8 @@ int ToggleF1Enable(void)
 
 int ToggleF2Enable(void)
 {
-    if (!strcmp(F2Enable, "ON")) strcpy(F2Enable, "OFF");
-    else strcpy(F2Enable, "ON");
+    if (!strcmp(F2Enable, " ON")) strcpy(F2Enable, "OFF");
+    else strcpy(F2Enable, " ON");
     NormalizeFunctionSettings();
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
@@ -1097,8 +1097,8 @@ void Load_Variables (void)
 	 }
 	 else
      {
-         strcpy(F1Enable, "ON");
-         strcpy(F2Enable, "ON");
+         strcpy(F1Enable, " ON");
+         strcpy(F2Enable, " ON");
          NormalizeFunctionSettings();
          Save_Variables();
      }
@@ -1609,8 +1609,8 @@ void btnDisplayTitler ( void )
 
 int RestoreDefaults ( void )
 {
-    strcpy(F1Enable, "ON");
-    strcpy(F2Enable, "ON");
+    strcpy(F1Enable, " ON");
+    strcpy(F2Enable, " ON");
     NormalizeFunctionSettings();
     FirstVar[0] = 0xFF;    //indicates data needs to be replaced with defaults
     Save_Variables();         

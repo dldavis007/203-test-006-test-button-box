@@ -85,7 +85,7 @@ void clear(void)
     Cntrl_Slow_Flag = controller_mode = 0;
     CntrSwTimeOut = -1;
     memset(gProcImg, 0, sizeof(gProcImg));
-    strcpy(F1Enable, "ON"); strcpy(F2Enable, "ON");
+    strcpy(F1Enable, " ON"); strcpy(F2Enable, " ON");
     tick(0); /* release every key, including after a previous scenario */
 }
 #define KEY(i) (1UL << (i))
@@ -115,15 +115,15 @@ int main(void)
     assert(!strcmp(SerialNum, "12345"));
     clear(); ButtonBoxData = TC0_RCVD_Data = TeleData_F1 | TeleData_F2;
     ToggleF1Enable();
-    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, "ON"));
+    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, " ON"));
     assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
     ToggleF2Enable(); assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
     ToggleF1Enable(); ToggleF2Enable();
-    assert(!strcmp(F1Enable, "ON") && !strcmp(F2Enable, "ON"));
+    assert(!strcmp(F1Enable, " ON") && !strcmp(F2Enable, " ON"));
     for (f1 = 0; f1 <= 1; ++f1) for (f2 = 0; f2 <= 1; ++f2) {
         clear();
-        strcpy(F1Enable, f1 ? "ON" : "OFF");
-        strcpy(F2Enable, f2 ? "ON" : "OFF");
+        strcpy(F1Enable, f1 ? " ON" : "OFF");
+        strcpy(F2Enable, f2 ? " ON" : "OFF");
         tick(KEY(1)); assert(ButtonBoxData & TeleData_F1);
         tick(0); tick(KEY(7));
         assert(ButtonBoxData & TeleData_F2);
@@ -135,8 +135,8 @@ int main(void)
     }
     for (mode = TeleData_F2; mode <= TeleData_F1; mode *= 2) {
         clear();
-        strcpy(F1Enable, mode == TeleData_F1 ? "OFF" : "ON");
-        strcpy(F2Enable, mode == TeleData_F2 ? "OFF" : "ON");
+        strcpy(F1Enable, mode == TeleData_F1 ? "OFF" : " ON");
+        strcpy(F2Enable, mode == TeleData_F2 ? "OFF" : " ON");
         ButtonBoxData = mode;
         tick(KEY(4)); assert(Third_byte == 0);
         assert((tempData & (mode | TeleData_Down)) == (mode | TeleData_Down));
@@ -181,8 +181,8 @@ int main(void)
     tick(0); tick(KEY(7)); assert(ButtonBoxData & TeleData_F2);
     tick(0); tick(KEY(7)); assert(!(ButtonBoxData & TeleData_F2));
     for (flags = 0; flags < 4; ++flags) {
-        strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
-        strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
+        strcpy(F1Enable, (flags & 1) ? " ON" : "OFF");
+        strcpy(F2Enable, (flags & 2) ? " ON" : "OFF");
         NormalizeFunctionSettings();
         assert(AlternateFunctionMask == ((flags & 1 ? TeleData_F1 : 0) | (flags & 2 ? TeleData_F2 : 0)));
         ButtonBoxData = TeleData_F1;
@@ -199,16 +199,16 @@ int main(void)
                 legacy[n] = word >> 8; legacy[n + 1] = word & 255;
             }
         }
-        strcpy(F1Enable, "ON"); strcpy(F2Enable, "ON");
+        strcpy(F1Enable, " ON"); strcpy(F2Enable, " ON");
         DecodeLegacySettings(legacy);
-        assert(!strcmp(F1Enable, (flags & 1) ? "ON" : "OFF"));
-        assert(!strcmp(F2Enable, (flags & 2) ? "ON" : "OFF"));
+        assert(!strcmp(F1Enable, (flags & 1) ? " ON" : "OFF"));
+        assert(!strcmp(F2Enable, (flags & 2) ? " ON" : "OFF"));
     }
     memset(legacy + 18, 255, 8); DecodeLegacySettings(legacy);
-    assert(!strcmp(F1Enable, "ON") && !strcmp(F2Enable, "ON"));
+    assert(!strcmp(F1Enable, " ON") && !strcmp(F2Enable, " ON"));
     memcpy(legacy + 18, "OFF", 4); memcpy(legacy + 22, "BAD", 4);
     DecodeLegacySettings(legacy);
-    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, "ON"));
+    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, " ON"));
     puts("PASS: settings combinations, F1/F2 commands, release/latching, travel/stop, menu routing, EEPROM codec");
     return 0;
 }
