@@ -129,6 +129,18 @@ SECTIONS {
 ''' % (entries(banks[0]), entries(banks[1]))
 
 
+def check_near_assembly(text):
+    # Old GNU68HC12 accepts -mlong-calls but not its negative spelling.
+    # Verify the default instead of passing an unsupported option.
+    instructions = '\n'.join(line.split(';', 1)[0] for line in text.splitlines())
+    if re.search(r'^\s*(?:call|rtc)\b', instructions, re.M | re.I):
+        raise RuntimeError('Compiler defaults to far calls; fixed-bank runtime requires JSR/RTS.')
+    if not re.search(r'^\s*rts\b', instructions, re.M | re.I):
+        raise RuntimeError('Could not verify near-call return convention in compiler probe.')
+    if not re.search(r'^\s*(?:jsr|bsr|lbsr)\b', instructions, re.M | re.I):
+        raise RuntimeError('Could not verify near-call instruction in compiler probe.')
+
+
 def main():
     BUILD.mkdir(parents=True, exist_ok=True)
     # Remove stale deliverables before any compiler/compile/link failure.
@@ -145,10 +157,15 @@ def main():
     if not shutil.which(gcc):
         raise RuntimeError('9S12 compiler not found: %s. Set GNU68HC12_BIN or PATH.' % gcc)
     print(run([gcc, '--version']))
-    flags = ['-m68hc12', '-mshort', '-fshort-double', '-mno-long-calls',
+    flags = ['-m68hc12', '-mshort', '-fshort-double',
              '-std=gnu89', '-ffreestanding', '-Os', '-gstabs+', '-fsigned-char', '-fno-common',
              '-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections',
              '-DBUTTONBOX_GCC', '-Wall', '-W', '-I', str(SOURCE)]
+    probe = BUILD/'call_abi_probe.c'
+    probe.write_text('extern unsigned int bb_external(unsigned int);\n'
+                     'unsigned int bb_probe(unsigned int x) { return bb_external(x) + 1; }\n')
+    print(run([gcc] + flags + ['-S', probe, '-o', BUILD/'call_abi_probe.s']))
+    check_near_assembly((BUILD/'call_abi_probe.s').read_text())
     objects = []
     files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/startup.S']
     for source in files:

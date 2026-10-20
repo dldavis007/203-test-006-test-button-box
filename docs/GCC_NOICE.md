@@ -42,7 +42,7 @@ C:\Toolchains\GNU68HC12\bin or PATH for m6811-elf-* tools. GNU68HC12_PREFIX
 can override the executable prefix. Do not point this at MinGW or ARM GCC.
 
 The flags use HC12, 16-bit int/pointers, 32-bit double, signed plain char,
-near calls, size optimization, function/data sections and STABS mappings.
+default near calls (verified by an assembly probe), size optimization, function/data sections and STABS mappings.
 Compile-time assertions verify widths. Near calls deliberately differ from the
 motion project's far-call build: this port uses only fixed Flash, with no PPAGE
 switching. The RAM Flash command wrapper also follows the near-call ABI.
@@ -100,3 +100,6 @@ Existing CAN receive uses polling through MCOHW_PullMessage. The inherited
 CANRxISR has an uninitialized pointer and must not be enabled without a separate
 fix. This port retains its existing vector assignment and does not enable CAN
 receive interrupts. A host test does not validate an interrupt path.
+
+GCC 3.3.6 rejects `-mno-long-calls`; the build omits that option and verifies
+JSR/BSR and RTS in generated probe assembly before compiling the application.

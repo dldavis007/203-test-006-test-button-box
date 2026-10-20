@@ -11,6 +11,13 @@ build = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build)
 
 class LayoutTests(unittest.TestCase):
+    def test_default_near_call_probe(self):
+        build.check_near_assembly("bb_probe:\n jsr bb_external\n addd #1\n rts\n")
+        with self.assertRaises(RuntimeError):
+            build.check_near_assembly(" call bb_external,0\n rtc\n")
+        with self.assertRaises(RuntimeError):
+            build.check_near_assembly(" rts\n")
+
     def test_sections_parser(self):
         info = build.sections('''  0 .startup 00000020 00000000 00000000 00000034 2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
