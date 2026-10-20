@@ -251,6 +251,6 @@ extern volatile bool controller_mode, legacy_mode;
 extern bool resequenceNodes;
 extern char deviceSubMenu[20][17];
 extern int sub_Device_Type_Response_ID[20];
-extern struct MatrixTbl Keypad_Matrix[18];
+extern const struct MatrixTbl Keypad_Matrix[18];
 
 #endif

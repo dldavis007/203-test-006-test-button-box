@@ -157,6 +157,10 @@ def validate_final_image(text):
     persistent, noinit, _ = rows['.noinit']
     data_size, data, data_load = rows['.data']
     bss_size, bss, _ = rows['.bss']
+    stack_bytes = 0x4000 - (bss + bss_size)
+    print('RAM: noinit 0x%04X-0x%04X; data 0x%04X-0x%04X; '
+          'bss 0x%04X-0x%04X; remaining stack %d bytes (minimum 1280)' %
+          (noinit, noinit + persistent, data, data + data_size, bss, bss + bss_size, stack_bytes))
     if persistent != 20 or noinit != 0x2000:
         raise RuntimeError('Final memory validation: reset-persistent storage moved')
     if not (noinit + persistent <= data <= data + data_size <= bss <= bss + bss_size <= 0x3B00):

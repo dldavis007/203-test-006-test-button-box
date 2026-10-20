@@ -80,6 +80,11 @@ class FinalMemoryTests(unittest.TestCase):
     def test_valid_image(self):
         build.validate_final_image(self.headers())
 
+    def test_stack_reserve_boundary(self):
+        build.validate_final_image(self.headers(**{'.bss': (0x3B00 - 0x2114, 0x2114, 0x2114)}))
+        with self.assertRaises(RuntimeError):
+            build.validate_final_image(self.headers(**{'.bss': (0x3B02 - 0x2114, 0x2114, 0x2114)}))
+
     def test_reject_overflow_vectors_and_overlap(self):
         for change in [{'.text_window': (0x4001,0x8000,0x8000)},
                        {'.vectors': (126,0xFF80,0xFF80)},

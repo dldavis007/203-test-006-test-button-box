@@ -145,6 +145,50 @@ int main(void) {
 }
 ''')
 
+    def test_variable_editors_reject_invalid_menu_state(self):
+        source = (ROOT/'Embedded/Src/Subroutines.c').read_text()
+        header = (ROOT/'Embedded/Include/Subroutines.h').as_posix()
+        helpers = '\n'.join(extract(source, name) for name in ['dispVariable', 'IncVariable', 'DecVariable'])
+        run_c('#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <assert.h>\n#include "' + header + '"\n' + r'''
+#define SER_NUM 8
+#define OFF_ON 9
+struct MenuStruct Menuc[MenuSize];
+struct MenuStack MenuStackc[MenuStackSize];
+unsigned char StackPointer;
+char VariableFlag, SerialNum[6] = "12345";
+double increment = 1, lLimit = 1, uLimit = 13;
+int nDigits = 30, renders;
+void LoadMenu(unsigned char index[]) { (void)index; }
+void btnDisplayTitler(void) { ++renders; }
+''' + helpers + r'''
+int main(void) {
+    char value[4] = "  1";
+    Menuc[0].Index[0] = 1;
+    MenuStackc[0].Index[0] = 1;
+    MenuStackc[0].CursorPos = 1;
+    Menuc[0].VarPntr[0] = value;
+    IncVariable(); assert(!strcmp(value, "  2"));
+    DecVariable(); assert(!strcmp(value, "  1"));
+    DecVariable(); assert(!strcmp(value, " 13"));
+    nDigits = OFF_ON; strcpy(value, "OFF");
+    IncVariable(); assert(!strcmp(value, " ON"));
+    DecVariable(); assert(!strcmp(value, "OFF"));
+    renders = 0;
+    MenuStackc[0].Index[0] = 99; IncVariable(); DecVariable();
+    MenuStackc[0].Index[0] = 1;
+    MenuStackc[0].CursorPos = 0; IncVariable(); DecVariable();
+    MenuStackc[0].CursorPos = 12; IncVariable(); DecVariable();
+    MenuStackc[0].CursorPos = 1; Menuc[0].VarPntr[0] = NULL;
+    IncVariable(); DecVariable();
+    Menuc[0].VarPntr[0] = SerialNum;
+    nDigits = SER_NUM; VariableFlag = 0; IncVariable(); DecVariable();
+    VariableFlag = 6; IncVariable(); DecVariable();
+    StackPointer = MenuStackSize; IncVariable(); DecVariable();
+    assert(!renders && !strcmp(SerialNum, "12345"));
+    return 0;
+}
+''')
+
     def test_timer_scan_stays_inside_matrix(self):
         source = (ROOT/'Embedded/Src/Interrupts.c').read_text()
         handler = extract(source, 'TC3_Int_Handler')

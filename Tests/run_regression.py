@@ -34,7 +34,7 @@ assert scan.count(condition) == 1
 scan = scan.replace(condition, 'if (pressed & (1UL << Sw_Index))')
 scan = scan.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
 scan = scan.replace('unsigned int MaskBit = 0x8000;', '')
-matrix = s[s.index('struct MatrixTbl Keypad_Matrix[18]'):s.index('void setDefaultMenu')]
+matrix = s[s.index('const struct MatrixTbl Keypad_Matrix[18]'):s.index('void setDefaultMenu')]
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
                    if line.startswith('#define TeleData_') or line.startswith('#define Gen_Flags_'))
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]

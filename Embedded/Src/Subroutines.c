@@ -519,7 +519,7 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
 
 struct MenuStruct Menuc[MenuSize];
 
-struct MenuStack defaultMenuStackc[MenuStackSize] = {
+const struct MenuStack defaultMenuStackc[MenuStackSize] = {
     {
         {0, 0, 0, 0},
         1,
@@ -554,7 +554,7 @@ struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 /**************************************************************************/
 
 
-struct MatrixTbl Keypad_Matrix[18] = {
+const struct MatrixTbl Keypad_Matrix[18] = {
     {
         0x0100,
         {0x00, 0x0C},
@@ -1079,8 +1079,11 @@ void IncVariable ( void )
 {
     int k;
     int varIndex;       //index of variable
-    double j;
-    char *vPtr2;        //will also point to variable to be decremented
+    double j = 0;
+    char *vPtr2 = NULL;        //will also point to variable to be decremented
+
+    if (StackPointer >= MenuStackSize)
+        return;
 
      //Find out which menu we are on
      for ( k=0;k<MenuSize;k++ )
@@ -1091,7 +1094,10 @@ void IncVariable ( void )
             Menuc[k].Index[3] == MenuStackc[StackPointer].Index[3] )
         {
             varIndex = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
+            if (varIndex < 0 || varIndex >= 11)
+                return;
             vPtr2 = Menuc[k].VarPntr[varIndex];     //copy pointer to variable
+            if (vPtr2 == NULL) return;
 
             if( nDigits == OFF_ON ) {
                 if ( !(strcmp ( vPtr2, "OFF" )) )
@@ -1101,7 +1107,8 @@ void IncVariable ( void )
                 break;     
             }
 
-            if( nDigits == SER_NUM ) {              //limit to numerical serial numbers
+            if( nDigits == SER_NUM ) {
+                if (VariableFlag < 1 || VariableFlag > 5) return;              //limit to numerical serial numbers
                 if( SerialNum[VariableFlag -1]  == '-' )
                     SerialNum[VariableFlag -1]  = '0';
                 else
@@ -1127,6 +1134,8 @@ void IncVariable ( void )
             }
         }
     }
+    if (vPtr2 == NULL)
+        return;
     dispVariable(vPtr2, &j, nDigits);
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();
@@ -1136,8 +1145,11 @@ void DecVariable ( void )
 {
     int k;
     int varIndex;       //index of variable
-    double j;
-    char *vPtr2;        //will also point to variable to be decremented
+    double j = 0;
+    char *vPtr2 = NULL;        //will also point to variable to be decremented
+
+    if (StackPointer >= MenuStackSize)
+        return;
 
     //Find out which menu we are on
     for ( k=0;k<MenuSize;k++ )
@@ -1149,7 +1161,10 @@ void DecVariable ( void )
         {
             //VarPnt = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
             varIndex = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
+            if (varIndex < 0 || varIndex >= 11)
+                return;
             vPtr2 = Menuc[k].VarPntr[varIndex];     //copy pointer to variable
+            if (vPtr2 == NULL) return;
             
             if( nDigits == OFF_ON ) 
             {
@@ -1161,6 +1176,7 @@ void DecVariable ( void )
             }
             if( nDigits == SER_NUM )               //limit to numerical serial numbers
             {
+                if (VariableFlag < 1 || VariableFlag > 5) return;
                 if( SerialNum[VariableFlag -1]  == '-' )
                     SerialNum[VariableFlag -1]  = '0';
                 else
@@ -1189,6 +1205,8 @@ void DecVariable ( void )
             }
         }
     }
+    if (vPtr2 == NULL)
+        return;
     dispVariable(vPtr2, &j, nDigits);
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();

@@ -18,7 +18,7 @@ __attribute__((section(".vectors"), used))
 #else
 #pragma abs_address:0xFF80
 #endif
-void (*interrupt_vectors[])(void) =
+void (* const interrupt_vectors[])(void) =
 {
 		
         DUMMY_ENTRY, 	/*Reserved $FF80*/

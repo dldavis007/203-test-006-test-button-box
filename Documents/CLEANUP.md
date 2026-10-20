@@ -94,3 +94,19 @@ build. Current unit test count: 17, plus the signed/unsigned keypad regressions.
 Remaining work includes size-aware serial parser APIs, menu-building capacity
 checks, broader interrupt reentrancy review, and splitting Subroutines.c by
 responsibility. This pass does not claim the whole firmware has been audited.
+
+## Follow-up to the GCC 3.3.6 target build
+
+The target build of 962cccc compiled and linked but failed the unchanged 1280-byte
+stack reserve check. Keypad_Matrix and defaultMenuStackc are read-only templates
+and now const, keeping them in Flash instead of consuming initialized RAM. The
+vector pointer table is also const so its section does not request writable
+attributes. The target assembler must confirm whether its attribute warning is
+resolved. The memory report now prints noinit/data/BSS ranges and actual stack
+bytes before validation; the minimum remains 1280.
+
+IncVariable/DecVariable now initialize their pointer/value and reject missing
+menus, invalid stack/row positions, null variable pointers and invalid serial
+character positions. Tests cover these cases and normal numeric/ON-OFF edits.
+All 19 host tests, keypad regressions and strict source checks pass. A new target
+build is required to verify the RAM headroom and remaining compiler warnings.
