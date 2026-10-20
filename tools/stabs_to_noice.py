@@ -65,7 +65,9 @@ def read_global_symbols(objdump, elf_path):
         match = NM_RE.match(raw_line)
         if match:
             address, name = match.groups()
-            symbols[name] = int(address, 16)
+            # NoICE DEFINE accepts C identifiers, not GCC internals such as _.frame.
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
+                symbols[name] = int(address, 16)
     return symbols
 
 

@@ -142,7 +142,7 @@ class NoICEMapTests(unittest.TestCase):
                  "1 FUN 0 0 00004020 0 main:F1\n"
                  "2 SLINE 0 25 00000000 0 \n"
                  "3 FUN 0 0 00000010 0 \n")
-        symbols = "\n".join("00002000 B " + name for name, _ in noice.ESSENTIAL_WATCHES) + "\n00004000 T _start"
+        symbols = "\n".join("00002000 B " + name for name, _ in noice.ESSENTIAL_WATCHES) + "\n00004000 T _start\n00002424 B _.frame\n00002426 B _.tmp"
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
             (folder/"buttonbox.s19").write_text("S9034000BC\n")
@@ -156,6 +156,8 @@ class NoICEMapTests(unittest.TestCase):
             self.assertIn('LOAD "' + str(folder/'buttonbox.s19') + '"', session)
             self.assertNotIn('buttonbox.elf', session)
             self.assertIn('DEFINE ButtonBoxData 02000H %X16', session)
+            self.assertNotIn('DEFINE _.frame', session)
+            self.assertNotIn('DEFINE _.tmp', session)
             self.assertIn('DEFINE _start 04000H', session)
             self.assertIn('R PC _start', session)
             self.assertIn('LOAD \"' + str(folder/'buttonbox.s19') + '\" 03DH:0000H', session)
