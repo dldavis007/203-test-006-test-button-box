@@ -472,12 +472,11 @@ char FirstVar[]       = "xxx";
 char MessageRow[]	  = "  1";
 char MessageCol[]	  = "  1";
 char SerialNum[]      = "-----";
+char F1Enable[4]      = "ON";
+char F2Enable[4]      = "ON";
 char NullVar[]        = "";
 
 //The following Menu Variables are NOT saved in EEPROM
-/* Independent record at 0x0880; legacy settings remain at 0x0800. */
-char F1Enable[4] = "ON";
-char F2Enable[4] = "ON";
 
 char Rev[]		      = Revision;
 char BattSerNum[] 	  = "  -  -   ";
@@ -1018,23 +1017,14 @@ unsigned int EnabledFunctionData(unsigned int data)
     return data;
 }
 
-void DecodeFunctionSettings(const unsigned char record[4])
+void NormalizeFunctionSettings(void)
 {
-    unsigned char flags = 3; /* Old, erased or invalid records enable both. */
-    if (record[0] == 0xA6 && record[1] == 1 && record[2] <= 3 &&
-        record[3] == (unsigned char)(record[2] ^ 0xFF))
-        flags = record[2];
-    strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
-    strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
-}
-
-void EncodeFunctionSettings(unsigned char record[4])
-{
-    record[0] = 0xA6;
-    record[1] = 1;
-    record[2] = (!strcmp(F1Enable, "ON") ? 1 : 0) |
-                (!strcmp(F2Enable, "ON") ? 2 : 0);
-    record[3] = (unsigned char)(record[2] ^ 0xFF);
+    /* Old EEPROM has no valid strings in these newly added fields. */
+    F1Enable[3] = F2Enable[3] = 0;
+    if (strcmp(F1Enable, "ON") && strcmp(F1Enable, "OFF"))
+        strcpy(F1Enable, "ON");
+    if (strcmp(F2Enable, "ON") && strcmp(F2Enable, "OFF"))
+        strcpy(F2Enable, "ON");
 }
 
 int ToggleF1Enable(void)
@@ -1058,21 +1048,26 @@ int ToggleF2Enable(void)
 }
 
 #ifdef BUTTONBOX_GCC
-void EncodeLegacySettings(unsigned char legacy[20])
+void EncodeLegacySettings(unsigned char legacy[28])
 {
     memcpy(legacy, FirstVar, 4);
     memcpy(legacy + 4, MessageRow, 4);
     memcpy(legacy + 8, MessageCol, 4);
     memcpy(legacy + 12, SerialNum, 6);
-    legacy[18] = legacy[19] = 0;
+    memcpy(legacy + 18, F1Enable, 4);
+    memcpy(legacy + 22, F2Enable, 4);
+    legacy[26] = legacy[27] = 0;
 }
 
-void DecodeLegacySettings(const unsigned char legacy[20])
+void DecodeLegacySettings(const unsigned char legacy[28])
 {
     memcpy(FirstVar, legacy, 4);
     memcpy(MessageRow, legacy + 4, 4);
     memcpy(MessageCol, legacy + 8, 4);
     memcpy(SerialNum, legacy + 12, 6);
+    memcpy(F1Enable, legacy + 18, 4);
+    memcpy(F2Enable, legacy + 22, 4);
+    NormalizeFunctionSettings();
     FirstVar[3] = MessageRow[3] = MessageCol[3] = SerialNum[5] = 0;
 }
 #endif
@@ -1080,8 +1075,6 @@ void DecodeLegacySettings(const unsigned char legacy[20])
 void Load_Variables (void)
 {
  	 char *VarRAMPntr, *VarEEPROMPntr;
-     unsigned char record[4];
-     unsigned char k;
 	 VarRAMPntr = FirstVar;
 	 VarEEPROMPntr = (char *)0x0800;
 	 if ( (unsigned char)*VarEEPROMPntr != 0xff )
@@ -1095,9 +1088,7 @@ void Load_Variables (void)
              *VarRAMPntr++ = *VarEEPROMPntr++;
          }while ( VarRAMPntr != NullVar );
 #endif
-         for (k = 0; k < 4; ++k)
-             record[k] = ((volatile unsigned char *)0x0880)[k];
-         DecodeFunctionSettings(record);
+         NormalizeFunctionSettings();
 	 }
 	 else
      {
@@ -1109,20 +1100,15 @@ void Load_Variables (void)
 
 void Save_Variables ( void )
 {
-    unsigned char record[4];
-    EncodeFunctionSettings(record);
 #ifdef BUTTONBOX_GCC
     {
-        unsigned char legacy[20];
+        unsigned char legacy[28];
         EncodeLegacySettings(legacy);
-        EEWrite(20, (char *)legacy, (int *)0x0800);
+        EEWrite(28, (char *)legacy, (int *)0x0800);
     }
 #else
     EEWrite ( 128, FirstVar, (int *)0x0800 );
 #endif
-    Timer2 = 0.05 * RTI_One_Sec;
-    while (Timer2);
-    EEWrite ( 4, (char *)record, (int *)0x0880 );
     Timer2 = 0.05 * RTI_One_Sec;
     while (Timer2);
 }

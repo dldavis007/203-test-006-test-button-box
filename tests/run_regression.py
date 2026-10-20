@@ -39,7 +39,7 @@ macros = '\n'.join(line for line in (SRC/'Interrupts.h').read_text().splitlines(
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
-helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'DecodeFunctionSettings', 'EncodeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
+helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'NormalizeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
 program = r'''
 #include <assert.h>
@@ -89,7 +89,7 @@ void clear(void)
 int main(void)
 {
     unsigned int mode;
-    unsigned char record[4], legacy[20], flags;
+    unsigned char legacy[28], flags;
     int f1, f2, key;
     const int nav_keys[5] = {4, 16, 9, 11, 10};
     const unsigned int nav_bits[5] = {4, 8, 1, 2, 16};
@@ -180,23 +180,24 @@ int main(void)
     for (flags = 0; flags < 4; ++flags) {
         strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
         strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
-        EncodeFunctionSettings(record);
-        { /* Round-trip bytes exactly as the real EEPROM word writer packs them. */
-            unsigned int word = EEPROMWord(record[2], record[3]);
-            assert((word >> 8) == record[2]);
-            assert((word & 255) == record[3]);
-            record[2] = word >> 8; record[3] = word & 255;
+        EncodeLegacySettings(legacy);
+        { /* Round-trip through the actual EEPROM word packing. */
+            int n;
+            for (n = 0; n < 28; n += 2) {
+                unsigned int word = EEPROMWord(legacy[n], legacy[n + 1]);
+                legacy[n] = word >> 8; legacy[n + 1] = word & 255;
+            }
         }
-        strcpy(F1Enable, "OFF"); strcpy(F2Enable, "OFF");
-        DecodeFunctionSettings(record);
+        strcpy(F1Enable, "ON"); strcpy(F2Enable, "ON");
+        DecodeLegacySettings(legacy);
         assert(!strcmp(F1Enable, (flags & 1) ? "ON" : "OFF"));
         assert(!strcmp(F2Enable, (flags & 2) ? "ON" : "OFF"));
     }
-    memset(record, 255, 4); DecodeFunctionSettings(record);
+    memset(legacy + 18, 255, 8); DecodeLegacySettings(legacy);
     assert(!strcmp(F1Enable, "ON") && !strcmp(F2Enable, "ON"));
-    record[0]=0xA6; record[1]=1; record[2]=0; record[3]=0;
-    DecodeFunctionSettings(record); /* corrupt checksum */
-    assert(!strcmp(F1Enable, "ON") && !strcmp(F2Enable, "ON"));
+    memcpy(legacy + 18, "OFF", 4); memcpy(legacy + 22, "BAD", 4);
+    DecodeLegacySettings(legacy);
+    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, "ON"));
     puts("PASS: settings combinations, F1/F2 commands, release/latching, travel/stop, menu routing, EEPROM codec");
     return 0;
 }

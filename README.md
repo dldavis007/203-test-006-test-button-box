@@ -32,7 +32,7 @@ No PC_SIDE application or interactive simulation is included.
 
 Tests cover all four enable combinations; F1/F2 navigation output and release;
 function replacement and toggling; held disabled keys; internal-menu routing;
-normal travel/Slow/Stop; controller Slow preservation; erased and corrupt records;
+normal travel/Slow/Stop; controller Slow preservation; erased and invalid saved strings;
 and all four settings round trips. They run with signed and unsigned plain char.
 Host unsigned int remains host-sized: these are not processor ABI tests.
 
@@ -47,12 +47,14 @@ task; use the task commands above. Use **Build 9S12 GCC** or **Build + Load NoIC
 
 ## EEPROM
 
-The legacy layout at 0x0800-0x087F is unchanged. A new aligned four-byte record
-at 0x0880-0x0883 holds magic 0xA6, version 1, flags (bit 0 F1, bit 1 F2), and
-flags XOR 0xFF. The source contains no other users of this range. The serial
-number remains at 0x0902. Old/erased/invalid records enable both functions.
-Defaults restore both ON. The legacy reset marker takes precedence over this
-record. Existing EEPROM write timing delays separate the two write operations.
+F1Enable and F2Enable are in the original saved RAM declaration block, between
+FirstVar and NullVar, after SerialNum. ImageCraft uses the existing contiguous
+save/load mechanism. GCC explicitly serializes the same fields because linker
+placement does not guarantee contiguous C globals. The first 18 EEPROM bytes
+are unchanged; F1Enable occupies 0x0812-0x0815, F2Enable 0x0816-0x0819.
+Both are stored as ON/OFF strings with terminators. Invalid/old fields default
+independently to ON. There is no separate record or checksum at 0x0880.
+Exit the entire internal menu to save, then power-cycle to verify persistence.
 
 ## Embedded builds and NoICE
 
@@ -90,7 +92,3 @@ Tracked DBG/S19/LST files under Rev 3.05 are imported baseline artifacts, not
 builds of dev. Use only fresh build/9s12 artifacts for this GCC workflow.
 
 See [docs/GCC_NOICE.md](docs/GCC_NOICE.md) for memory layout and bench checks.
-
-The EEPROM word writer packs bytes as unsigned values. This prevents signed-char
-extension from corrupting the F1/F2 flags/checksum record. Save on menu exit and
-load at startup use the same paths as the other menu settings.

@@ -91,7 +91,7 @@ GCC explicitly serializes the legacy settings: FirstVar at EEPROM +0, MessageRow
 +4, MessageCol +8, SerialNum +12. These offsets were checked against BUTTONBOX.mp
 from the imported ImageCraft build. It writes 20 aligned bytes, preserving unused
 bytes above that range. ImageCraft's existing contiguous storage path is retained.
-The separate F1/F2 record remains at 0x0880. Both codecs have host regression checks.
+F1/F2 strings follow SerialNum in the same block; the GCC codec has host regression checks.
 
 ## Validation and next bench checks
 
@@ -181,10 +181,9 @@ The ELF is retained for inspection and generating debug mappings.
 F1/F2 OFF disables alternate key routing, not the latched function bit. Raw
 message bits and their LED indications remain available in either setting.
 The same Save_Variables/menu-exit and Load_Variables/startup paths store and
-restore the independent settings in the versioned record at 0x0880.
-The EEPROM writer now packs both bytes unsigned; signed low bytes previously
-borrowed from the high byte and corrupted that record's flags/checksum.
-Host regression covers all four settings through the actual word-packing helper,
+restore the independent settings in the original menu-variable block.
+The EEPROM writer packs both bytes unsigned, preserving all byte values.
+Host regression covers all four settings through the menu-variable codec and actual word-packing helper,
 plus OFF latching/transmission and normal key routing. Verify power-cycle
 persistence and LED indications on hardware after exiting the menu to save.
 
@@ -193,3 +192,12 @@ and wait for CCIF (0x40), rather than only buffer-empty (0x80). Each write is
 read back. NoICE watches include EEWriteStatus: 0 means the last EEWrite passed
 readback, 1 means verification failed, and bits 0x10/0x20 report EEPROM access
 error/protection violation. Check this after menu exit if settings do not save.
+
+### Unified menu-variable storage (current)
+
+This supersedes the earlier separate 0x0880 function record. F1Enable and
+F2Enable now sit after SerialNum and before NullVar in the saved RAM block.
+ImageCraft's original save/load includes them; GCC's explicit codec uses the
+same layout: existing fields at offsets 0-17, F1 string at 18-21, F2 at 22-25,
+and two padding bytes for a 28-byte aligned EEPROM write. Invalid new strings
+default to ON independently. No 0x0880 record is read or written.
