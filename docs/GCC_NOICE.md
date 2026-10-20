@@ -136,3 +136,12 @@ loaded by NoICE and is deleted before generating the final firmware.
 The build saves sections.txt and merged.map for actual target-footprint review.
 The Windows cross-build must still establish the resulting size; no extra Flash
 addresses or PPAGE assumptions have been enabled by this footprint change.
+
+The legacy linker also crashed at ldexp.c:745 during the diagnostic link.
+The pruning script no longer uses per-section AT(ADDR(section)) expressions:
+GC can eliminate their referenced output sections. Its temporary data uses
+RAM addresses for both VMA/LMA because that image is never run. Diagnostic
+ASSERT expressions were removed too, avoiding an old ASSERT/-Map interaction.
+The actual firmware still uses its checked Flash-to-RAM initialization image
+and retains the final memory/vector assertions.
+Reference: https://ecos.sourceware.org/ml/binutils/2005-08/msg00361.html

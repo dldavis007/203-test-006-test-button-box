@@ -150,8 +150,9 @@ def pruning_linker_script(info):
     lines += [' . = ALIGN(2); __data_load = .;',
               ' .noinit 0x2000 (NOLOAD) : { KEEP(merged.o(.noinit)) }',
               ' . = ALIGN(2); __data_start = .;']
-    lines += [' %s : AT(__data_load + (ADDR(%s) - __data_start)) { merged.o(%s) }'
-              % (name, name, name) for name in data]
+    # This image is never executed: initialized data can have LMA == RAM VMA.
+    # In old ld, AT(ADDR(section)) may crash when GC removes that section.
+    lines += [' %s : { merged.o(%s) }' % (name, name) for name in data]
     lines += [' . = ALIGN(2); __data_size = . - __data_start;',
               ' __bss_start = .;']
     lines += [' %s (NOLOAD) : { merged.o(%s) }' % (name, name) for name in bss]
@@ -159,7 +160,6 @@ def pruning_linker_script(info):
               ' .vectors 0xFF80 : { KEEP(merged.o(.vectors)) }',
               ' .stab 0 : { *(.stab) }', ' .stabstr 0 : { *(.stabstr) }',
               ' /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }',
-              ' ASSERT(__data_load + __data_size <= 0xFF00, "Pruned image exceeds diagnostic 48KB map")',
               '}']
     return '\n'.join(lines) + '\n'
 

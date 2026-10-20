@@ -64,7 +64,7 @@ class PruningLinkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
             (folder/'input.c').write_text(
-                'volatile int sink; int used(void) { return 7; }\n'
+                'volatile int sink; int dead_data = 9; int dead_bss; int used(void) { return 7; }\n'
                 'int unused(void) { return 8; }\n'
                 'void _start(void) __attribute__((section(".startup")));\n'
                 'void _start(void) { sink = used(); }\n'
@@ -74,6 +74,9 @@ class PruningLinkTests(unittest.TestCase):
                             '-fdata-sections','-c','input.c','-o','merged.o'],cwd=folder,check=True)
             info = build.sections(subprocess.check_output(['objdump','-h','merged.o'],cwd=folder,text=True))
             script = build.pruning_linker_script(info)
+            self.assertNotIn('ADDR(', script)
+            self.assertNotRegex(script, r'\bAT\s*\(')
+            self.assertNotIn('ASSERT(', script)
             # Same section/GC script, using host machine format for this test.
             script = script.replace('OUTPUT_FORMAT("elf32-m68hc12")','').replace('OUTPUT_ARCH(m68hc12)','')
             (folder/'pruning.ld').write_text(script)
@@ -84,6 +87,8 @@ class PruningLinkTests(unittest.TestCase):
             self.assertIn('.text.used', names)
             self.assertIn('.vectors', names)
             self.assertNotIn('.text.unused', names)
+            self.assertNotIn('.data.dead_data', names)
+            self.assertNotIn('.bss.dead_bss', names)
 
 class FailureTests(unittest.TestCase):
     def test_missing_compiler_removes_stale_outputs(self):
