@@ -32,7 +32,7 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(info[0][:3], ('.startup', 32, 2))
         self.assertEqual(info[1][:3], ('.text.foo', 16, 1))
 
-    def test_fixed_banks_only(self):
+    def test_fixed_banks_and_static_window(self):
         flags = 'CONTENTS, ALLOC, LOAD, READONLY, CODE'
         info = [('.startup', 32, 2, flags)] + [('.text.fn%d'%i, 4000, 2, flags) for i in range(6)]
         banks = build.layout(info)
@@ -40,10 +40,19 @@ class LayoutTests(unittest.TestCase):
         script = build.linker_script(banks)
         self.assertIn('ORIGIN = 0x4000', script)
         self.assertIn('ORIGIN = 0xC000', script)
-        self.assertNotIn('ORIGIN = 0x8000', script)
+        self.assertIn('ORIGIN = 0x8000', script)
         self.assertIn('__data_load + __data_size <= 0xFF00', script)
         self.assertIn('__bss_end <= 0x3B00', script)
         self.assertIn('SIZEOF(.vectors) == 128', script)
+
+    def test_reported_41kb_image_can_use_static_window(self):
+        flags = 'ALLOC, LOAD, READONLY, CODE'
+        info = [('.startup', 52, 2, flags)] + [('.text.fn%d' % i, 1000, 2, flags) for i in range(41)]
+        banks = build.layout(info)
+        self.assertEqual(len(banks), 3)
+        self.assertEqual(sum(map(len, banks)), 41)
+        for bank in banks:
+            self.assertLessEqual(len(bank), 16)
 
     def test_reject_overflow_or_unknown_sections(self):
         flags = 'ALLOC, LOAD, CODE'
@@ -122,6 +131,10 @@ class NoICEMapTests(unittest.TestCase):
             self.assertIn('HALT', session)
             self.assertIn('LOAD "' + str(folder/'buttonbox.elf') + '"', session)
             self.assertIn('R PC _start', session)
+            self.assertIn('LOAD \"' + str(folder/'buttonbox.elf') + '\" 03DH:0000H', session)
+            self.assertIn('R PG 03DH', session)
+            self.assertEqual(noice.noice_hex(0x8123), '03DH:08123H')
+            self.assertEqual(noice.noice_hex(0xC123), '0C123H')
             self.assertNotIn('\nGO', session)
             self.assertIn('W Third_byte', session)
             self.assertTrue((folder/'buttonbox_reconnect.noi').exists())

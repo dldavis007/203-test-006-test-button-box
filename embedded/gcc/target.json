@@ -1,0 +1,6 @@
+{
+  "processor": "MC9S12A128",
+  "static_ppage": 61,
+  "window_start": 32768,
+  "window_end": 49152
+}

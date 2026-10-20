@@ -27,7 +27,7 @@ $env:NOICE_EXE = 'C:\Program Files (x86)\NoICE\bin\NoICE12.exe'
 Build + Load rebuilds before launching, then loads the fresh ELF and source
 mappings. The generated session halts, maps RAM/EEPROM, loads the ELF and sets
 PC to _start. It does not automatically run the target. Press Run in NoICE.
-Configure the correct MC9S12A128 BDM target, Flash burner and hardware breakpoints
+Configure the correct MC9S12A128 BDM target, enable Use PPAGE, Flash burner and hardware breakpoints
 in NoICE. Keep the NoICE Virtual UART disabled: this firmware does not reserve
 the motion project's UART mailbox addresses.
 
@@ -44,8 +44,9 @@ can override the executable prefix. Do not point this at MinGW or ARM GCC.
 The flags use HC12, 16-bit int/pointers, 32-bit double, signed plain char,
 default near calls (verified by an assembly probe), size optimization, function/data sections and STABS mappings.
 Compile-time assertions verify widths. Near calls deliberately differ from the
-motion project's far-call build: this port uses only fixed Flash, with no PPAGE
-switching. The RAM Flash command wrapper also follows the near-call ABI.
+motion project's far-call build. Startup fixes PPAGE to 0x3D for the entire run,
+allowing ordinary 16-bit code/data pointers into 0x8000-0xBFFF. The firmware does
+not switch pages or use far CALL/RTC. The RAM Flash wrapper follows the near ABI.
 
 GCC option reference:
 https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/M68hc1x-Options.html
@@ -55,19 +56,28 @@ https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/M68hc1x-Options.html
 - RAM: 0x2000-0x3FFF. Twenty reset-persistent bytes are reserved in .noinit for
   _bss_end, then initialized data/BSS. At least 1280 bytes are reserved for stack.
 - Fixed Flash: 0x4000-0x7FFF and 0xC000-0xFEFF.
-- Page window: 0x8000-0xBFFF is not used. No PPAGE assumption is required.
+- Static window: 0x8000-0xBFFF maps PPAGE 0x3D. This is distinct from the
+  fixed low/high aliases (pages 0x3E/0x3F). Startup at fixed 0x4000 selects it
+  before any window access and before interrupts are enabled.
 - Flash configuration/security bytes at 0xFF00-0xFF0F are not emitted.
-- Vectors: 0xFF80-0xFFFF, exactly 128 bytes, using the existing vector assignments.
+- Vectors: 0xFF80-0xFFFF, exactly 128 bytes, using existing vector assignments.
 
-All application and needed library objects are combined relocatably. Their
-actual section sizes are packed into the two fixed Flash banks. A generated
-linker script places startup at 0x4000, copies initialized RAM data, clears BSS,
-preserves .noinit and enforces Flash/vector/stack limits. This fixed-bank build
-may not fit: the imported ImageCraft image is about 43 KB and spans the page
-window. GCC size optimization may reduce that, but only a real link can decide.
-If it cannot fit, the build stops with no loadable output. A banked-memory port
-or further footprint work would then be required; this script never silently
-places code in an unconfigured page window.
+The reviewed section report retained 41,253 bytes after pruning, so the original
+32 KB fixed-bank restriction was insufficient. Layout now packs code/constants
+into all three 16 KB address ranges. Startup and RAM-data initialization remain
+in fixed Flash. The generated script enforces each range and vector/stack limits.
+Images that exceed this static 48 KB arrangement still fail; it is not a general
+128 KB bank-switching port.
+
+NoICE must have Use PPAGE enabled. The generated load command explicitly supplies
+the static page: `LOAD "buttonbox.elf" 03DH:0000H`. NoICE documents page-qualified
+LOAD offsets; outside the paged window the fixed/RAM addresses remain unpaged.
+The session sets PG to 0x3D before and after loading, and generated function/line
+addresses inside the window explicitly use `03DH:08xxxH` notation. At reset the
+fixed startup also selects 0x3D. The .s19 file has logical 16-bit addresses; any
+separate programmer must be configured to map its window to page 0x3D.
+
+NoICE paging reference: https://www.noicedebugger.com/help/2bitmmu.htm
 
 ## Source compatibility changes
 
@@ -134,8 +144,7 @@ Only those retained sections enter fixed-bank size packing. The delivered final
 link also enables garbage collection. The temporary diagnostic image is never
 loaded by NoICE and is deleted before generating the final firmware.
 The build saves sections.txt and merged.map for actual target-footprint review.
-The Windows cross-build must still establish the resulting size; no extra Flash
-addresses or PPAGE assumptions have been enabled by this footprint change.
+The Windows cross-build must still establish the resulting size; the subsequent static-page layout change is described above.
 
 The legacy linker also crashed at ldexp.c:745 during the diagnostic link.
 The pruning script no longer uses per-section AT(ADDR(section)) expressions:

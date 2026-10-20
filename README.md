@@ -67,7 +67,7 @@ From PowerShell in the repository root:
 
 The second command rebuilds, launches NoICE and loads fresh firmware/debug data.
 It leaves the target halted at `_start`; use NoICE **Run** to start execution.
-Configure NoICE for the actual MC9S12A128 BDM target with its Flash burner and
+Configure NoICE for the actual MC9S12A128 BDM target with **Use PPAGE**, its Flash burner and
 hardware breakpoints before loading. Do not reuse a different processor's Flash
 programming configuration.
 

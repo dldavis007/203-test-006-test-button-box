@@ -1,10 +1,14 @@
-/* Standalone near-call runtime; no banked window is used. */
+/* Near-call runtime with one statically selected Flash window page. */
+#ifndef BUTTONBOX_STATIC_PAGE
+#error BUTTONBOX_STATIC_PAGE must be supplied by the build
+#endif
 .section .startup,"ax",@progbits
 .globl _start
 _start:
     sei
     movb #0x21,0x0010
     lds #0x4000
+    movb #BUTTONBOX_STATIC_PAGE,0x0030 /* Set PPAGE before any window access. */
     /* Copy initialized data from fixed Flash to RAM. */
     ldx #__data_load
     ldy #__data_start

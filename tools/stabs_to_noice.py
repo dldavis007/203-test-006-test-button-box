@@ -7,10 +7,14 @@ NoICE 9.8 does not reliably import from this old GCC toolchain.
 """
 
 import os
+import json
+from pathlib import Path
 import re
 import subprocess
 import sys
 
+
+STATIC_PAGE = json.loads((Path(__file__).resolve().parents[1]/'embedded/gcc/target.json').read_text())['static_ppage']
 
 STAB_RE = re.compile(
     r"^\s*\d+\s+(SO|FUN|SLINE)\s+\d+\s+(\d+)\s+([0-9A-Fa-f]+)\s+\d+\s*(.*)$"
@@ -32,6 +36,8 @@ ESSENTIAL_WATCHES = [
 
 def noice_hex(value):
     """Return an unambiguous NoICE hexadecimal address expression."""
+    if 0x8000 <= value < 0xC000:
+        return "0%XH:0%XH" % (STATIC_PAGE, value)
     return "0%XH" % value
 
 
@@ -169,9 +175,11 @@ def main():
             "HALT",
             "OUT 010H 021H",  # RAM at 0x2000 before ELF data is loaded
             "OUT 012H 009H",  # EEPROM at 0x0800
+            "R PG 0%XH" % STATIC_PAGE,
 
-            "LOAD \"%s\"" % elf_path,
+            "LOAD \"%s\" 0%XH:0000H" % (elf_path, STATIC_PAGE),
         ]
+        session_commands.append("R PG 0%XH" % STATIC_PAGE)
         session_commands.extend(commands[2:])
         session_commands.append("W -")
         session_commands.extend("W %s %s" % item for item in ESSENTIAL_WATCHES)
@@ -191,6 +199,7 @@ def main():
             "; Generated NoICE reconnect session - does NOT load target memory",
             "; Use only when the target contains this exact build.",
         ]
+        reconnect_commands.append("R PG 0%XH" % STATIC_PAGE)
         reconnect_commands.extend(commands[2:])
         missing = []
         for name, display_type in ESSENTIAL_WATCHES:

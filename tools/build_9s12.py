@@ -1,6 +1,7 @@
 """Build the complete button-box application with GNU68HC12, not host GCC."""
 from pathlib import Path
 import os
+import json
 import re
 import shutil
 import subprocess
@@ -8,6 +9,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'Rev 3.05'
+STATIC_PAGE = json.loads((ROOT/'embedded/gcc/target.json').read_text())['static_ppage']
 BUILD = ROOT / 'build' / '9s12'
 SOURCES = ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines']
 
@@ -31,10 +33,10 @@ def sections(text):
 
 
 def layout(info):
-    """Pack near-call code/const sections into the two fixed Flash banks.
+    """Pack near-call code into fixed low, static-page window and fixed high.
 
-    Do not allocate anything in the PPAGE window (0x8000-0xBFFF), Flash
-    configuration bytes (0xFF00-0xFF0F), or vector area (0xFF80-0xFFFF).
+    Startup selects one page for the whole run; there are no banked calls.
+    Flash configuration bytes and vector space remain excluded.
     """
     executable = []
     data_size = 0
@@ -59,14 +61,14 @@ def layout(info):
     if not startup_size:
         raise RuntimeError('Startup section missing.')
     # Conservative alignment slack for data initializer placement.
-    remaining = [0x4000 - startup_size - 4, 0x3F00 - data_size - 4]
-    banks = [[], []]
+    remaining = [0x4000 - startup_size - 4, 0x4000 - 4, 0x3F00 - data_size - 4]
+    banks = [[], [], []]
     for name, size, align in sorted(executable, key=lambda x: x[1], reverse=True):
         cost = size + align - 1
-        fits = [i for i in (0, 1) if remaining[i] >= cost]
+        fits = [i for i in (0, 1, 2) if remaining[i] >= cost]
         if not fits:
-            raise RuntimeError('Firmware does not fit fixed Flash; no firmware/session generated. '
-                               'Needs a reviewed banked-memory port or footprint reduction. '
+            raise RuntimeError('Firmware does not fit static-page Flash; no firmware/session generated. '
+                               'Needs further footprint reduction or a multi-page banked-memory port. '
                                'Section %s: %d bytes; remaining %s' % (name, size, remaining))
         bank = max(fits, key=lambda i: remaining[i])
         banks[bank].append(name)
@@ -83,6 +85,7 @@ ENTRY(_start)
 MEMORY {
   ram (rw) : ORIGIN = 0x2000, LENGTH = 0x2000
   low (rx) : ORIGIN = 0x4000, LENGTH = 0x4000
+  window (rx) : ORIGIN = 0x8000, LENGTH = 0x4000
   high (rx) : ORIGIN = 0xC000, LENGTH = 0x3F00
   vectors (rx) : ORIGIN = 0xFF80, LENGTH = 0x80
 }
@@ -91,6 +94,9 @@ SECTIONS {
     KEEP(merged.o(.startup))
 %s
   } > low
+  .text_window : {
+%s
+  } > window
   .text_high : {
 %s
     . = ALIGN(2);
@@ -126,7 +132,7 @@ SECTIONS {
   ASSERT(__bss_end <= 0x3B00, "Less than 1280 bytes remain for stack")
   ASSERT(SIZEOF(.vectors) == 128, "Incorrect interrupt vector table size")
 }
-''' % (entries(banks[0]), entries(banks[1]))
+''' % (entries(banks[0]), entries(banks[1]), entries(banks[2]))
 
 
 def pruning_linker_script(info):
@@ -203,7 +209,7 @@ def main():
     flags = ['-m68hc12', '-mshort', '-fshort-double',
              '-std=gnu89', '-ffreestanding', '-Os', '-gstabs+', '-fsigned-char', '-fno-common',
              '-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections',
-             '-DBUTTONBOX_GCC', '-Wall', '-W', '-I', str(SOURCE)]
+             '-DBUTTONBOX_GCC', '-DBUTTONBOX_STATIC_PAGE=0x%02X' % STATIC_PAGE, '-Wall', '-W', '-I', str(SOURCE)]
     probe = BUILD/'call_abi_probe.c'
     probe.write_text('extern unsigned int bb_external(unsigned int);\n'
                      'unsigned int bb_probe(unsigned int x) { return bb_external(x) + 1; }\n')
