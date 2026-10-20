@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build-Run GCC",
+      "detail": "Compile and run host GCC regression tests; this does not build or upload 9S12 firmware.",
+      "type": "process",
+      "command": "python",
+      "args": ["${workspaceFolder}/tests/run_regression.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

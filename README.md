@@ -35,6 +35,15 @@ normal travel/Slow/Stop; controller Slow preservation; erased and corrupt record
 and all four settings round trips. They run with signed and unsigned plain char.
 Host unsigned int remains host-sized: these are not processor ABI tests.
 
+## VS Code
+
+Open the repository root (the folder containing `.vscode` and `Rev 3.05`).
+Press **Ctrl+Shift+B** to run the default **Build-Run GCC** task, or choose
+**Terminal > Run Task > Build-Run GCC**. It compiles and runs host regression
+tests, not the embedded application. Python and host GCC must be on PATH.
+A play button supplied by an extension may run the active C file instead of this
+task; use the task commands above. There is no embedded GCC/NoICE launch task yet.
+
 ## EEPROM
 
 The legacy layout at 0x0800-0x087F is unchanged. A new aligned four-byte record

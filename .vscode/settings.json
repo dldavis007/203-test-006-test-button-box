@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.h": "c"
+  },
+  "task.saveBeforeRun": "always"
+}
