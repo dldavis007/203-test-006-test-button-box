@@ -134,7 +134,7 @@ class FailureTests(unittest.TestCase):
             self.assertEqual(list(directory.iterdir()), [])
 
 class NoICEMapTests(unittest.TestCase):
-    def test_session_loads_current_elf_and_stays_halted(self):
+    def test_session_loads_current_srecords_and_stays_halted(self):
         spec = importlib.util.spec_from_file_location('noice', ROOT/'tools/stabs_to_noice.py')
         noice = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(noice)
@@ -142,9 +142,10 @@ class NoICEMapTests(unittest.TestCase):
                  "1 FUN 0 0 00004020 0 main:F1\n"
                  "2 SLINE 0 25 00000000 0 \n"
                  "3 FUN 0 0 00000010 0 \n")
-        symbols = "\n".join("00002000 B " + name for name, _ in noice.ESSENTIAL_WATCHES)
+        symbols = "\n".join("00002000 B " + name for name, _ in noice.ESSENTIAL_WATCHES) + "\n00004000 T _start"
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
+            (folder/"buttonbox.s19").write_text("S9034000BC\n")
             args = ['stabs_to_noice.py', 'm6811-elf-objdump', str(folder/'buttonbox.elf'),
                     str(ROOT/'Rev 3.05/Controller.c'), str(folder/'buttonbox.noi'),
                     str(folder/'buttonbox_debug.noi')]
@@ -152,9 +153,12 @@ class NoICEMapTests(unittest.TestCase):
                 self.assertEqual(noice.main(), 0)
             session = (folder/'buttonbox_debug.noi').read_text()
             self.assertIn('HALT', session)
-            self.assertIn('LOAD "' + str(folder/'buttonbox.elf') + '"', session)
+            self.assertIn('LOAD "' + str(folder/'buttonbox.s19') + '"', session)
+            self.assertNotIn('buttonbox.elf', session)
+            self.assertIn('DEFINE ButtonBoxData 02000H %X16', session)
+            self.assertIn('DEFINE _start 04000H', session)
             self.assertIn('R PC _start', session)
-            self.assertIn('LOAD \"' + str(folder/'buttonbox.elf') + '\" 03DH:0000H', session)
+            self.assertIn('LOAD \"' + str(folder/'buttonbox.s19') + '\" 03DH:0000H', session)
             self.assertIn('OUT 030H 03DH', session)
             self.assertNotIn('R PG ', session)
             self.assertEqual(noice.noice_hex(0x8123), '03DH:08123H')

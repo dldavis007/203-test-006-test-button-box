@@ -1,8 +1,8 @@
 """Convert GCC/ELF STABS source records into a NoICE command file.
 
 This is intentionally small and compatible with the Python 3 installation used
-by the Windows build scripts.  The ELF remains the source for executable bytes,
-symbols and types; this file supplies the source/function/line associations that
+by the Windows build scripts.  The ELF supplies symbols and source records; the matching S-record file
+programs target memory with an explicit page; this file supplies the source/function/line associations that
 NoICE 9.8 does not reliably import from this old GCC toolchain.
 """
 
@@ -167,19 +167,41 @@ def main():
         else:
             reconnect_output_path = os.path.splitext(session_output_path)[0] + "_reconnect.noi"
 
-        # The complete debugger-facing diagnostic/menu set is loaded at startup.
-        # A 250 ms refresh has loaded the expanded list successfully. Disable
-        # timed refresh while playing it if a particular NoICE session is unstable.
+        # Program S-records rather than ELF: the hardware test showed that the
+        # ELF loader left page 3D erased, while this explicit S-record load worked.
+        s19_path = os.path.splitext(elf_path)[0] + ".s19"
+        if not os.path.isfile(s19_path):
+            print("[ERROR] missing firmware S-record file: %s" % s19_path)
+            return 1
+        try:
+            symbols = read_global_symbols(objdump, elf_path)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            print("[ERROR] could not read ELF globals: %s" % exc)
+            return 1
+        if "_start" not in symbols:
+            print("[ERROR] missing startup symbol: _start")
+            return 1
+        # S-records have no symbols. Restore addresses explicitly after LOAD,
+        # including _start and the typed diagnostic watches.
+        definitions = ["DEFINE %s %s" % (name, noice_hex(address))
+                       for name, address in sorted(symbols.items())]
+        for name, display_type in ESSENTIAL_WATCHES:
+            address = symbols.get(name, symbols.get("_" + name))
+            if address is None:
+                print("[ERROR] missing diagnostic symbol: %s" % name)
+                return 1
+            definitions.append("DEFINE %s %s %s" %
+                               (name, noice_hex(address), display_type))
         session_commands = [
             "; Generated NoICE debug session - do not edit",
             "HALT",
-            "OUT 010H 021H",  # RAM at 0x2000 before ELF data is loaded
-            "OUT 012H 009H",  # EEPROM at 0x0800
+            "OUT 010H 021H",
+            "OUT 012H 009H",
             "OUT 030H 0%XH" % STATIC_PAGE,
-
-            "LOAD \"%s\" 0%XH:0000H" % (elf_path, STATIC_PAGE),
+            'LOAD "%s" 0%XH:0000H' % (s19_path, STATIC_PAGE),
+            "OUT 030H 0%XH" % STATIC_PAGE,
         ]
-        session_commands.append("OUT 030H 0%XH" % STATIC_PAGE)
+        session_commands.extend(definitions)
         session_commands.extend(commands[2:])
         session_commands.append("W -")
         session_commands.extend("W %s %s" % item for item in ESSENTIAL_WATCHES)
@@ -188,12 +210,6 @@ def main():
             session_output.write("\n".join(session_commands))
             session_output.write("\n")
         print("Generated NoICE session %s." % session_output_path)
-
-        try:
-            symbols = read_global_symbols(objdump, elf_path)
-        except (OSError, subprocess.CalledProcessError) as exc:
-            print("[ERROR] could not read ELF globals for reconnect file: %s" % exc)
-            return 1
 
         reconnect_commands = [
             "; Generated NoICE reconnect session - does NOT load target memory",

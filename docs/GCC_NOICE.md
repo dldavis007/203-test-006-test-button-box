@@ -70,7 +70,7 @@ Images that exceed this static 48 KB arrangement still fail; it is not a general
 128 KB bank-switching port.
 
 NoICE must have Use PPAGE enabled. The generated load command explicitly supplies
-the static page: `LOAD "buttonbox.elf" 03DH:0000H`. NoICE documents page-qualified
+the static page: `LOAD "buttonbox.s19" 03DH:0000H`. NoICE documents page-qualified
 LOAD offsets; outside the paged window the fixed/RAM addresses remain unpaged.
 The session writes PPAGE at register address 0x0030 to 0x3D before and after loading, and generated function/line
 addresses inside the window explicitly use `03DH:08xxxH` notation. At reset the
@@ -165,3 +165,13 @@ runs before S19 or NoICE session generation; failure removes the ELF too.
 Some NoICE12 configurations do not expose a register named PG. The generated
 sessions use `OUT 030H 03DH` instead of `R PG 03DH`; the explicit page-qualified
 LOAD and window source mappings remain unchanged.
+
+### Page-qualified S-record programming
+
+Hardware testing found the ELF load left page 0x3D erased. Loading the matching
+S-record with the explicit page programmed the expected main bytes and startup
+reached main successfully. The generated session now loads buttonbox.s19, then
+restores global symbol addresses, typed diagnostic watches and source/line
+mappings extracted from buttonbox.elf. PPAGE writes are separate commands.
+The session remains halted at _start; use Run after loading completes.
+The ELF is retained for inspection and generating debug mappings.
