@@ -1010,7 +1010,7 @@ int setSerial ( void )
     return 0;
 }
 
-/* Only a disabled function is filtered; ordinary controls are untouched. */
+/* Select active alternate-key modes without changing latched/output bits. */
 unsigned int EnabledFunctionData(unsigned int data)
 {
     if (strcmp(F1Enable, "ON")) data &= ~TeleData_F1;
@@ -1041,8 +1041,6 @@ int ToggleF1Enable(void)
 {
     if (!strcmp(F1Enable, "ON")) strcpy(F1Enable, "OFF");
     else strcpy(F1Enable, "ON");
-    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
-    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
     btnDisplayTitler();
@@ -1053,8 +1051,6 @@ int ToggleF2Enable(void)
 {
     if (!strcmp(F2Enable, "ON")) strcpy(F2Enable, "OFF");
     else strcpy(F2Enable, "ON");
-    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
-    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
     btnDisplayTitler();
@@ -2171,8 +2167,6 @@ void doevents ( void )
 {
 	int i,j;
 
-    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
-    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
 	if (TC0_RCVD_Data != (ButtonBoxData << 8 | ButtonBoxData))
 	{
 		TC0_RCVD_Data = ButtonBoxData;
@@ -2244,7 +2238,7 @@ void doevents ( void )
 		}
 		else
 		{   //Neither Internal nor External menu active
-			if ( controller_mode && !((TC0_RCVD_Data & TeleData_F1) || (TC0_RCVD_Data & TeleData_F2)) )  //no internal menu functions if F1 or F2 pressed
+			if ( controller_mode && !(EnabledFunctionData(TC0_RCVD_Data) & (TeleData_F1 | TeleData_F2)) )  //no internal menu functions if F1 or F2 pressed
 			{
 				if (internal_menu)
 				{
@@ -2349,7 +2343,7 @@ void doevents ( void )
 		SwitchData = ButtonBoxData;
 		
 		//Keep all latched data
-		SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast );
+		SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast );
 
 		
 		//Data Port T     Port B     Port P     Port T     Port J
@@ -2365,17 +2359,7 @@ void doevents ( void )
 			while (Timer1);
 			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )
 			{   //Switch is pressed
-                if (Keypad_Matrix[Sw_Index].BB_Data &
-                    (TeleData_F1 | TeleData_F2))
-                {
-                    if (EnabledFunctionData(Keypad_Matrix[Sw_Index].BB_Data) !=
-                        (unsigned int)Keypad_Matrix[Sw_Index].BB_Data)
-                    {
-                        SwitchUpData &= ~Keypad_Matrix[Sw_Index].BB_Data;
-                        continue;
-                    }
-                }
-				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
+				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
 				{   //Switch is a toggle function 
 					if (SwitchUpData & Keypad_Matrix[Sw_Index].BB_Data) 
 					{	//Switch is pressed and was previously released
@@ -2384,7 +2368,7 @@ void doevents ( void )
 					}
 					
 					if (MenuCheck)
-					    SwitchData &= ~(TeleData_F1 | TeleData_F2);  // do not allow F1 or F2 function if menu is present
+					    SwitchData &= ~EnabledFunctionData(TeleData_F1 | TeleData_F2);  // block enabled alternate modes while menu is present
 				}
 				else
 				{   //Switch is not a toggle function 
@@ -2456,7 +2440,7 @@ void doevents ( void )
 		    SwitchData &= ~(TeleData_Fwd | TeleData_Rev);
 			
 		if ( !(SwitchData & TeleData_Rev) && !(SwitchData & TeleData_Fwd) ) //No Reverse or Forward
-		    SwitchData &= ~(TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast);
+		    SwitchData &= ~(TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast);
 		
 		if ( SwitchData & TeleData_Fwd && SwitchUpData & TeleData_Rev ) //FORWARD
 		    SwitchData &= ~TeleData_Rev;
@@ -2477,7 +2461,7 @@ void doevents ( void )
 
 		SwitchData = SwitchData | 0x0400;
 		ButtonBoxData = SwitchData;
- 		if (ButtonBoxData & TeleData_Down && ButtonBoxData & TeleData_Up && controller_mode && !((TC0_RCVD_Data & TeleData_F1) || (TC0_RCVD_Data & TeleData_F2)) ) //Don't output menu command when in "internal menu mode"
+ 		if (ButtonBoxData & TeleData_Down && ButtonBoxData & TeleData_Up && controller_mode && !(EnabledFunctionData(TC0_RCVD_Data) & (TeleData_F1 | TeleData_F2)) ) //Don't output menu command when in "internal menu mode"
 		{
 			ButtonBoxData = ButtonBoxData & ~TeleData_Down & ~TeleData_Up;
 			if (!(Gen_Flags & Gen_Flags_Menu_Active))
@@ -2492,7 +2476,7 @@ void doevents ( void )
 	}
 	
 	Third_byte = 0;
-	if ( tempData & TeleData_F1 || tempData & TeleData_F2 )
+	if ( EnabledFunctionData(tempData) & (TeleData_F1 | TeleData_F2) )
 	{
 		if (Gen_Flags & Gen_Flags_Menu_Active)
 		{   //exit menu if active

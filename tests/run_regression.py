@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'Rev 3.05'
 s = (SRC / 'Subroutines.c').read_text()
 
-def function(name):
+def function(name, source=None):
+    s = source if source is not None else (SRC / "Subroutines.c").read_text()
     match = re.search(r'^(?:unsigned int|void|int) ' + name + r'\([^;]*?\)\s*\{', s, re.M)
     assert match, name
     start = match.start()
@@ -39,6 +40,7 @@ menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];'
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
 helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'DecodeFunctionSettings', 'EncodeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
+helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
 program = r'''
 #include <assert.h>
 #include <stdio.h>
@@ -66,8 +68,7 @@ void DeSelect(void) { Gen_Flags &= ~Gen_Flags_Menu_Active; }
 }
 void tick(unsigned long pressed)
 {
-    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
-    TC0_RCVD_Data = EnabledFunctionData(ButtonBoxData);
+    TC0_RCVD_Data = ButtonBoxData;
     DeBounceTimer = 0;
     scan(pressed);
     assert(gProcImg[IN_digi_0] == (tempData & 255));
@@ -112,18 +113,35 @@ int main(void)
     clear(); ButtonBoxData = TC0_RCVD_Data = TeleData_F1 | TeleData_F2;
     ToggleF1Enable();
     assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, "ON"));
-    assert(ButtonBoxData == TeleData_F2 && TC0_RCVD_Data == TeleData_F2);
-    ToggleF2Enable(); assert(ButtonBoxData == 0 && TC0_RCVD_Data == 0);
+    assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
+    ToggleF2Enable(); assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
     ToggleF1Enable(); ToggleF2Enable();
     assert(!strcmp(F1Enable, "ON") && !strcmp(F2Enable, "ON"));
     for (f1 = 0; f1 <= 1; ++f1) for (f2 = 0; f2 <= 1; ++f2) {
         clear();
         strcpy(F1Enable, f1 ? "ON" : "OFF");
         strcpy(F2Enable, f2 ? "ON" : "OFF");
-        tick(KEY(1)); assert(!!(ButtonBoxData & TeleData_F1) == f1);
+        tick(KEY(1)); assert(ButtonBoxData & TeleData_F1);
         tick(0); tick(KEY(7));
-        assert(!!(ButtonBoxData & TeleData_F2) == f2);
-        if (f2) assert(!(ButtonBoxData & TeleData_F1));
+        assert(ButtonBoxData & TeleData_F2);
+        assert(!(ButtonBoxData & TeleData_F1));
+        tick(0); tick(KEY(4));
+        assert(Third_byte == (f2 ? 4 : 0));
+        assert(tempData & TeleData_F2);
+        if (!f2) assert(tempData & TeleData_Down);
+    }
+    for (mode = TeleData_F2; mode <= TeleData_F1; mode *= 2) {
+        clear();
+        strcpy(F1Enable, mode == TeleData_F1 ? "OFF" : "ON");
+        strcpy(F2Enable, mode == TeleData_F2 ? "OFF" : "ON");
+        ButtonBoxData = mode;
+        tick(KEY(4)); assert(Third_byte == 0);
+        assert((tempData & (mode | TeleData_Down)) == (mode | TeleData_Down));
+        tick(0); tick(KEY(11)); assert(Third_byte == 0);
+        assert(tempData & TeleData_RotCW);
+        clear(); strcpy(F1Enable, "OFF"); strcpy(F2Enable, "OFF");
+        MenuCheck = 1; tick(mode == TeleData_F1 ? KEY(1) : KEY(7));
+        assert(ButtonBoxData & mode); /* OFF still latches with menu present. */
     }
     for (mode = TeleData_F2; mode <= TeleData_F1; mode *= 2) {
         for (key = 0; key < 5; ++key) {
@@ -154,17 +172,21 @@ int main(void)
     tick(0); tick(KEY(13)); assert(ButtonBoxData & TeleData_F3);
     assert(!(ButtonBoxData & (TeleData_F1 | TeleData_F2)));
     clear(); MenuCheck = 1; tick(KEY(7)); assert(!(ButtonBoxData & TeleData_F2));
-    clear(); ButtonBoxData = TeleData_F1 | TeleData_F2;
-    strcpy(F1Enable, "OFF"); strcpy(F2Enable, "OFF");
-    tick(0); assert(!(ButtonBoxData & (TeleData_F1 | TeleData_F2)));
-    clear(); strcpy(F2Enable, "OFF"); tick(KEY(7));
-    strcpy(F2Enable, "ON"); tick(KEY(7));
-    assert(!(ButtonBoxData & TeleData_F2)); /* must release before enabling */
+    clear(); strcpy(F1Enable, "OFF"); strcpy(F2Enable, "OFF");
+    tick(KEY(1)); assert(ButtonBoxData & TeleData_F1);
+    tick(0); tick(KEY(1)); assert(!(ButtonBoxData & TeleData_F1));
     tick(0); tick(KEY(7)); assert(ButtonBoxData & TeleData_F2);
+    tick(0); tick(KEY(7)); assert(!(ButtonBoxData & TeleData_F2));
     for (flags = 0; flags < 4; ++flags) {
         strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
         strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
         EncodeFunctionSettings(record);
+        { /* Round-trip bytes exactly as the real EEPROM word writer packs them. */
+            unsigned int word = EEPROMWord(record[2], record[3]);
+            assert((word >> 8) == record[2]);
+            assert((word & 255) == record[3]);
+            record[2] = word >> 8; record[3] = word & 255;
+        }
         strcpy(F1Enable, "OFF"); strcpy(F2Enable, "OFF");
         DecodeFunctionSettings(record);
         assert(!strcmp(F1Enable, (flags & 1) ? "ON" : "OFF"));

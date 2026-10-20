@@ -10,10 +10,11 @@ ON. Exit the internal menu to save, as with the existing settings. The labels
 identify function keys; descriptions of camera-menu and positioning modes remain
 with the controlled equipment.
 
-Disabling a function clears its latched selection and rejects its physical key.
-A disabled press is consumed, requiring release before a subsequent enabled
-press can latch it. F3 and ordinary travel controls retain their existing logic.
-The three existing Slow masks and the final Cntrl_Slow_Flag exception remain intact.
+OFF disables that key's alternate navigation mode. F1/F2 still latch on each
+press/release cycle, set their transmitted message bits and drive their LEDs.
+With an OFF function selected, navigation and speed keys keep their ordinary
+roles. ON retains the shared third-byte navigation encoding. The controller
+Slow exception remains intact.
 
 ## Regression tests
 
@@ -89,3 +90,7 @@ Tracked DBG/S19/LST files under Rev 3.05 are imported baseline artifacts, not
 builds of dev. Use only fresh build/9s12 artifacts for this GCC workflow.
 
 See [docs/GCC_NOICE.md](docs/GCC_NOICE.md) for memory layout and bench checks.
+
+The EEPROM word writer packs bytes as unsigned values. This prevents signed-char
+extension from corrupting the F1/F2 flags/checksum record. Save on menu exit and
+load at startup use the same paths as the other menu settings.

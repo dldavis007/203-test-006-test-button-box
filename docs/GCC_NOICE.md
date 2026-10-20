@@ -175,3 +175,15 @@ restores global symbol addresses, typed diagnostic watches and source/line
 mappings extracted from buttonbox.elf. PPAGE writes are separate commands.
 The session remains halted at _start; use Run after loading completes.
 The ELF is retained for inspection and generating debug mappings.
+
+### Function settings and EEPROM byte packing
+
+F1/F2 OFF disables alternate key routing, not the latched function bit. Raw
+message bits and their LED indications remain available in either setting.
+The same Save_Variables/menu-exit and Load_Variables/startup paths store and
+restore the independent settings in the versioned record at 0x0880.
+The EEPROM writer now packs both bytes unsigned; signed low bytes previously
+borrowed from the high byte and corrupted that record's flags/checksum.
+Host regression covers all four settings through the actual word-packing helper,
+plus OFF latching/transmission and normal key routing. Verify power-cycle
+persistence and LED indications on hardware after exiting the menu to save.

@@ -11,11 +11,17 @@ void EEInit ( void )
 
 
 
+/* EEPROM bytes must not sign-extend when char is signed under GCC. */
+unsigned int EEPROMWord(unsigned char high, unsigned char low)
+{
+    return ((unsigned int)high << 8) | (unsigned int)low;
+}
+
 void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 {
  	 //Erases and Writes an array of up to 128 char to EEPROM
 	 
-	 int i, j, TmpData;
+	 int i, j, TmpData = 0;
 	 char *tempAddr;
 	 char tempArray[128];
 	 
@@ -77,7 +83,7 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
      for (i=0;i<j;i+=2, WriteAddr++)
      {
-	  	 TmpData = tempArray[i]*256 + tempArray[i+1];
+	  	 TmpData = EEPROMWord(tempArray[i], tempArray[i+1]);
 		 *WriteAddr = TmpData;
 		 ECMD = WordPrg;
 		 ESTAT = ESTAT_CBEIF;
