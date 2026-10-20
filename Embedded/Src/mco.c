@@ -35,7 +35,13 @@ char *RamAddress;
 char RamData;
 char RamCkSum;
 
+extern bool controller_mode;
+extern bool resequenceNodes;
+extern char deviceSubMenu[20][17];
+extern int sub_Device_Type_Response_ID[20];
+extern char UpdateDisp;
 int No2WireCnt = 0;
+extern volatile char Gen_Flags;
 
 // this structure holds all node specific configuration
 MCO_CONFIG gMCOConfig;
@@ -63,18 +69,21 @@ CAN_MSG gTxSDO;
 CAN_MSG gTxNMT;
 
 // this array holds all of the responses from the Scan Network
-int Device_Type_Response_ID[DEVICE_SCAN_CAPACITY];
+int Device_Type_Response_ID[12];
 
 // this is the pointer to the current Device_Type_Response_ID
 int Device_Type_Response_ID_ptr = 0;
 
 // this array holds all of the Menu responses from the Scan Network
-char Device_Menus[DEVICE_SCAN_CAPACITY][17];
+char Device_Menus[20][17];
 
 // process image from user_xxxx.c
+extern UNSIGNED8 gProcImg[];
 
 // table with SDO Responses for read requests to OD - defined in user_xxx.c
+extern UNSIGNED8 MEM_CONST SDOResponseTable[];
 
+extern volatile unsigned int Timer1;
 
 
 /**************************************************************************
@@ -256,6 +265,7 @@ UNSIGNED8 MCO_Handle_SDO_Request
 		  }
 		  else if ( subindex == 1 )
 		  {
+		   	  char x;
 		      StartAddress = (void*)(gRxCAN.BUF[4]*256 + gRxCAN.BUF[5]);
 			  StartAddress();
               gTxSDO.BUF[0] = 0x60;
@@ -515,7 +525,7 @@ void MCO_InitRPDO
 #ifdef CHECK_PARAMETERS
   // check PDO range and check node id range 1 - 127
   if (((PDO_NR < 1)             || (PDO_NR > NR_OF_RPDOS))      || 
-      ((gMCOConfig.Node_ID == 0) || (gMCOConfig.Node_ID > 127)))
+      ((gMCOConfig.Node_ID < 0) || (gMCOConfig.Node_ID > 127)))
   {
     MCOUSER_FatalError(0x8804);
   }
@@ -568,7 +578,7 @@ void MCO_InitTPDO
 #ifdef CHECK_PARAMETERS
   // check PDO range, node id, len range 1 - 8 and event time or inhibit time set
   if (((PDO_NR < 1)             || (PDO_NR > NR_OF_TPDOS))     ||
-      ((gMCOConfig.Node_ID == 0) || (gMCOConfig.Node_ID > 127)) ||
+      ((gMCOConfig.Node_ID < 0) || (gMCOConfig.Node_ID > 127)) ||
       ((len < 1)                || (len > 8))                  ||
       ((event_time == 0)        && (inhibit_time == 0)))
   {
@@ -608,32 +618,6 @@ DOES:    This function implements the main MicroCANopen protocol stack.
          Typically it is called from the while(1) loop in main.
 RETURNS: 0 if nothing was done, 1 if a CAN message was sent or received
 **************************************************************************/
-/* Scan replies are asynchronous: ignore unregistered IDs and excess replies. */
-static void RecordDeviceMenuResponse(const CAN_MSG *message)
-{
-    int row;
-    unsigned int offset;
-    if (message->LEN < 4)
-        return;
-    if (message->BUF[3] == 0)
-    {
-        if (Device_Type_Response_ID_ptr >= 0 &&
-            Device_Type_Response_ID_ptr < DEVICE_SCAN_CAPACITY)
-            Device_Type_Response_ID[Device_Type_Response_ID_ptr++] = message->ID;
-        return;
-    }
-    if (message->BUF[3] > 4 || message->LEN < 8)
-        return;
-    for (row = 0; row < DEVICE_SCAN_CAPACITY; ++row)
-        if ((UNSIGNED32)Device_Type_Response_ID[row] == message->ID)
-            break;
-    if (row == DEVICE_SCAN_CAPACITY)
-        return;
-    offset = (message->BUF[3] - 1) * 4;
-    memcpy(&Device_Menus[row][offset], &message->BUF[4], 4);
-    Device_Menus[row][offset + 4] = 0;
-}
-
 UNSIGNED8 MCO_ProcessStack
   (
   void
@@ -748,7 +732,7 @@ UNSIGNED8 MCO_ProcessStack
     if (gMCOConfig.heartbeat_msg.BUF[0] != 4)
     {
       // is the message an SDO request message for us?
-      if (gRxCAN.ID == (UNSIGNED32)gMCOConfig.Node_ID + 0x600UL)
+      if (gRxCAN.ID == gMCOConfig.Node_ID+0x600)
       {
         // handle SDO request - return value not used in this version
         i = MCO_Handle_SDO_Request(&gRxCAN.BUF[0]);
@@ -759,7 +743,23 @@ UNSIGNED8 MCO_ProcessStack
     // See if expedite SDO Upload Response to Menu type request
     if (gRxCAN.ID >= 0x580 && gRxCAN.ID <= 0x5FF && (gRxCAN.BUF[0] & 0xf0) == 0x40 && gRxCAN.BUF[1] == 0x00 && gRxCAN.BUF[2] == 0x21)
     {
-        RecordDeviceMenuResponse(&gRxCAN);
+	   if (gRxCAN.BUF[3] == 0x00)
+       {
+	      Device_Type_Response_ID[Device_Type_Response_ID_ptr++] = gRxCAN.ID;
+	   }
+	   else
+	   {
+	     char i;
+	     i = 0;
+		 while ( Device_Type_Response_ID[i] != gRxCAN.ID )
+		     i++;
+			 
+	     Device_Menus[i][(gRxCAN.BUF[3]-1)*4] = gRxCAN.BUF[4];
+	     Device_Menus[i][(gRxCAN.BUF[3]-1)*4+1] = gRxCAN.BUF[5];
+	     Device_Menus[i][(gRxCAN.BUF[3]-1)*4+2] = gRxCAN.BUF[6];
+	     Device_Menus[i][(gRxCAN.BUF[3]-1)*4+3] = gRxCAN.BUF[7];
+	     Device_Menus[i][(gRxCAN.BUF[3]-1)*4+4] = 0;
+	   } 
 	}
 
 #if NR_OF_RPDOS > 0
@@ -921,7 +921,8 @@ UNSIGNED8 MCO_TransmitSDO
 
 void SDO_Init_Upload ( int SDO_ID, int SDO_Index, char SDO_SubIndex)
 {
- 	UNSIGNED8 Expedite_Msg[] = { 0x00,0x00,0x00,0x00 };
+ 	char Expedite_Msg[] = { 0x00,0x00,0x00,0x00 };
+	int i;
 	
 	gTxSDO.LEN = 8;
 	gTxSDO.BUF[0] = 0x40;

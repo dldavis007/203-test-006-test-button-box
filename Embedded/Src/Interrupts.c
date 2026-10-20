@@ -8,9 +8,9 @@
 #include "Subroutines.h"
 #include <math.h>
 
-static char Seconds = 60;
+char Seconds = 60;
 
-static int Tick = RTI_One_Sec;
+int Tick = RTI_One_Sec;
 
 
 volatile char Gen_Flags;
@@ -19,6 +19,7 @@ volatile unsigned int Timer1;
 volatile unsigned int Timer2;
 volatile int CntrSwTimeOut;
 volatile unsigned int DeBounceTimer;
+extern volatile int ReActivate_Timer;
 volatile unsigned int MenuTimer;
 volatile unsigned int ToggleTimer;
 volatile unsigned int WD_Timer;
@@ -28,12 +29,22 @@ volatile int SIN0Bufptr = 0;
 char SOUT0Buf[SOUT0BufLen] = "\0";
 volatile int SOUT0Bufptr = 0;
 
-static unsigned char TC0_State;
-static unsigned char TC0_BitCounter;
-static unsigned char QBit;
-static unsigned int TC0_Data_Bit;
+unsigned char TC0_State;
+unsigned char TC0_BitCounter;
+unsigned char QBit;
+unsigned int TC0_Data_Bit;
+extern unsigned int ButtonBoxData;
 
+extern char SPI0InBuf[];
+extern volatile int SPI0InBufptr;
+extern char SPI0OutBuf[];
+extern volatile int SPI0OutBufptr;
 
+extern char UpdateMenu;
+extern bool controller_mode;
+extern bool legacy_mode;
+extern char wd_flag, wdInit, wdStarted;
+extern struct MatrixTbl Keypad_Matrix[];
 
 void DUMMY_ENTRY ( void )
 {

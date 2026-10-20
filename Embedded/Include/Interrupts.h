@@ -126,12 +126,4 @@ void CANRxISR(void) BB_ISR;
 #define DeBounceTime  RTI_One_Sec * .05;
 #define HW_Watchdog_Time  RTI_One_Sec * 0.5
 
-/* Shared state defined in Interrupts.c. */
-extern volatile char Gen_Flags;
-extern volatile unsigned int Timer1, Timer2, DeBounceTimer;
-extern volatile unsigned int MenuTimer, ToggleTimer, WD_Timer;
-extern volatile int CntrSwTimeOut;
-extern char SIN0Buf[SIN0BufLen], SOUT0Buf[SOUT0BufLen];
-extern volatile int SIN0Bufptr, SOUT0Bufptr;
-
 #endif

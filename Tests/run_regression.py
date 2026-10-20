@@ -32,9 +32,9 @@ scan = s[begin:end]
 condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )'
 assert scan.count(condition) == 1
 scan = scan.replace(condition, 'if (pressed & (1UL << Sw_Index))')
-scan = scan.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
+scan = scan.replace('while (Timer1);', '/* test clock */')
 scan = scan.replace('unsigned int MaskBit = 0x8000;', '')
-matrix = s[s.index('const struct MatrixTbl Keypad_Matrix[18]'):s.index('void setDefaultMenu')]
+matrix = s[s.index('struct MatrixTbl Keypad_Matrix[18]'):s.index('void setDefaultMenu')]
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
                    if line.startswith('#define TeleData_') or line.startswith('#define Gen_Flags_'))
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
@@ -52,20 +52,18 @@ program = r'''
 #define RTI_One_Sec 1000
 #define DeBounceTime 10
 ''' + macros + r'''
-volatile unsigned int ButtonBoxData;
-unsigned int TC0_RCVD_Data, tempData, Third_byte;
+unsigned int ButtonBoxData, TC0_RCVD_Data, tempData, Third_byte;
 volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
 unsigned int DeBounceTimer, Timer1;
 int CntrSwTimeOut = -1;
 unsigned char PORTB, PORTA;
-char Cntrl_Slow_Flag, MenuCheck, Gen_Flags, internal_menu;
-unsigned char StackPointer;
-volatile bool controller_mode;
+char Cntrl_Slow_Flag, MenuCheck, Gen_Flags, StackPointer, internal_menu;
+int controller_mode;
 unsigned char gProcImg[PROCIMG_SIZE];
 ''' + menu + menu_stubs + r'''
 
 struct MenuStack MenuStackc[MenuStackSize];
-void LoadMenu(unsigned char index[]) { (void)index; }
+void LoadMenu(char index[]) { (void)index; }
 void InsertCursor(void) {}
 void btnDisplayTitler(void) {}
 void DeSelect(void) { Gen_Flags &= ~Gen_Flags_Menu_Active; }

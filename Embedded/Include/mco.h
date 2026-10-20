@@ -237,12 +237,4 @@ void Reset_Max33011 ( void );
 void MCO_TransmitPDO (UNSIGNED8 PDONr);
 
 
-/* Shared CANopen state defined in mco.c and response table in user.c. */
-#define DEVICE_SCAN_CAPACITY 20
-extern CAN_MSG gTxSDO, gRxCAN;
-extern int Device_Type_Response_ID[DEVICE_SCAN_CAPACITY];
-extern int Device_Type_Response_ID_ptr;
-extern char Device_Menus[DEVICE_SCAN_CAPACITY][17];
-extern UNSIGNED8 MEM_CONST SDOResponseTable[];
-
 #endif

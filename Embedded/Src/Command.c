@@ -9,9 +9,15 @@
 #include "Interrupts.h"
 #include "Subroutines.h"
 
+extern char SIN0Buf[];
+extern char SOUT1Buf[];
+extern int SOUT1Bufptr;
+extern volatile char Gen_Flags;
 unsigned int jmpAddress;
+extern volatile unsigned int Timer1;
 
 
+extern char SW1[];
 
 
 void command ( char CmdBuf[] )

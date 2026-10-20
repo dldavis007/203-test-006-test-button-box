@@ -12,32 +12,51 @@
 #include "EEProm.h"
 #include "string.h"
 
+extern char _bss_end[20];
 
 
+extern volatile char Gen_Flags;
 
+extern char SIN0Buf[SIN0BufLen];
+extern volatile int SIN0Bufptr;
+extern char SOUT0Buf[SOUT0BufLen];
+extern volatile int SOUT0Bufptr;
 
+extern char SIN1Buf[SIN1BufLen];
+extern int SIN1Bufptr;
+extern char SOUT1Buf[SOUT1BufLen];
+extern int SOUT1Bufptr;
 
 unsigned int TC0_RCVD_Data;
 
-volatile char UpdateMenu;
+char UpdateMenu;
 
-static CAN_MSG gTxMsg;
+extern CAN_MSG gTxSDO;
+extern CAN_MSG gRxCAN;
+CAN_MSG gTxMsg;
 
+extern volatile unsigned int Timer1;
+extern volatile unsigned int Timer2;
+extern volatile int CntrSwTimeOut;
+extern volatile unsigned int DeBounceTimer;
+extern volatile unsigned int MenuTimer;
+extern volatile unsigned int ToggleTimer;
+extern char Seconds;
 
 unsigned char ExSlowPushed;
 unsigned char SlowPushed;
 unsigned char FastPushed;
 
-volatile unsigned int ButtonBoxData;
+unsigned int ButtonBoxData;
 unsigned int LEDData;
 volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
 unsigned int tempData;
 unsigned int Third_byte;
 char Cntrl_Slow_Flag;
 
-volatile char SPI0InBuf[2];
+char SPI0InBuf[2];
 volatile int SPI0InBufptr = 0;
-volatile char SPI0OutBuf[2];
+char SPI0OutBuf[2];
 volatile int SPI0OutBufptr = 0;
 
 int dispPBJTFlag = 0;
@@ -49,12 +68,15 @@ volatile int ReActivate_Timer;
 
 char power_on = 1;
 char Ext_Menu_xmitd;
+extern int Device_Type_Response_ID[12];
+extern int Device_Type_Response_ID_ptr;
 
 
+extern char Device_Menus[127][17];
 
 bool resequenceNodes = false;
-volatile bool controller_mode = false;
-volatile bool legacy_mode = false;
+bool controller_mode = false;
+bool legacy_mode = false;
 bool vid18_addr = false;
 bool vid18_update = false;
 bool F3pressed = false;
@@ -73,7 +95,7 @@ char STX_count;            //count <STX>, 0x02, that indicates beginning of tag
 char ETX_flag;             //count <ETX>, 0x03, that indicates end of tag
 char XmitSPI_flag;
 char RcvSPI_flag;
-struct MsgStruct
+typedef struct MsgStruct
 {
 	unsigned char Bufptr;
 	char Buffer[30];
@@ -465,70 +487,279 @@ char BattErr[] 		  = "   OK";
 char BatteryTemps[]   = "B:---,C1:---,C2:---";
 
 
-const struct MenuStruct defaultMenuc[MenuSize] = {
-    {
-        {0, 0, 0, 0},
-        {"     BUTTON BOX     ", " SETTINGS           ", " DIAGNOSTICS        ", " CAMERAS            ", " STATUS             ", " AUXILIARY EQUIP    ", " DEFAULTS           ", " EXIT               ", "                    ", "                    ", "                    ", "                    "},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu}
-    },
-    {
-        {0, 0, 0, 1},
-        {"    SETTINGS MENU   ", " MESSAGE ROW        ", " MESSAGE COL        ", " F1                 ", " F2                 ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
-        {15, 15, 15, 15, 0, 0, 0, 0, 0, 0, 0},
-        {MessageRow, MessageCol, F1Enable, F2Enable, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&Var1to13Funct, &Var1to30Funct, &ToggleF1Enable, &ToggleF2Enable, &ExitMenu, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction}
-    },
-    {
-        {0, 0, 0, 2},
-        {"   DIAGNOSTIC MENU  ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&ExitMenu, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction}
-    },
-    {
-        {0, 0, 0, 3},
-        {"      CAMERAS       ", " FIND CAMERAS       ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&findCameras, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu}
-    },
-    {
-        {0, 0, 0, 4},
-        {"     STATUS MENU    ", " SOFTWARE REV       ", " SERIAL NUM         ", " BATT #             ", " STATE OF CHARGE    ", " STATE OF HEALTH    ", " B:---,C1:---,C2:---", " BATT STATUS        ", " CLEAR BATT ERROR   ", " VIEW NEXT BATT     ", " EXIT               ", "                    "},
-        {16, 15, 11, 17, 17, 1, 15, 0, 0, 0, 0},
-        {Rev, SerialNum, BattSerNum, BattSOC, BattSOH, BatteryTemps, BattErr, NullVar, NullVar, NullVar, NullVar},
-        {&NullFunction, &setSerial, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &ClrBattErr, &NextBatt, &ExitMenu, &NullFunction}
-    },
-    {
-        {0, 0, 0, 5},
-        {"   AUXILIARY EQUIP  ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu, &ExitMenu}
-    },
-    {
-        {0, 0, 0, 6},
-        {"     DEFAULTS       ", " EXIT               ", " RESTORE DEFAULTS   ", "                    ", "      WARNING       ", "YOU WILL LOSE ALL   ", "OF THE CURRENT      ", "SETTINGS WHEN       ", "RESTORING DEFAULTS  ", "                    ", "                    ", "                    "},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
-        {&ExitMenu, &RestoreDefaults, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction}
-    }
+const struct MenuStruct defaultMenuc[MenuSize] = {    
+                                        0,0,0,0,
+                                        "     BUTTON BOX     ",
+                                        " SETTINGS           ",
+                                        " DIAGNOSTICS        ",
+                                        " CAMERAS            ",
+                                        " STATUS             ",
+                                        " AUXILIARY EQUIP    ",
+										" DEFAULTS           ",
+                                        " EXIT               ",
+                                        "                    ",
+                                        "                    ",
+                                        "                    ",
+                                        "                    ",
+                                        0,0,0,0,0,0,0,0,0,0,0,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        NullVar,
+                                        &NullFunction,
+                                        &NullFunction,
+                                        &NullFunction,
+                                        &NullFunction,
+                                        &NullFunction,
+                                        &ExitMenu,
+                                        &ExitMenu,
+                                        &ExitMenu,
+                                        &ExitMenu,
+                                        &ExitMenu,
+                                        &ExitMenu,
+                                        
+                                        
+                                            0,0,0,1,
+                                            "    SETTINGS MENU   ",
+											" MESSAGE ROW        ",
+                                            " MESSAGE COL        ",
+                                            " F1                 ",
+											" F2                 ",
+                                            " EXIT               ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            15,15,15,15,0,0,0,0,0,0,0,
+                                            MessageRow,
+                                            MessageCol,
+                                            F1Enable,
+                                            F2Enable,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &Var1to13Funct,
+                                            &Var1to30Funct,
+                                            &ToggleF1Enable,
+                                            &ToggleF2Enable,
+                                            &ExitMenu,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                     
+                            
+                                            0,0,0,2,
+                                            "   DIAGNOSTIC MENU  ",
+                                            " EXIT               ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            0,0,0,0,0,0,0,0,0,0,0,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &ExitMenu,
+											&NullFunction,
+                                            &NullFunction,
+											&NullFunction,
+											&NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                             
+                                            
+                                            0,0,0,3,
+                                            "      CAMERAS       ",
+                                            " FIND CAMERAS       ",
+											" EXIT               ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            0,0,0,0,0,0,0,0,0,0,0,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &findCameras,
+											&ExitMenu,
+                                            &ExitMenu,
+											&ExitMenu,
+											&ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                             
+                                            
+                                            0,0,0,4,
+                                            "     STATUS MENU    ",
+                                            " SOFTWARE REV       ",
+                                            " SERIAL NUM         ",
+                                            " BATT #             ",
+                                            " STATE OF CHARGE    ",
+                                            " STATE OF HEALTH    ",
+                                            " B:---,C1:---,C2:---",
+                                            " BATT STATUS        ",
+                                            " CLEAR BATT ERROR   ",
+                                            " VIEW NEXT BATT     ",
+                                            " EXIT               ",
+                                            "                    ",
+                                            16,15,11,17,17,1,15,0,0,0,0,
+                                            Rev,
+                                            SerialNum,
+                                            BattSerNum,
+                                            BattSOC,
+                                            BattSOH,
+                                            BatteryTemps,
+                                            BattErr,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &NullFunction,
+                                            &setSerial,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &ClrBattErr,
+                                            &NextBatt,
+                                            &ExitMenu,
+                                            &NullFunction,
+                                            
+                                            
+                                            0,0,0,5,
+                                            "   AUXILIARY EQUIP  ",
+                                            " EXIT               ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            0,0,0,0,0,0,0,0,0,0,0,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                            &ExitMenu,
+                                     
+                                            0,0,0,6,
+                                            "     DEFAULTS       ",
+                                            " EXIT               ",
+                                            " RESTORE DEFAULTS   ",
+                                            "                    ",
+                                            "      WARNING       ",
+                                            "YOU WILL LOSE ALL   ",
+                                            "OF THE CURRENT      ",
+                                            "SETTINGS WHEN       ",
+                                            "RESTORING DEFAULTS  ",
+                                            "                    ",
+                                            "                    ",
+                                            "                    ",
+                                            0,0,0,0,0,0,0,0,0,0,0,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            NullVar,
+                                            &ExitMenu,
+                                            &RestoreDefaults,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction,
+                                            &NullFunction
+ 
 };
 
 struct MenuStruct Menuc[MenuSize];
 
-const struct MenuStack defaultMenuStackc[MenuStackSize] = {
-    {
-        {0, 0, 0, 0},
-        1,
-        0
-    }
-};
+struct MenuStack defaultMenuStackc[MenuStackSize] = {0,0,0,0,1,0};
 struct MenuStack MenuStackc[MenuStackSize];
 
-unsigned char StackPointer = 0;
+char StackPointer = 0;
 
 char Menu[12][21];
 
@@ -550,107 +781,43 @@ struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 /***************************************************************************/ 
 
 // external declaration for the process image array
+extern UNSIGNED8 gProcImg[];
 
 /**************************************************************************/
 
 
-const struct MatrixTbl Keypad_Matrix[18] = {
-    {
-        0x0100,
-        {0x00, 0x0C},
-        {0x18, 0x00, 0x00}
-    },
-    {
-        0x0080,
-        {0x00, 0x0A},
-        {0x08, 0x00, 0x40}
-    },
-    {
-        0x8000,
-        {0x00, 0x09},
-        {0x08, 0x00, 0x80}
-    },
-    {
-        0x2000,
-        {0x40, 0x08},
-        {0x09, 0x00, 0x00}
-    },
-    {
-        0x0001,
-        {0x20, 0x08},
-        {0x08, 0x02, 0x00}
-    },
-    {
-        0x0004,
-        {0x10, 0x08},
-        {0x08, 0x04, 0x00}
-    },
-    {
-        0x0400,
-        {0x00, 0x24},
-        {0x14, 0x00, 0x00}
-    },
-    {
-        0x0040,
-        {0x00, 0x22},
-        {0x04, 0x00, 0x40}
-    },
-    {
-        0x0000,
-        {0x00, 0x21},
-        {0x04, 0x00, 0x80}
-    },
-    {
-        0x1000,
-        {0x40, 0x20},
-        {0x05, 0x00, 0x00}
-    },
-    {
-        0x0003,
-        {0x20, 0x20},
-        {0x04, 0x02, 0x00}
-    },
-    {
-        0x0008,
-        {0x10, 0x20},
-        {0x04, 0x04, 0x00}
-    },
-    {
-        0x0200,
-        {0x00, 0x14},
-        {0x12, 0x00, 0x00}
-    },
-    {
-        0x0020,
-        {0x00, 0x12},
-        {0x02, 0x00, 0x40}
-    },
-    {
-        0x4000,
-        {0x00, 0x11},
-        {0x02, 0x00, 0x80}
-    },
-    {
-        0x0800,
-        {0x40, 0x10},
-        {0x03, 0x00, 0x00}
-    },
-    {
-        0x0002,
-        {0x20, 0x10},
-        {0x02, 0x02, 0x00}
-    },
-    {
-        0x0010,
-        {0x10, 0x10},
-        {0x02, 0x04, 0x00}
-    }
+struct MatrixTbl Keypad_Matrix[18] = {
+//Data Port T     Port B     Port P     Port T     Port J
+//	   Switch	  Switch	 LED  		LED	 	   LED
+//     0b01110000,0b00111111,0b00011111,0b00000110,0b11000000,		Mask bits
+//        RRR         CCCRRR      RCCC4        RR    RR      
+//        456         BCA123      11234        65    32             
+0x0100,0x00,0x0C,0x18,0x00,0x00,		//Trigger
+0x0080,0x00,0x0A,0x08,0x00,0x40,		//F1
+0x8000,0x00,0x09,0x08,0x00,0x80,		//Reverse
+0x2000,0x40,0x08,0x09,0x00,0x00,		//Ex-Slow
+0x0001,0x20,0x08,0x08,0x02,0x00,		//Down
+0x0004,0x10,0x08,0x08,0x04,0x00,		//Select
+
+0x0400,0x00,0x24,0x14,0x00,0x00,		//Option
+0x0040,0x00,0x22,0x04,0x00,0x40,		//F2
+0x0000,0x00,0x21,0x04,0x00,0x80,		//Stop
+0x1000,0x40,0x20,0x05,0x00,0x00,		//Slow
+0x0003,0x20,0x20,0x04,0x02,0x00,		//Menu
+0x0008,0x10,0x20,0x04,0x04,0x00,		//Rotate CW
+
+0x0200,0x00,0x14,0x12,0x00,0x00,		//Reset
+0x0020,0x00,0x12,0x02,0x00,0x40,		//F3
+0x4000,0x00,0x11,0x02,0x00,0x80,		//Forward
+0x0800,0x40,0x10,0x03,0x00,0x00,		//Fast
+0x0002,0x20,0x10,0x02,0x02,0x00,		//Up
+0x0010,0x10,0x10,0x02,0x04,0x00		//Rotate CCW
 };
 
 
 void setDefaultMenu(void)
 {
-    int i;
+    int i, j;
 	
 	for (i = 0; i < MenuSize; i++)
 	{
@@ -663,12 +830,13 @@ void setDefaultMenu(void)
 }
 
 	 
+extern UNSIGNED8 gCANFilter;
 char BattNum[20][4];
-unsigned char ptrDispBatt = 0;
+char ptrDispBatt = 0;
 
 void Scan_Batteries ( void )
 {
-    unsigned char i,ptrGetBatt=0;
+    char i,ptrGetBatt=0;
 	char BMS_Temp;
 	
 	//clear previous data
@@ -706,7 +874,7 @@ void Scan_Batteries ( void )
 	}
 	while (gProcImg[OUT_digi_13] && ptrGetBatt < 20); // Multiple batteries will send multiple serial numbers
 
-	if (ptrDispBatt >= 20 || !BattNum[ptrDispBatt][0])
+	if (!BattNum[ptrDispBatt][0])
 	    ptrDispBatt = 0;
 		
 	gProcImg[IN_digi_13] = BattNum[ptrDispBatt][0];
@@ -802,10 +970,7 @@ int ClrBattErr ( void )
 
 int NextBatt ( void )
 {
-    if (++ptrDispBatt >= 20)
-    {
-        ptrDispBatt = 0;
-    }
+    ptrDispBatt++;
 	Scan_Batteries();
 	UpdateMenu = 1;
 	return 0;
@@ -813,6 +978,7 @@ int NextBatt ( void )
 
 int setSerial ( void )
 {
+    int j,k;
 
     if ( VariableFlag >= 5 )
     {
@@ -913,13 +1079,8 @@ void DecodeLegacySettings(const unsigned char legacy[28])
 
 void Load_Variables (void)
 {
- 	 char *VarEEPROMPntr;
-#ifndef BUTTONBOX_GCC
-     char *VarRAMPntr;
-#endif
-	 #ifndef BUTTONBOX_GCC
-     VarRAMPntr = FirstVar;
-#endif
+ 	 char *VarRAMPntr, *VarEEPROMPntr;
+	 VarRAMPntr = FirstVar;
 	 VarEEPROMPntr = (char *)0x0800;
 	 if ( (unsigned char)*VarEEPROMPntr != 0xff )
 	 {
@@ -955,7 +1116,7 @@ void Save_Variables ( void )
     EEWrite ( 128, FirstVar, (int *)0x0800 );
 #endif
     Timer2 = 0.05 * RTI_One_Sec;
-    while (Timer2) { /* wait for interrupt */ }
+    while (Timer2);
 }
 
 //retrieve serial number from EEProm
@@ -992,7 +1153,7 @@ void Save_Serial_Num ( void )
 
  	EEWrite ( 5, EEpromPtr, (int *)0x0902 );
     Timer2 = 0.05 * RTI_One_Sec;   //EEProm is not available for brief period after EEWrite
-    while (Timer2) { /* wait for interrupt */ }
+    while (Timer2);
 }
 
 int Var1to13Funct ( void )
@@ -1079,11 +1240,9 @@ void IncVariable ( void )
 {
     int k;
     int varIndex;       //index of variable
-    double j = 0;
-    char *vPtr2 = NULL;        //will also point to variable to be decremented
-
-    if (StackPointer >= MenuStackSize)
-        return;
+    double j;
+    char tempstr [9];
+    char *vPtr2;        //will also point to variable to be decremented
 
      //Find out which menu we are on
      for ( k=0;k<MenuSize;k++ )
@@ -1094,10 +1253,7 @@ void IncVariable ( void )
             Menuc[k].Index[3] == MenuStackc[StackPointer].Index[3] )
         {
             varIndex = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
-            if (varIndex < 0 || varIndex >= 11)
-                return;
             vPtr2 = Menuc[k].VarPntr[varIndex];     //copy pointer to variable
-            if (vPtr2 == NULL) return;
 
             if( nDigits == OFF_ON ) {
                 if ( !(strcmp ( vPtr2, "OFF" )) )
@@ -1107,8 +1263,7 @@ void IncVariable ( void )
                 break;     
             }
 
-            if( nDigits == SER_NUM ) {
-                if (VariableFlag < 1 || VariableFlag > 5) return;              //limit to numerical serial numbers
+            if( nDigits == SER_NUM ) {              //limit to numerical serial numbers
                 if( SerialNum[VariableFlag -1]  == '-' )
                     SerialNum[VariableFlag -1]  = '0';
                 else
@@ -1134,8 +1289,6 @@ void IncVariable ( void )
             }
         }
     }
-    if (vPtr2 == NULL)
-        return;
     dispVariable(vPtr2, &j, nDigits);
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();
@@ -1145,11 +1298,9 @@ void DecVariable ( void )
 {
     int k;
     int varIndex;       //index of variable
-    double j = 0;
-    char *vPtr2 = NULL;        //will also point to variable to be decremented
-
-    if (StackPointer >= MenuStackSize)
-        return;
+    double j;
+    char tempstr [9];
+    char *vPtr2;        //will also point to variable to be decremented
 
     //Find out which menu we are on
     for ( k=0;k<MenuSize;k++ )
@@ -1161,10 +1312,7 @@ void DecVariable ( void )
         {
             //VarPnt = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
             varIndex = MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine-1;
-            if (varIndex < 0 || varIndex >= 11)
-                return;
             vPtr2 = Menuc[k].VarPntr[varIndex];     //copy pointer to variable
-            if (vPtr2 == NULL) return;
             
             if( nDigits == OFF_ON ) 
             {
@@ -1176,7 +1324,6 @@ void DecVariable ( void )
             }
             if( nDigits == SER_NUM )               //limit to numerical serial numbers
             {
-                if (VariableFlag < 1 || VariableFlag > 5) return;
                 if( SerialNum[VariableFlag -1]  == '-' )
                     SerialNum[VariableFlag -1]  = '0';
                 else
@@ -1205,8 +1352,6 @@ void DecVariable ( void )
             }
         }
     }
-    if (vPtr2 == NULL)
-        return;
     dispVariable(vPtr2, &j, nDigits);
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();
@@ -1326,9 +1471,9 @@ void DeSelect ( void )
 	 VariableFlag = 0;
 }
 
-void LoadMenu ( unsigned char Index[] )
+void LoadMenu ( char Index[] )
 {
-    int i, j, k;
+    int i,j,k,l;
 
     //find menu
     for ( k=0;k<MenuSize;k++ )
@@ -1444,7 +1589,7 @@ void InsertCursor ( void )
 
 void btnDisplayTitler ( void )
 {
-	int i, j, k;
+	int i,j,k,l;
 	
 	for ( i=0;i<=8;i++ )
 	{
@@ -1498,7 +1643,7 @@ void ext_menu ( void )
         }
         //! Transmit this without using the TPDO
 		Timer1 = RTI_One_Sec * .010;
-		while (Timer1) { /* wait for interrupt */ }
+		while (Timer1);
 	}
 }
 
@@ -1515,7 +1660,7 @@ void Scan ( void )
 	for (j=0x610;j<=0x67f;j++)
 	{
 	    Timer1 = RTI_One_Sec * .015;      //necessary to allow menu to populate
-	    while (Timer1) { /* wait for interrupt */ }
+	    while ( Timer1 );
         SDO_Init_Upload (j,0x2100,0);
 	    MCO_ProcessStack();
 	    COP_Trig();
@@ -1523,7 +1668,7 @@ void Scan ( void )
 	for (j=1;j<40;j++)
 	{
 	    Timer1 = RTI_One_Sec * .015;      //necessary to allow menu to populate
-	    while (Timer1) { /* wait for interrupt */ }
+	    while ( Timer1 );
 	    MCO_ProcessStack();
 	    COP_Trig();
 	}
@@ -1533,7 +1678,7 @@ void Scan ( void )
     {
 	    if (Device_Type_Response_ID[i] >= 0x5E1 && Device_Type_Response_ID[i] <= 0x5E9) 
 		{ 
-		     if (i + 1 < DEVICE_SCAN_CAPACITY && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])  //if duplicate detected
+		     if (Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])  //if duplicate detected
 			 {
 			     Device_Type_Response_ID[i] = 0;
 				 Device_Type_Response_ID[i+1] = 0;
@@ -1551,26 +1696,26 @@ void Scan ( void )
       		     } 
 				 
 				 Timer1 = RTI_One_Sec * 0.25;
-        	     while (Timer1) { /* wait for interrupt */ }   //wait here to receive bootup message after CNT-031's reset
+        	     while ( Timer1 );   //wait here to receive bootup message after CNT-031's reset
 			
 			
 				 for (j = 0x661; j < 0x66A; j++)
 				 {
 				     Timer1 = RTI_One_Sec * .015;       
-	    			 while (Timer1) { /* wait for interrupt */ }
+	    			 while ( Timer1 );
         			 SDO_Init_Upload (j,0x2100,0);
 	    			 MCO_ProcessStack();
 				 }
 				 
                  Timer1 = RTI_One_Sec * .015;       
-	    	     while (Timer1) { /* wait for interrupt */ }
+	    	     while ( Timer1 );
 			     MCO_ProcessStack();
 
 				 i -= 1;
 			 }	
 		
 	    }
-	 	else if ( i + 1 < DEVICE_SCAN_CAPACITY && Device_Type_Response_ID[i] != 0 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])
+	 	else if ( Device_Type_Response_ID[i] != 0 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])
 		{
 		    for(j=i; j<19; j++) {                   //move Type Responses up (remove duplicates, they should be consecutive)
 			    Device_Type_Response_ID[j] = Device_Type_Response_ID[j+1];
@@ -1603,7 +1748,7 @@ void Scan ( void )
           		    MCOUSER_FatalError(0x8801);
 				 
 				Timer1 = RTI_One_Sec *.025;
-        	    while (Timer1) { /* wait for interrupt */ }
+        	    while(Timer1);
 			}
 			
 			MCO_ProcessStack();
@@ -1613,7 +1758,7 @@ void Scan ( void )
                 SDO_Init_Upload((0x600 + (Device_Type_Response_ID[i] - 0x580)), 0x2100, j);   //SDO Request to 0x600 + Node_ID to sub-indexes 1 - 4
                 MCO_ProcessStack();
         	    Timer1 = RTI_One_Sec * .02;
-        	    while (Timer1) { /* wait for interrupt */ }
+        	    while(Timer1);
 			}
 		}
 		i++;
@@ -1623,7 +1768,7 @@ void Scan ( void )
 	{
 	    COP_Trig();
 	    Timer1 = RTI_One_Sec * .05;
-	    while (Timer1) { /* wait for interrupt */ }
+	    while ( Timer1 );
 	    MCO_ProcessStack();
 	}
 	
@@ -1643,7 +1788,7 @@ void Scan ( void )
                 MCOUSER_FatalError(0x8801);
 				
 			Timer1 = RTI_One_Sec * .015;       
-	    	while (Timer1) { /* wait for interrupt */ }	
+	    	while (Timer1);	
 			MCO_ProcessStack();
         }	
 	}
@@ -1658,7 +1803,7 @@ void Scan ( void )
 	    if ( Device_Type_Response_ID[i] != 0 ) 
 		{
             //main menu items
-            if( (unsigned char)Device_Menus[i][15] != 0xff && Device_Menus[i][15] != 0x00 )    //0xff indicates auxiliary menus, WIM = 0xA6                   
+            if( Device_Menus[i][15] != 0xff && Device_Menus[i][15] != 0x00 )    //0xff indicates auxiliary menus, WIM = 0xA6                   
 		    {  						   		   					   		  	    //0x32 indicates main menu items
     	    	Device_Menus[i][15] = 0x32;
 				strcpy(Menuc[0].Entry[j+8], Menuc[0].Entry[j+7]);		
@@ -1668,7 +1813,7 @@ void Scan ( void )
     			j++;
     		}
       	    //auxiliary menu items   
-      	    if( (unsigned char)Device_Menus[i][15] == 0xff )                                   //0xff indicates auxiliary menus
+      	    if( Device_Menus[i][15] == 0xff )                                   //0xff indicates auxiliary menus
             {
 			    if (k < 10)  //supports max of 10 aux devices
 				{
@@ -1702,7 +1847,7 @@ void menuSort( void )       //seperate sub-menu items from primary menu items
 
     for(index = 0; index < 19; index++) {
 	    COP_Trig();
-        if( (unsigned char)Device_Menus[index][15] == 0xff ) {    //0xff indicates sub menu of Auxiliary Equip
+        if( Device_Menus[index][15] == 0xff ) {    //0xff indicates sub menu of Auxiliary Equip
             sub_Device_Type_Response_ID[subIndex] = Device_Type_Response_ID[index];
             strcpy( &deviceSubMenu[subIndex++][0], &Device_Menus[index][0]);
             
@@ -1841,7 +1986,7 @@ void addressCamera(void)
     }
     MCO_ProcessStack();
 	Timer2 = RTI_One_Sec * 0.25;         //intialize timer
-    while (Timer2) { /* wait for interrupt */ }       //allow time for to create addresses 
+    while ( Timer2 );       //allow time for to create addresses 
 }
 
 int findCameras(void)
@@ -2013,7 +2158,7 @@ int Trigger_Device ( void )
 
 void doevents ( void )
 {
-	
+	int i,j;
 
 	if (TC0_RCVD_Data != (ButtonBoxData << 8 | ButtonBoxData))
 	{
@@ -2110,6 +2255,7 @@ void doevents ( void )
 				}
 				else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Down) && !(TC0_RCVD_Data & TeleData_Select))
 				{
+					char tempstr[18];
 					ToggleTimer = RTI_One_Sec * 0.75;						
 					
 					if(cam_select <= 0)
@@ -2128,6 +2274,7 @@ void doevents ( void )
 				}
 				else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Up) && !(TC0_RCVD_Data & TeleData_Select))
 				{
+					char tempstr[18];
 					ToggleTimer = RTI_One_Sec * 0.75;
 					
 					if(cam_select >= 9 || !cam_list[cam_select + 1])
@@ -2180,8 +2327,8 @@ void doevents ( void )
 		unsigned int SwitchData; 
 		static unsigned SwitchUpData;
 		//static unsigned char Prev_Cntrl_Sw;
-		
-		unsigned char Sw_Index;
+		unsigned int MaskBit = 0x8000;
+		char Sw_Index;
 		char StopFlag=0;
 		
 		DeBounceTimer = DeBounceTime;
@@ -2202,7 +2349,7 @@ void doevents ( void )
 		{	//See which button is pressed/not pressed and set SwitchData accordingly
 			PORTB = (PORTB & ~0x38) | (~Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x38);		 //Output Columns
 			Timer1 = RTI_One_Sec * .001;
-			while (Timer1) { /* wait for interrupt */ }
+			while (Timer1);
 			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )
 			{   //Switch is pressed
 				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
@@ -2413,7 +2560,7 @@ void doevents ( void )
             }
               
 			Timer1 = RTI_One_Sec * .2;
-			while (Timer1) { /* wait for interrupt */ }
+			while(Timer1);
 		}
 		else if (i == 1)
 		{
@@ -2429,7 +2576,7 @@ void doevents ( void )
             }
 
 			Timer1 = RTI_One_Sec * .2;
-			while (Timer1) { /* wait for interrupt */ }
+			while(Timer1);
 		}
 		else if (i == 2)
 		{
@@ -2445,7 +2592,7 @@ void doevents ( void )
             }
 
 			Timer1 = RTI_One_Sec * .2;
-			while (Timer1) { /* wait for interrupt */ }
+			while(Timer1);
 		}
 		i++;
 
@@ -2498,7 +2645,7 @@ void doevents ( void )
 	if ( !legacy_mode )//!(Gen_Flags & Gen_Flags_No2Wire) )
 	{
 		//Operate on CANopen protocol stack
-		MCO_ProcessStack();
+		i = MCO_ProcessStack();
 		//End MicroCanOpen Stack
 	}   
 	
@@ -2567,7 +2714,7 @@ void Xmit_Rcv_SPI ( void )
 		for(i = 0; i < 5; i++);	
 	    SPI0DR = 0x01; 
 		SPI0CR1 |= SPICR1_SPTIE;
-    	while (SPI0CR1 & SPICR1_SPTIE) { /* wait for interrupt */ }
+    	while ( SPI0CR1 & SPICR1_SPTIE );
 		PTM |= 0x08;
 	    firstWriteSPI = false;    
 	}
@@ -2576,14 +2723,14 @@ void Xmit_Rcv_SPI ( void )
 	for(i = 0; i < 5; i++);	
 	SPI0DR = SPI0OutBuf[0];
     SPI0CR1 |= SPICR1_SPTIE;
-    while (SPI0CR1 & SPICR1_SPTIE) { /* wait for interrupt */ }
+    while (SPI0CR1 & SPICR1_SPTIE);
 	PTM |= 0x08;
 }
 
 
 void WriteCharMem ( void )
 {
-    unsigned char CMM, CMAH, CMAL;
+    char CMM, CMAH, CMAL;
 	
     SPI0OutBufptr = 0;
    	SPI0OutBuf[0] = 0x00;	   //Disable OSD
@@ -2591,7 +2738,7 @@ void WriteCharMem ( void )
    	Xmit_Rcv_SPI();
 
 	Timer1 = .1 * RTI_One_Sec;
-	while (Timer1) { /* wait for interrupt */ }
+	while ( Timer1 );
 
 	CMAH = 0x00;
 	CMM = 0xa0;
@@ -2624,16 +2771,16 @@ void WriteCharMem ( void )
     	Xmit_Rcv_SPI();
 		
 		Timer1 = .1 * RTI_One_Sec;
-		while (Timer1) { /* wait for interrupt */ }
+		while ( Timer1 );
 
     }
 	Timer1 = .2 * RTI_One_Sec;
-	while (Timer1) { /* wait for interrupt */ }
+	while ( Timer1 );
 }
 
 void ReadCharMem ( void )
 {
-    unsigned char CMM, CMAH, CMAL;
+    char CMM, CMAH, CMAL;
 	int i;
 	
     SPI0OutBufptr = 0;
@@ -2642,7 +2789,7 @@ void ReadCharMem ( void )
    	Xmit_Rcv_SPI();
 
 	Timer1 = .1 * RTI_One_Sec;
-	while (Timer1) { /* wait for interrupt */ }
+	while ( Timer1 );
 	
 	CMM = 0x50;
 	CMAH = 5;           //determining if the "+" symbol is there is sufficient: CMAH = 5
@@ -2658,7 +2805,7 @@ void ReadCharMem ( void )
     Xmit_Rcv_SPI();
 	
 	Timer1 = .1 * RTI_One_Sec;
-	while (Timer1) { /* wait for interrupt */ }
+	while ( Timer1 );
 
 
     for (CMAL = 0; CMAL < 54; CMAL++)
@@ -2697,7 +2844,7 @@ void resetTitler(void)
 	Xmit_Rcv_SPI();
 		
 	Timer1 = RTI_One_Sec * 0.002;  //short delay to allow reset to finish
-	while (Timer1) { /* wait for interrupt */ }
+	while (Timer1);
 		
 	SPI0OutBufptr = 0;
     SPI0OutBuf[0] = 0x00;  	   //Video Mode0, Enable display OSD
@@ -2710,7 +2857,7 @@ void resetTitler(void)
 //puts Menu in proper location, leaves room for messages on top line
 void showMenu ( void )
 {
-    int i, j;
+    int i,j,k;
 
 	MenuCheck=1;
 	
@@ -2870,7 +3017,7 @@ void bldMessages(void)
     ETX_flag = 0;
     if ( gProcImg[OUT_digi_1+1] )
 	{
-		memcpy ( CANBuf, &gProcImg[OUT_digi_1+1], 7 );
+		strncpy ( CANBuf, &gProcImg[OUT_digi_1+1], 7 );
 		CANBuf[7]=0;
 		if( strchr( CANBuf, 0x03 ))
 		{
@@ -3011,7 +3158,7 @@ void showMessage ( char Message[], int row )       //row = position on video scr
     int DispAddr;
 
     //see if external menu is not active and internal menu is not active
-	if ( (gProcImg[OUT_digi_0] & 0x01) || (( Gen_Flags & Gen_Flags_Menu_Active ) && MenuCheck==0))
+	if ( (gProcImg[OUT_digi_0] & 0x01) || ( Gen_Flags & Gen_Flags_Menu_Active ) && MenuCheck==0)
 	{
 	    //some menu is active, display on top or bottom row, column selection is okay
     	//if ( row == 1 || row >= 6 )
@@ -3075,7 +3222,7 @@ void ClearTitler ( void )
 	if ( !legacy_mode )//!(Gen_Flags & Gen_Flags_No2Wire) )
 	    MCO_ProcessStack();
     Timer1 = RTI_One_Sec * .05;
-	while (Timer1) { /* wait for interrupt */ }
+	while ( Timer1 );
 	resetTitler();
 }
 
