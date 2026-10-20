@@ -65,6 +65,44 @@ int main(void) {
 }
 ''')
 
+    def test_polled_can_receive_and_irq_fallback(self):
+        driver = (ROOT/'Embedded/Src/mcohw.c').read_text()
+        interrupt = (ROOT/'Embedded/Src/Interrupts.c').read_text()
+        run_c(r'''
+#include <assert.h>
+#include <string.h>
+typedef unsigned char UNSIGNED8;
+typedef unsigned long UNSIGNED32;
+typedef struct { UNSIGNED32 ID; UNSIGNED8 LEN; UNSIGNED8 BUF[8]; } CAN_MSG;
+unsigned char CANRFLG, CANRIER, CANRXIDR0, CANRXIDR1, CANRXDLR;
+unsigned char registers[8];
+#define CANRXDSR0 registers[0]
+''' + extract(driver, 'MCOHW_PullMessage') + extract(interrupt, 'CANRxISR') + r'''
+int main(void) {
+    struct { unsigned long before; CAN_MSG message; unsigned long after; } guarded;
+    int length, index;
+    memset(&guarded, 0, sizeof guarded);
+    guarded.before = 0x12345678; guarded.after = 0x87654321;
+    CANRFLG = 0;
+    assert(!MCOHW_PullMessage(&guarded.message));
+    CANRXIDR0 = 0x64; CANRXIDR1 = 0x20; /* Standard ID 0x321 */
+    for (index = 0; index < 8; ++index) registers[index] = 0x80 + index;
+    for (length = 0; length < 16; ++length) {
+        CANRFLG = 1; CANRXDLR = length;
+        CANRIER = 0xa5;
+        CANRxISR();
+        assert(CANRIER == 0xa4 && CANRFLG == 1);
+        assert(MCOHW_PullMessage(&guarded.message));
+        assert(guarded.message.ID == 0x321);
+        assert(guarded.message.LEN == (length < 8 ? length : 8));
+        for (index = 0; index < guarded.message.LEN; ++index)
+            assert(guarded.message.BUF[index] == 0x80 + index);
+        assert(guarded.before == 0x12345678 && guarded.after == 0x87654321);
+    }
+    return 0;
+}
+''')
+
     def test_timer_scan_stays_inside_matrix(self):
         source = (ROOT/'Embedded/Src/Interrupts.c').read_text()
         handler = extract(source, 'TC3_Int_Handler')

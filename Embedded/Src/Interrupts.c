@@ -53,25 +53,11 @@ void DUMMY_ENTRY ( void )
 
 void CANRxISR ( void )
 {
-  	unsigned char length, index;
-	unsigned char rxdata[8];
-    UNSIGNED32 Identifier;
-	CAN_MSG *pReceiveBuf;
-	
-    Identifier   = (UNSIGNED32)CANRXIDR0;
-    Identifier <<= 8;
-    Identifier  |= (UNSIGNED32) CANRXIDR1;
-    Identifier >>= 5;
-	
-	length = (CANRXDLR & 0x0f);
-	for ( index = 0; index < length; index++ )
-		*(UNSIGNED8 *)(pReceiveBuf->BUF+index) = *(&CANRXDSR0 + index);   	 //Get received data 
-	CANRFLG = 0x01;	  				   						  				 //Clear RXF 
-
-    pReceiveBuf->ID = Identifier;
-    pReceiveBuf->LEN = length;
-
-}	
+    /* Reception belongs to MCOHW_PullMessage in the main loop. If RX IRQ is
+       unexpectedly enabled, mask it without clearing RXF or losing the frame.
+       No software receive queue exists for interrupt-driven reception. */
+    CANRIER &= ~0x01;
+}
 
 void IRQ_Int_Handler ( void )
 {

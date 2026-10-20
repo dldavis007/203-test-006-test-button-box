@@ -35,13 +35,18 @@ power cycling. Also build the relocated ImageCraft project before merging.
 - Character terminators use '\0' rather than pointer NULL; serial S-record
   checks use logical AND; unused parser locals were removed.
 
-Host checks pass (14 unit tests, both scan regression char modes and syntax).
-Windows build/load and hardware regression remain outstanding for this branch.
+The first 14-test cleanup pass was reported working on hardware. The subsequent
+Flash/CAN pass has 16 host unit tests; both scan regression char modes and source
+syntax also pass. Its Windows build/load and hardware regression are pending.
 
 ## Remaining review
 
-- CANRxISR writes through an uninitialized pointer. CAN reception currently
-  polls in mcohw.c; repair the ownership/queue design before enabling RX IRQs.
+- CAN reception remains polled in mcohw.c. The old uninitialized-pointer ISR
+  was replaced by an RX-interrupt mask fallback that leaves RXF/frame data for
+  the poller. Initialization explicitly masks RX IRQ. Receive copies are bounded
+  to eight bytes and RXF is released once, avoiding a second clear that could
+  discard a newly arrived frame. Tests cover DLC 0-15, frame ID/data and the
+  fallback. Interrupt-driven reception would require a separate queue design.
 - FlashWrite now initializes the erase dummy, packs unsigned bytes, uses
   volatile command-address stores and rejects lengths outside 1-512 bytes.
   All 65,536 byte pairs are tested under both char modes. The Flash command

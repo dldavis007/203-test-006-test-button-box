@@ -256,6 +256,10 @@ UNSIGNED8 MCOHW_PullMessage
     Identifier >>= 5;
 	
 	Length = (CANRXDLR & 0x0f);
+    if (Length > sizeof(pReceiveBuf->BUF))
+    {
+        Length = sizeof(pReceiveBuf->BUF); /* Classic CAN carries at most 8 bytes. */
+    }
 	for ( i = 0; i < Length; i++ )
 		*(UNSIGNED8 *)(pReceiveBuf->BUF+i) = *(&CANRXDSR0 + i);   	/* Get received data */
 	CANRFLG = 0x01;	  				   						  				/* Clear RXF */
@@ -433,6 +437,8 @@ UNSIGNED8 MCOHW_Init
 
 UNSIGNED8 i;
 UNSIGNED8 baudrateok = 0;
+
+    CANRIER &= ~0x01; /* Main-loop polling owns the receive FIFO. */
 
  	CANCTL0 = 0x01;
 	Timer1 = RTI_One_Sec * 0.01;
