@@ -175,7 +175,7 @@ def main():
     print(run([gcc] + flags + ['-S', probe, '-o', BUILD/'call_abi_probe.s']))
     check_near_assembly((BUILD/'call_abi_probe.s').read_text())
     objects = []
-    files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/startup.S']
+    files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/compact_io.c', ROOT/'embedded/gcc/startup.S']
     for source in files:
         obj = BUILD/(source.stem+'.o')
         compile_flags = list(flags)
@@ -188,14 +188,20 @@ def main():
         objects.append(obj)
     # Resolve libc/libgcc into a relocatable object so their real section sizes
     # participate in fixed-bank layout (rather than guessing library footprint).
-    print(run([gcc] + flags + ['-nostdlib', '-Wl,-r', '-o', 'merged.o'] +
+    print(run([gcc] + flags + ['-nostdlib', '-Wl,-r', '-Wl,--gc-sections,-u,_start,-u,interrupt_vectors', '-Wl,-Map,merged.map', '-o', 'merged.o'] +
               objects + ['-Wl,--start-group', '-lc', '-lgcc', '-Wl,--end-group'], cwd=BUILD))
     undefined = unresolved_runtime_symbols(run([tool('nm'), '-u', BUILD/'merged.o'])).strip()
     if undefined:
         raise RuntimeError('Unresolved symbols before final link:\n' + undefined)
-    info = sections(run([tool('objdump'), '-h', BUILD/'merged.o']))
+    section_output = run([tool('objdump'), '-h', BUILD/'merged.o'])
+    (BUILD/'sections.txt').write_text(section_output)
+    info = sections(section_output)
+    rom_bytes = sum(size for name, size, align, attrs in info
+                    if 'ALLOC' in attrs and name.startswith(('.text', '.rodata', '.data', '.sdata', '.startup', '.vectors')))
+    print('Post-pruning code/constants/data/vector bytes:', rom_bytes)
+    print('Section report: build/9s12/sections.txt; library map: build/9s12/merged.map')
     (BUILD/'buttonbox.ld').write_text(linker_script(layout(info)))
-    print(run([gcc] + flags + ['-nostdlib', '-Wl,-T,buttonbox.ld', '-Wl,-Map,buttonbox.map',
+    print(run([gcc] + flags + ['-nostdlib', '-Wl,-T,buttonbox.ld', '-Wl,--gc-sections', '-Wl,-Map,buttonbox.map',
                               'merged.o', '-o', 'buttonbox.elf'], cwd=BUILD))
     print(run([tool('objcopy'), '-O', 'srec', BUILD/'buttonbox.elf', BUILD/'buttonbox.s19']))
     print(run([tool('size'), '-A', BUILD/'buttonbox.elf']))

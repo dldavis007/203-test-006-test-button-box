@@ -109,3 +109,26 @@ register-spill error in optimized MCO_ProcessStack. The build overrides -Os
 with -O0 for mco.c only. Other modules remain size-optimized. This may increase
 Flash use; the existing link-layout checks still enforce all bounds. The next
 Windows build must establish whether this compiler workaround is sufficient.
+
+## Footprint diagnosis from the first cross-build
+
+The user's section report showed 60,308 bytes of .text (including a 34,317-byte
+plain .text library block), 6,420 bytes of read-only constants and 1,630 bytes of
+initialized data before garbage collection. Application functions already had
+separate .text.NAME sections; they were not merged into the large plain block.
+This exceeds even a 48 KB flat layout before pruning.
+
+The GCC build now uses compact_io.c for this firmware's printf/sprintf formats
+and decimal menu parsing, avoiding the general-purpose stdio/strtod dependency.
+The supported contract is the formats currently present in the firmware, with
+floating menu output limited to two fractional digits and normal small menu
+values. It is not a complete standard printf/atof replacement (no exponent/NaN
+parsing, locale or high precision). Integer/menu output, battery strings,
+variable widths and serial output are compared against host libc in tests.
+ImageCraft retains its original library functions.
+
+The relocatable link now prunes unused sections with explicit startup/vector
+roots before size packing. The final link also enables garbage collection.
+The build saves sections.txt and merged.map for actual target-footprint review.
+The Windows cross-build must still establish the resulting size; no extra Flash
+addresses or PPAGE assumptions have been enabled by this footprint change.

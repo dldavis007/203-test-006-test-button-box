@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 source = ROOT/'Rev 3.05'
 files = [source/(name+'.c') for name in
          ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines']]
-files += [ROOT/'embedded/gcc/runtime.c']
+files += [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/compact_io.c']
 subprocess.run([os.environ.get('CC','gcc'), '-std=gnu89', '-fsyntax-only',
                 '-DBUTTONBOX_GCC', '-DBUTTONBOX_HOST_SYNTAX',
                 '-include', str(ROOT/'tests/stdio_macro_probe.h'),
