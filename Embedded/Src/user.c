@@ -35,7 +35,6 @@ VERSION:   2.10, ESA 12-JAN-05
 
 // This structure holds all node specific configuration
 UNSIGNED8 gProcImg[PROCIMG_SIZE];
-extern UNSIGNED8 setFilters[];
 char clearProc = 1;
 
 // Table with SDO Responses for read requests to OD
@@ -112,7 +111,7 @@ UNSIGNED8 MEM_CONST SDOResponseTable[] = {
 #endif // PDO_IN_OD
 
   // End-of-table marker
-  SDOREPLY(0xFFFF, 0xFF, 0xFF, 0xFFFFFFFFL)
+  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF /* End-of-table marker, not an SDO reply. */
 };
 
 #ifdef PROCIMG_IN_OD
@@ -139,6 +138,7 @@ void MCOUSER_FatalError
   UNSIGNED16 ErrCode  // the error code
   )
 {
+  (void)ErrCode; /* Existing recovery ignores the diagnostic code. */
   //display blinking pattern on led
     InitCANopen ();
 

@@ -29,7 +29,7 @@ void DecVariable ( void );
 void dispVariable(char* vPtr, double *value, char format);
 void Select ( void );
 void DeSelect ( void );
-void LoadMenu ( char Index[] );
+void LoadMenu ( unsigned char Index[] );
 void InsertCursor ( void );
 void btnDisplayTitler ( void );
 int RestoreDefaults ( void );
@@ -69,9 +69,9 @@ struct MatrixTbl
 
 struct MenuStruct
 {
-char Index[4];
+unsigned char Index[4];
 char Entry[12][21];           //menu text
-char Pos[11];                 //position of variable
+unsigned char Pos[11];                 //position of variable
 char *VarPntr[11];                  //pointer to variable
 int (*FunctPtr[11])( void );        //pointer to function
 };
@@ -80,9 +80,9 @@ extern struct MenuStruct Menuc[];   //holds menu data
 
 struct MenuStack
 {
-char Index[4];
-char CursorPos;
-char FirstLine;
+unsigned char Index[4];
+unsigned char CursorPos;
+unsigned char FirstLine;
 };
 
 #define MenuSize 11
@@ -239,5 +239,18 @@ char FirstLine;
 
 //PORT-E define
 #define HW_COP         0x40
+
+/* Shared application state defined in Subroutines.c. */
+extern volatile unsigned int ButtonBoxData;
+extern volatile int ReActivate_Timer;
+extern volatile char SPI0InBuf[2], SPI0OutBuf[2];
+extern volatile int SPI0InBufptr, SPI0OutBufptr;
+extern volatile char UpdateMenu;
+extern char UpdateDisp;
+extern volatile bool controller_mode, legacy_mode;
+extern bool resequenceNodes;
+extern char deviceSubMenu[20][17];
+extern int sub_Device_Type_Response_ID[20];
+extern struct MatrixTbl Keypad_Matrix[18];
 
 #endif

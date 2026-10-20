@@ -1,7 +1,8 @@
-#include "Subroutines.h"
-
 #ifndef Controller_H
 #define Controller_H
+
+#include "Subroutines.h"
+#include "Interrupts.h"
 
 #ifdef BUTTONBOX_GCC
 /* GNU68HC12 stdio implements these as macros. Define real device hooks. */
@@ -17,7 +18,6 @@
 #define INTR_OFF()	asm("sei")
 #endif
 
-extern volatile unsigned int Timer1;
 extern void WriteCharMem(void);
 extern void ReadCharMem(void);
 extern bool CharsInMem;
@@ -40,5 +40,10 @@ void InitCANopen ( void );
 void InitWatchdog(void);
 void COP_Trig(void); 
 
+
+/* Watchdog handshake shared with the timer interrupt. */
+extern volatile char wd_flag, wdInit, wdStarted;
+/* Startup-owned persistent marker (ImageCraft startup or GCC runtime). */
+extern char _bss_end[20];
 
 #endif

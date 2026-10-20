@@ -49,7 +49,9 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 char tempArray[1024];
 
      if (ArraySize <= 0 || ArraySize > 512)
+     {
          return;
+     }
 	 
      
 	 

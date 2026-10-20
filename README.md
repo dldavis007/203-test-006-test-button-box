@@ -100,7 +100,8 @@ It stops before launching NoICE on any compiler, unresolved-symbol, memory-layou
 or debug-map failure and removes stale loadable artifacts.
 
 **Validation status:** host regression, settings codec, source syntax and build-tool
-checks pass. The user verified the pre-cleanup GCC build/load, F1/F2 settings,
+checks pass. Shared declarations are organized by owning header, and the host
+source check treats warnings as errors (excluding target-only address-width casts). The user verified the pre-cleanup GCC build/load, F1/F2 settings,
 EEPROM persistence and mode LEDs on hardware. The reorganized cleanup branch
 still needs a Windows GNU68HC12 build/load and hardware check. ImageCraft is
 not installed here, so its relocated IDE project needs a local build check.

@@ -99,4 +99,7 @@ Modify these for your application
 #define OUT_ana_1 56
 
 
+/* Process image storage is defined once in user.c. */
+extern unsigned char gProcImg[PROCIMG_SIZE];
+
 #endif

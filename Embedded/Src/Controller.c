@@ -10,12 +10,8 @@
 
 
 
-char wd_flag = 0, wdInit = 0, wdStarted = 0;
+volatile char wd_flag = 0, wdInit = 0, wdStarted = 0;
 
-extern volatile int SIN0Bufptr;
-extern volatile int SOUT0Bufptr;
-extern char SOUT0Buf[SOUT0BufLen];
-extern volatile unsigned int WD_Timer;
 
 
 void main (void)
