@@ -792,26 +792,26 @@ struct MatrixTbl Keypad_Matrix[18] = {
 //     0b01110000,0b00111111,0b00011111,0b00000110,0b11000000,		Mask bits
 //        RRR         CCCRRR      RCCC4        RR    RR      
 //        456         BCA123      11234        65    32             
-0x0100,0b00000000,0b00001100,0b00011000,0b00000000,0b00000000,		//Trigger
-0x0080,0b00000000,0b00001010,0b00001000,0b00000000,0b01000000,		//F1
-0x8000,0b00000000,0b00001001,0b00001000,0b00000000,0b10000000,		//Reverse
-0x2000,0b01000000,0b00001000,0b00001001,0b00000000,0b00000000,		//Ex-Slow
-0x0001,0b00100000,0b00001000,0b00001000,0b00000010,0b00000000,		//Down
-0x0004,0b00010000,0b00001000,0b00001000,0b00000100,0b00000000,		//Select
+0x0100,0x00,0x0C,0x18,0x00,0x00,		//Trigger
+0x0080,0x00,0x0A,0x08,0x00,0x40,		//F1
+0x8000,0x00,0x09,0x08,0x00,0x80,		//Reverse
+0x2000,0x40,0x08,0x09,0x00,0x00,		//Ex-Slow
+0x0001,0x20,0x08,0x08,0x02,0x00,		//Down
+0x0004,0x10,0x08,0x08,0x04,0x00,		//Select
 
-0x0400,0b00000000,0b00100100,0b00010100,0b00000000,0b00000000,		//Option
-0x0040,0b00000000,0b00100010,0b00000100,0b00000000,0b01000000,		//F2
-0x0000,0b00000000,0b00100001,0b00000100,0b00000000,0b10000000,		//Stop
-0x1000,0b01000000,0b00100000,0b00000101,0b00000000,0b00000000,		//Slow
-0x0003,0b00100000,0b00100000,0b00000100,0b00000010,0b00000000,		//Menu
-0x0008,0b00010000,0b00100000,0b00000100,0b00000100,0b00000000,		//Rotate CW
+0x0400,0x00,0x24,0x14,0x00,0x00,		//Option
+0x0040,0x00,0x22,0x04,0x00,0x40,		//F2
+0x0000,0x00,0x21,0x04,0x00,0x80,		//Stop
+0x1000,0x40,0x20,0x05,0x00,0x00,		//Slow
+0x0003,0x20,0x20,0x04,0x02,0x00,		//Menu
+0x0008,0x10,0x20,0x04,0x04,0x00,		//Rotate CW
 
-0x0200,0b00000000,0b00010100,0b00010010,0b00000000,0b00000000,		//Reset
-0x0020,0b00000000,0b00010010,0b00000010,0b00000000,0b01000000,		//F3
-0x4000,0b00000000,0b00010001,0b00000010,0b00000000,0b10000000,		//Forward
-0x0800,0b01000000,0b00010000,0b00000011,0b00000000,0b00000000,		//Fast
-0x0002,0b00100000,0b00010000,0b00000010,0b00000010,0b00000000,		//Up
-0x0010,0b00010000,0b00010000,0b00000010,0b00000100,0b00000000		//Rotate CCW
+0x0200,0x00,0x14,0x12,0x00,0x00,		//Reset
+0x0020,0x00,0x12,0x02,0x00,0x40,		//F3
+0x4000,0x00,0x11,0x02,0x00,0x80,		//Forward
+0x0800,0x40,0x10,0x03,0x00,0x00,		//Fast
+0x0002,0x20,0x10,0x02,0x02,0x00,		//Up
+0x0010,0x10,0x10,0x02,0x04,0x00		//Rotate CCW
 };
 
 
@@ -2360,10 +2360,10 @@ void doevents ( void )
 
 		for(Sw_Index=0;Sw_Index<18;Sw_Index++)
 		{	//See which button is pressed/not pressed and set SwitchData accordingly
-			PORTB = (PORTB & ~0b00111000) | (~Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0b00111000);		 //Output Columns
+			PORTB = (PORTB & ~0x38) | (~Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x38);		 //Output Columns
 			Timer1 = RTI_One_Sec * .001;
 			while (Timer1);
-			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0b00000111)) )
+			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )
 			{   //Switch is pressed
                 if (Keypad_Matrix[Sw_Index].BB_Data &
                     (TeleData_F1 | TeleData_F2))
@@ -2500,16 +2500,16 @@ void doevents ( void )
 			DeSelect();
 		}
 		if((tempData & TeleData_Down) && (tempData & TeleData_Up)) // Menu
-		    Third_byte |= 0b00010000;
+		    Third_byte |= 0x10;
 		else if(tempData & TeleData_Down) // Left
-		    Third_byte |= 0b00000100;
+		    Third_byte |= 0x04;
 		else if(tempData & TeleData_Up) // Right
-		    Third_byte |= 0b00001000;
+		    Third_byte |= 0x08;
 			
 		if(tempData & TeleData_Slow) // Up
-		    Third_byte |= 0b00000001;
+		    Third_byte |= 0x01;
 		if(tempData & TeleData_RotCW) // Dn
-		    Third_byte |= 0b00000010;
+		    Third_byte |= 0x02;
 			
 		tempData &= ~(TeleData_Down | TeleData_Up | (Cntrl_Slow_Flag?0:TeleData_Slow) | TeleData_RotCW); // These keys are used for Menu navigation when F1 or F2 is selected
 	}
@@ -3296,5 +3296,3 @@ void DisplayTitler ( void )
 
     }
 }
-
-

@@ -203,4 +203,3 @@ int hextoi(char *string)
     }
   return(number);
 }
-

@@ -127,25 +127,25 @@ void TC3_Int_Handler ( void )
 	if(((ButtonBoxData & TeleData_F1) || (ButtonBoxData & TeleData_F2)) && (Sw_Index == 4|Sw_Index == 9|Sw_Index == 10|Sw_Index == 11|Sw_Index == 16))
 	{
         // LEDs
-        PTP = (PTP & ~0b00001110) | (Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0b00001110); //Output a High on the Column
+        PTP = (PTP & ~0x0E) | (Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0x0E); //Output a High on the Column
         
-        PTP = (PTP | 0b00010001) & ~(Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0b00010001);
-        PTT = (PTT | 0b00000110) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[1];
-        PTJ = (PTJ | 0b11000000) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[2];
+        PTP = (PTP | 0x11) & ~(Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0x11);
+        PTT = (PTT | 0x06) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[1];
+        PTJ = (PTJ | 0xC0) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[2];
 	
 	}
     else if ( Keypad_Matrix[Sw_Index].BB_Data & ButtonBoxData || ( Sw_Index == 8 && !(ButtonBoxData & (TeleData_Rev | TeleData_Fwd) ) ) )
     {
         // LEDs
-        PTP = (PTP & ~0b00001110) | (Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0b00001110); //Output a High on the Column
+        PTP = (PTP & ~0x0E) | (Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0x0E); //Output a High on the Column
         
-        PTP = (PTP | 0b00010001) & ~(Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0b00010001);
-        PTT = (PTT | 0b00000110) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[1];
-        PTJ = (PTJ | 0b11000000) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[2];
+        PTP = (PTP | 0x11) & ~(Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0x11);
+        PTT = (PTT | 0x06) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[1];
+        PTJ = (PTJ | 0xC0) & ~Keypad_Matrix[Sw_Index].LED_Port_Data[2];
     }
 	else
 	{
-	    PTP = (PTP & ~0b00001110); //Output a Low on the Columns
+	    PTP = (PTP & ~0x0E); //Output a Low on the Columns
 	}
 	
 	if (++Sw_Index > 18)

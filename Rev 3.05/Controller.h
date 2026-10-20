@@ -3,6 +3,13 @@
 #ifndef Controller_H
 #define Controller_H
 
+#ifdef BUTTONBOX_GCC
+/* GNU68HC12 stdio implements these as macros. Define real device hooks. */
+#include <stdio.h>
+#undef getchar
+#undef putchar
+#endif
+
 #ifndef INTR_ON
 #define INTR_ON()	asm("cli")
 #define INTR_OFF()	asm("sei")

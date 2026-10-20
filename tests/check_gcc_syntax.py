@@ -9,6 +9,7 @@ files = [source/(name+'.c') for name in
 files += [ROOT/'embedded/gcc/runtime.c']
 subprocess.run([os.environ.get('CC','gcc'), '-std=gnu89', '-fsyntax-only',
                 '-DBUTTONBOX_GCC', '-DBUTTONBOX_HOST_SYNTAX',
+                '-include', str(ROOT/'tests/stdio_macro_probe.h'),
                 '-Wno-unknown-pragmas', '-w', '-I', str(source)] +
                [str(p) for p in files], check=True)
 print('PASS: GCC conditional source paths parse (host syntax only)')

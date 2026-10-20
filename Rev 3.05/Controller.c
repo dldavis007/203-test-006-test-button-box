@@ -262,5 +262,3 @@ int ResetProc (void)
 	while (1);					//wait for reset
 	return 0;
 }
-
-

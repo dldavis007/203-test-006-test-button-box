@@ -27,7 +27,7 @@ end = s.index('\n\tif (ButtonBoxData & TeleData_Reset)', begin)
 scan = s[begin:end]
 # Replace only electrical input and asynchronous delay. Keep actual scan order,
 # latching, settings gate, interlocks and all three output assignments.
-condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0b00000111)) )'
+condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )'
 assert scan.count(condition) == 1
 scan = scan.replace(condition, 'if (pressed & (1UL << Sw_Index))')
 scan = scan.replace('while (Timer1);', '/* test clock */')

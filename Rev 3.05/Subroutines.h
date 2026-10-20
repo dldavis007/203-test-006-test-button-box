@@ -126,24 +126,24 @@ char FirstLine;
 #define OscClk 8.0
 
 
-#define DDRA_Init 0b11111111
-#define DDRB_Init 0b10111000
-#define DDRE_Init 0b11111100
-#define DDRJ_Init 0b11000000
-#define DDRM_Init 0b00001000
-#define DDRP_Init 0b00011111
-#define DDRS_Init 0b00001111
-#define DDRT_Init 0b10001111
+#define DDRA_Init 0xFF
+#define DDRB_Init 0xB8
+#define DDRE_Init 0xFC
+#define DDRJ_Init 0xC0
+#define DDRM_Init 0x08
+#define DDRP_Init 0x1F
+#define DDRS_Init 0x0F
+#define DDRT_Init 0x8F
 
 
-#define PORTA_Init 0b00000000
-#define PORTB_Init 0b00000000
-#define PORTE_Init 0b00000000
-#define PTJ_Init 0b11000000
-#define PTM_Init 0b00000000
-#define PTP_Init 0b00010001
-#define PTS_Init 0b00000000
-#define PTT_Init 0b10001110
+#define PORTA_Init 0x00
+#define PORTB_Init 0x00
+#define PORTE_Init 0x00
+#define PTJ_Init 0xC0
+#define PTM_Init 0x00
+#define PTP_Init 0x11
+#define PTS_Init 0x00
+#define PTT_Init 0x8E
 
 
 #define ATD0DIEN_Init 0x00
@@ -192,7 +192,7 @@ char FirstLine;
 
 #define UpdateMainTime 250
 
-#define PWME_Init 0b10100000
+#define PWME_Init 0xA0
 #define PWMPOL_Init 0xff
 #define PWMCLK_Init 0xff
 #define PWMPRCLK_Init 0x11

@@ -50,13 +50,13 @@ void CANRxISR(void) BB_ISR;
 
 
 
-#define TIOS_Init 0b00001001
-#define TSCR1_Init 0b10000000
-#define TCTL1_Init 0b00000000
-#define TCTL2_Init 0b00000000
-#define TCTL3_Init 0b00000000
-#define TCTL4_Init 0b00000000
-#define TIE_Init 0b00001001
+#define TIOS_Init 0x09
+#define TSCR1_Init 0x80
+#define TCTL1_Init 0x00
+#define TCTL2_Init 0x00
+#define TCTL3_Init 0x00
+#define TCTL4_Init 0x00
+#define TIE_Init 0x09
 #define TSCR2_Init 0x05
 
 
