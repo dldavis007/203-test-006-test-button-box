@@ -128,11 +128,42 @@ SECTIONS {
   .debug_loc 0 : { *(.debug_loc) }
   .debug_aranges 0 : { *(.debug_aranges) }
   /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }
-  ASSERT(__data_load + __data_size <= 0xFF00, "Flash data initializer overflow")
-  ASSERT(__bss_end <= 0x3B00, "Less than 1280 bytes remain for stack")
-  ASSERT(SIZEOF(.vectors) == 128, "Incorrect interrupt vector table size")
 }
 ''' % (entries(banks[0]), entries(banks[1]), entries(banks[2]))
+
+
+def validate_final_image(text):
+    """Enforce target memory bounds without legacy ld ASSERT/-Map bugs."""
+    rows = {}
+    pattern = r'^\s*\d+\s+(\S+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+'
+    for line in text.splitlines():
+        match = re.match(pattern, line)
+        if match:
+            rows[match[1]] = tuple(int(match[i], 16) for i in (2, 3, 4))
+    required = ['.text_low', '.text_window', '.text_high', '.noinit', '.data', '.bss', '.vectors']
+    for name in required:
+        if name not in rows:
+            raise RuntimeError('Final memory validation: missing section ' + name)
+    for name, low, high in [('.text_low', 0x4000, 0x8000),
+                            ('.text_window', 0x8000, 0xC000),
+                            ('.text_high', 0xC000, 0xFF00)]:
+        size, vma, lma = rows[name]
+        if vma < low or vma + size > high or lma != vma:
+            raise RuntimeError('Final memory validation: Flash range error for ' + name)
+    size, vma, lma = rows['.vectors']
+    if (size, vma, lma) != (128, 0xFF80, 0xFF80):
+        raise RuntimeError('Final memory validation: incorrect vector address/size')
+    persistent, noinit, _ = rows['.noinit']
+    data_size, data, data_load = rows['.data']
+    bss_size, bss, _ = rows['.bss']
+    if persistent != 20 or noinit != 0x2000:
+        raise RuntimeError('Final memory validation: reset-persistent storage moved')
+    if not (noinit + persistent <= data <= data + data_size <= bss <= bss + bss_size <= 0x3B00):
+        raise RuntimeError('Final memory validation: RAM overlap or less than 1280 stack bytes')
+    high_size, high_vma, _ = rows['.text_high']
+    if not (high_vma + high_size <= data_load and data_load + data_size <= 0xFF00):
+        raise RuntimeError('Final memory validation: Flash initializer overlaps code/configuration')
+    print('PASS: final Flash ranges, initialized RAM, 1280-byte stack reserve and 128-byte vectors')
 
 
 def pruning_linker_script(info):
@@ -253,6 +284,9 @@ def main():
     (BUILD/'buttonbox.ld').write_text(linker_script(layout(info)))
     print(run([gcc] + flags + ['-nostdlib', '-Wl,-T,buttonbox.ld', '-Wl,--gc-sections', '-Wl,-Map,buttonbox.map',
                               'merged.o', '-o', 'buttonbox.elf'], cwd=BUILD))
+    final_headers = run([tool('objdump'), '-h', BUILD/'buttonbox.elf'])
+    (BUILD/'final_sections.txt').write_text(final_headers)
+    validate_final_image(final_headers)
     print(run([tool('objcopy'), '-O', 'srec', BUILD/'buttonbox.elf', BUILD/'buttonbox.s19']))
     print(run([tool('size'), '-A', BUILD/'buttonbox.elf']))
     print(run([tool('objdump'), '-h', '-f', BUILD/'buttonbox.elf']))

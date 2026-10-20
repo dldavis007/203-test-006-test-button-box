@@ -41,9 +41,7 @@ class LayoutTests(unittest.TestCase):
         self.assertIn('ORIGIN = 0x4000', script)
         self.assertIn('ORIGIN = 0xC000', script)
         self.assertIn('ORIGIN = 0x8000', script)
-        self.assertIn('__data_load + __data_size <= 0xFF00', script)
-        self.assertIn('__bss_end <= 0x3B00', script)
-        self.assertIn('SIZEOF(.vectors) == 128', script)
+        self.assertNotIn('ASSERT(', script)
 
     def test_reported_41kb_image_can_use_static_window(self):
         flags = 'ALLOC, LOAD, READONLY, CODE'
@@ -65,6 +63,31 @@ class LayoutTests(unittest.TestCase):
             build.layout(base + [('.page0', 10, 2, flags)])
         with self.assertRaises(RuntimeError):
             build.layout([('.text.foo', 10, 2, flags)])
+
+class FinalMemoryTests(unittest.TestCase):
+    def headers(self, **changes):
+        rows = {'.text_low': (0x2000,0x4000,0x4000),
+                '.text_window': (0x2000,0x8000,0x8000),
+                '.text_high': (0x2000,0xC000,0xC000),
+                '.noinit': (20,0x2000,0x2000),
+                '.data': (0x100,0x2014,0xE000),
+                '.bss': (0x1700,0x2114,0x2114),
+                '.vectors': (128,0xFF80,0xFF80)}
+        rows.update(changes)
+        return '\n'.join('%d %s %08x %08x %08x 00000000 2**0' %
+                         (i,n,z,v,l) for i,(n,(z,v,l)) in enumerate(rows.items()))
+
+    def test_valid_image(self):
+        build.validate_final_image(self.headers())
+
+    def test_reject_overflow_vectors_and_overlap(self):
+        for change in [{'.text_window': (0x4001,0x8000,0x8000)},
+                       {'.vectors': (126,0xFF80,0xFF80)},
+                       {'.data': (0x100,0x2014,0xFE80)},
+                       {'.bss': (0x2000,0x2114,0x2114)},
+                       {'.data': (0x100,0x2000,0xE000)}]:
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                build.validate_final_image(self.headers(**change))
 
 class PruningLinkTests(unittest.TestCase):
     @unittest.skipUnless(build.shutil.which('ld') and build.shutil.which('objdump') and build.shutil.which('gcc'), 'GNU host tools required')

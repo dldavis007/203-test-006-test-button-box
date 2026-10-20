@@ -154,3 +154,10 @@ ASSERT expressions were removed too, avoiding an old ASSERT/-Map interaction.
 The actual firmware still uses its checked Flash-to-RAM initialization image
 and retains the final memory/vector assertions.
 Reference: https://ecos.sourceware.org/ml/binutils/2005-08/msg00361.html
+
+The same ldexp.c:745 crash then occurred in the final link. Final-script ASSERT
+commands are now replaced by post-link Python checks of the actual ELF section
+addresses, load addresses and sizes. These reject Flash/window overflow, vector
+size/address errors, RAM overlap, misplaced reset-persistent storage, insufficient
+stack reserve and initializer overlap with Flash configuration bytes. Validation
+runs before S19 or NoICE session generation; failure removes the ELF too.
