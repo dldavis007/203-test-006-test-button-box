@@ -2,6 +2,8 @@
 #include "mc9s12a128.h"
 #include "Subroutines.h"
 
+volatile unsigned char EEWriteStatus;
+
 void EEInit ( void )
 {
  	 ECLKDIV = (char)(OscClk * (5 + Tbus));
@@ -24,6 +26,9 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 int i, j, TmpData = 0;
 	 char *tempAddr;
 	 char tempArray[128];
+     EEWriteStatus = 0;
+     while (!(ESTAT & ESTAT_CCIF));
+     ESTAT = ESTAT_ERRORS; /* Clear latched ACCERR/PVIOL before a new sequence. */
 	 
      
 	 
@@ -69,10 +74,20 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
      for (i=0; i<j; i += 4, WriteAddr +=2 )
      {
-		 *WriteAddr = TmpData;
+		 *(volatile unsigned int *)WriteAddr = (unsigned int)TmpData;
 		 ECMD = SecErase;
 		 ESTAT = ESTAT_CBEIF;
-		 while (!(ESTAT & ESTAT_CBEIF) );
+		 if (ESTAT & ESTAT_ERRORS)
+         {
+             EEWriteStatus = ESTAT & ESTAT_ERRORS;
+             return;
+         }
+         while (!(ESTAT & ESTAT_CCIF));
+         if (ESTAT & ESTAT_ERRORS)
+         {
+             EEWriteStatus = ESTAT & ESTAT_ERRORS;
+             return;
+         }
 	 }
 	 
 
@@ -84,11 +99,31 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
      for (i=0;i<j;i+=2, WriteAddr++)
      {
 	  	 TmpData = EEPROMWord(tempArray[i], tempArray[i+1]);
-		 *WriteAddr = TmpData;
+		 *(volatile unsigned int *)WriteAddr = (unsigned int)TmpData;
 		 ECMD = WordPrg;
 		 ESTAT = ESTAT_CBEIF;
-		 while (!(ESTAT & ESTAT_CBEIF) );
+		 if (ESTAT & ESTAT_ERRORS)
+         {
+             EEWriteStatus = ESTAT & ESTAT_ERRORS;
+             return;
+         }
+         while (!(ESTAT & ESTAT_CCIF));
+         if (ESTAT & ESTAT_ERRORS)
+         {
+             EEWriteStatus = ESTAT & ESTAT_ERRORS;
+             return;
+         }
      }
 
+
+    /* Never report a successful save solely because the command buffer emptied. */
+    for (i = 0; i < ArraySize; ++i)
+    {
+        if (((volatile unsigned char *)tempAddr)[i] != (unsigned char)WriteData[i])
+        {
+            EEWriteStatus = 1;
+            return;
+        }
+    }
 
 }

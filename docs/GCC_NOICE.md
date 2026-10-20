@@ -187,3 +187,9 @@ borrowed from the high byte and corrupted that record's flags/checksum.
 Host regression covers all four settings through the actual word-packing helper,
 plus OFF latching/transmission and normal key routing. Verify power-cycle
 persistence and LED indications on hardware after exiting the menu to save.
+
+EEPROM commands now use volatile word writes, clear stale ACCERR/PVIOL flags,
+and wait for CCIF (0x40), rather than only buffer-empty (0x80). Each write is
+read back. NoICE watches include EEWriteStatus: 0 means the last EEWrite passed
+readback, 1 means verification failed, and bits 0x10/0x20 report EEPROM access
+error/protection violation. Check this after menu exit if settings do not save.

@@ -22,6 +22,7 @@ STAB_RE = re.compile(
 NM_RE = re.compile(r"^\s*([0-9A-Fa-f]+)\s+[A-Za-z]\s+(\S+)\s*$")
 
 ESSENTIAL_WATCHES = [
+    ("EEWriteStatus", "%X08"),
     ("ButtonBoxData", "%X16"),
     ("TC0_RCVD_Data", "%X16"),
     ("tempData", "%X16"),
