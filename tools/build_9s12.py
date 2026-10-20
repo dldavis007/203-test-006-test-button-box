@@ -129,6 +129,41 @@ SECTIONS {
 ''' % (entries(banks[0]), entries(banks[1]))
 
 
+def pruning_linker_script(info):
+    """A diagnostic full link permits GC on old ld without combining it with -r.
+
+    Keep output section names so the retained set can be mapped back to merged.o.
+    Its temporary contiguous Flash map is never used for the delivered firmware.
+    """
+    allocated = [(n, z, a, f) for n, z, a, f in info if z and 'ALLOC' in f and not n.startswith(('.note', '.eh_frame'))]
+    code = [n for n, z, a, f in allocated if n.startswith(('.text', '.rodata', '.tramp'))]
+    data = [n for n, z, a, f in allocated if n.startswith(('.data', '.sdata'))]
+    bss = [n for n, z, a, f in allocated if n.startswith(('.bss', '.sbss', '.softregs'))]
+    known = set(code + data + bss + ['.startup', '.vectors', '.noinit'])
+    unknown = [n for n, z, a, f in allocated if n not in known]
+    if unknown:
+        raise RuntimeError('Unmapped allocated sections in pruning pass: ' + ', '.join(unknown))
+    lines = ['OUTPUT_FORMAT("elf32-m68hc12")', 'OUTPUT_ARCH(m68hc12)',
+             'ENTRY(_start)', 'SECTIONS {',
+             ' .startup 0x4000 : { KEEP(merged.o(.startup)) }']
+    lines += [' %s : { merged.o(%s) }' % (name, name) for name in code]
+    lines += [' . = ALIGN(2); __data_load = .;',
+              ' .noinit 0x2000 (NOLOAD) : { KEEP(merged.o(.noinit)) }',
+              ' . = ALIGN(2); __data_start = .;']
+    lines += [' %s : AT(__data_load + (ADDR(%s) - __data_start)) { merged.o(%s) }'
+              % (name, name, name) for name in data]
+    lines += [' . = ALIGN(2); __data_size = . - __data_start;',
+              ' __bss_start = .;']
+    lines += [' %s (NOLOAD) : { merged.o(%s) }' % (name, name) for name in bss]
+    lines += [' . = ALIGN(2); __bss_size = . - __bss_start;',
+              ' .vectors 0xFF80 : { KEEP(merged.o(.vectors)) }',
+              ' .stab 0 : { *(.stab) }', ' .stabstr 0 : { *(.stabstr) }',
+              ' /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }',
+              ' ASSERT(__data_load + __data_size <= 0xFF00, "Pruned image exceeds diagnostic 48KB map")',
+              '}']
+    return '\n'.join(lines) + '\n'
+
+
 def check_near_assembly(text):
     # Old GNU68HC12 accepts -mlong-calls but not its negative spelling.
     # Verify the default instead of passing an unsupported option.
@@ -152,7 +187,7 @@ def unresolved_runtime_symbols(text):
 def main():
     BUILD.mkdir(parents=True, exist_ok=True)
     # Remove stale deliverables before any compiler/compile/link failure.
-    for pattern in ('*.elf', '*.s19', '*.noi', '*.map', '*.o', '*.ld'):
+    for pattern in ('*.elf', '*.s19', '*.noi', '*.map', '*.o', '*.ld', '*.probe'):
         for file in BUILD.glob(pattern):
             file.unlink()
     toolbin = os.environ.get('GNU68HC12_BIN', r'C:\Toolchains\GNU68HC12\bin')
@@ -188,7 +223,7 @@ def main():
         objects.append(obj)
     # Resolve libc/libgcc into a relocatable object so their real section sizes
     # participate in fixed-bank layout (rather than guessing library footprint).
-    print(run([gcc] + flags + ['-nostdlib', '-Wl,-r', '-Wl,--gc-sections,-u,_start,-u,interrupt_vectors', '-Wl,-Map,merged.map', '-o', 'merged.o'] +
+    print(run([gcc] + flags + ['-nostdlib', '-Wl,-r,-d', '-Wl,-Map,merged.map', '-o', 'merged.o'] +
               objects + ['-Wl,--start-group', '-lc', '-lgcc', '-Wl,--end-group'], cwd=BUILD))
     undefined = unresolved_runtime_symbols(run([tool('nm'), '-u', BUILD/'merged.o'])).strip()
     if undefined:
@@ -196,6 +231,15 @@ def main():
     section_output = run([tool('objdump'), '-h', BUILD/'merged.o'])
     (BUILD/'sections.txt').write_text(section_output)
     info = sections(section_output)
+    (BUILD/'pruning.ld').write_text(pruning_linker_script(info))
+    print(run([gcc] + flags + ['-nostdlib', '-Wl,-T,pruning.ld', '-Wl,--gc-sections',
+                              '-Wl,-Map,pruning.map', 'merged.o', '-o', 'pruning.probe'], cwd=BUILD))
+    retained_output = run([tool('objdump'), '-h', BUILD/'pruning.probe'])
+    (BUILD/'retained_sections.txt').write_text(retained_output)
+    retained = {name for name, size, align, attrs in sections(retained_output)
+                if size and 'ALLOC' in attrs}
+    info = [entry for entry in info if entry[0] in retained]
+    (BUILD/'pruning.probe').unlink()
     rom_bytes = sum(size for name, size, align, attrs in info
                     if 'ALLOC' in attrs and name.startswith(('.text', '.rodata', '.data', '.sdata', '.startup', '.vectors')))
     print('Post-pruning code/constants/data/vector bytes:', rom_bytes)
@@ -217,7 +261,7 @@ if __name__ == '__main__':
         sys.exit(main())
     except (OSError, subprocess.CalledProcessError, RuntimeError) as exc:
         # Never leave loadable artifacts after any failed build stage.
-        for pattern in ('*.elf', '*.s19', '*.noi'):
+        for pattern in ('*.elf', '*.s19', '*.noi', '*.probe'):
             for file in BUILD.glob(pattern):
                 file.unlink()
         print('[ERROR]', exc, file=sys.stderr)

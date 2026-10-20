@@ -127,8 +127,12 @@ parsing, locale or high precision). Integer/menu output, battery strings,
 variable widths and serial output are compared against host libc in tests.
 ImageCraft retains its original library functions.
 
-The relocatable link now prunes unused sections with explicit startup/vector
-roots before size packing. The final link also enables garbage collection.
+The relocatable link resolves libraries without garbage collection (the old
+linker rejects combining --gc-sections with -r). A separate diagnostic full link
+prunes unused sections with startup/vector roots and preserves their names.
+Only those retained sections enter fixed-bank size packing. The delivered final
+link also enables garbage collection. The temporary diagnostic image is never
+loaded by NoICE and is deleted before generating the final firmware.
 The build saves sections.txt and merged.map for actual target-footprint review.
 The Windows cross-build must still establish the resulting size; no extra Flash
 addresses or PPAGE assumptions have been enabled by this footprint change.

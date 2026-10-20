@@ -57,6 +57,34 @@ class LayoutTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             build.layout([('.text.foo', 10, 2, flags)])
 
+class PruningLinkTests(unittest.TestCase):
+    @unittest.skipUnless(build.shutil.which('ld') and build.shutil.which('objdump') and build.shutil.which('gcc'), 'GNU host tools required')
+    def test_full_link_prunes_before_layout_without_relocatable_gc(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d)
+            (folder/'input.c').write_text(
+                'volatile int sink; int used(void) { return 7; }\n'
+                'int unused(void) { return 8; }\n'
+                'void _start(void) __attribute__((section(".startup")));\n'
+                'void _start(void) { sink = used(); }\n'
+                'char vectors[128] __attribute__((section(".vectors")));\n'
+                'char persistent[20] __attribute__((section(".noinit")));\n')
+            subprocess.run(['gcc','-fno-pie','-fno-asynchronous-unwind-tables','-ffunction-sections',
+                            '-fdata-sections','-c','input.c','-o','merged.o'],cwd=folder,check=True)
+            info = build.sections(subprocess.check_output(['objdump','-h','merged.o'],cwd=folder,text=True))
+            script = build.pruning_linker_script(info)
+            # Same section/GC script, using host machine format for this test.
+            script = script.replace('OUTPUT_FORMAT("elf32-m68hc12")','').replace('OUTPUT_ARCH(m68hc12)','')
+            (folder/'pruning.ld').write_text(script)
+            subprocess.run(['ld','--gc-sections','-T','pruning.ld','merged.o','-o','pruning.probe'],cwd=folder,check=True)
+            live = build.sections(subprocess.check_output(['objdump','-h','pruning.probe'],cwd=folder,text=True))
+            names = {row[0] for row in live}
+            self.assertIn('.startup', names)
+            self.assertIn('.text.used', names)
+            self.assertIn('.vectors', names)
+            self.assertNotIn('.text.unused', names)
+
 class FailureTests(unittest.TestCase):
     def test_missing_compiler_removes_stale_outputs(self):
         with tempfile.TemporaryDirectory() as d:
