@@ -1,7 +1,7 @@
 name: Button box regression
 on:
   push:
-    branches: [main, dev, cleanup]
+    branches: [main, dev, cleanup, startup-diagnosis]
   pull_request:
 jobs:
   regression:
