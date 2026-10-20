@@ -103,3 +103,9 @@ receive interrupts. A host test does not validate an interrupt path.
 
 GCC 3.3.6 rejects `-mno-long-calls`; the build omits that option and verifies
 JSR/BSR and RTS in generated probe assembly before compiling the application.
+
+The Windows GCC 3.3.6 cross-build hit an internal D_OR_S_REGS/umulqihi3
+register-spill error in optimized MCO_ProcessStack. The build overrides -Os
+with -O0 for mco.c only. Other modules remain size-optimized. This may increase
+Flash use; the existing link-layout checks still enforce all bounds. The next
+Windows build must establish whether this compiler workaround is sufficient.

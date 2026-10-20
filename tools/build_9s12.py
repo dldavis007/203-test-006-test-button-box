@@ -170,7 +170,13 @@ def main():
     files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/startup.S']
     for source in files:
         obj = BUILD/(source.stem+'.o')
-        print(run([gcc] + flags + ['-c', source.name, '-o', obj], cwd=source.parent))
+        compile_flags = list(flags)
+        if source.name == 'mco.c':
+            # GCC 3.3.6 HC12 spills fail in optimized MCO_ProcessStack
+            # (umulqihi3/D_OR_S_REGS). Keep the workaround local to this TU.
+            compile_flags.append('-O0')
+            print('Using -O0 for mco.c to avoid the GCC 3.3.6 register-spill bug.')
+        print(run([gcc] + compile_flags + ['-c', source.name, '-o', obj], cwd=source.parent))
         objects.append(obj)
     # Resolve libc/libgcc into a relocatable object so their real section sizes
     # participate in fixed-bank layout (rather than guessing library footprint).
