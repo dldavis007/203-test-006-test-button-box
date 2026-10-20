@@ -1,0 +1,28 @@
+[Files]
+..\Src\Controller.c
+..\Src\Flash.c
+..\Src\Command.c
+..\Src\EEProm.c
+..\Src\mco.c
+..\Src\user.c
+..\Src\mcohw.c
+..\Src\Interrupts.c
+..\Src\Subroutines.c
+[Headers]
+..\Include\Controller.h
+..\Include\Command.h
+..\Include\EEProm.h
+..\Include\Flash.h
+..\Include\vectors.h
+..\Include\hc12def.h
+..\Include\mc9s12a128.h
+..\Include\mcohw.h
+..\Include\nodecfg.h
+..\Include\procimg.h
+..\Include\mco.h
+..\Include\Interrupts.h
+..\Include\Subroutines.h
+[Documents]
+..\..\Documents\Legacy\MCO Reference.txt
+..\..\Documents\Legacy\Revision History.txt
+..\..\Documents\Legacy\2-wire IDs and Data.txt

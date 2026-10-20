@@ -57,8 +57,8 @@ int main(void) {
             folder = Path(d)
             (folder/'test.c').write_text(source)
             binary = folder/('test.exe' if os.name == 'nt' else 'test')
-            subprocess.run([os.environ.get('CC','gcc'), '-std=c89', '-Wall', '-Wextra',
-                            str(folder/'test.c'), str(ROOT/'embedded/gcc/compact_io.c'),
+            subprocess.run([os.environ.get('CC','gcc'), '-std=c89', '-Wall', '-Wextra', '-I', str(ROOT/'Embedded/Include'),
+                            str(folder/'test.c'), str(ROOT/'Embedded/Src/compact_io.c'),
                             '-o', str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
 

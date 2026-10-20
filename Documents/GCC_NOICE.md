@@ -24,8 +24,8 @@ $env:GNU68HC12_BIN = 'C:\Toolchains\GNU68HC12\bin'
 $env:NOICE_EXE = 'C:\Program Files (x86)\NoICE\bin\NoICE12.exe'
 ```
 
-Build + Load rebuilds before launching, then loads the fresh ELF and source
-mappings. The generated session halts, maps RAM/EEPROM, loads the ELF and sets
+Build + Load rebuilds before launching, then loads the fresh page-qualified S-record and source
+mappings. The generated session halts, maps RAM/EEPROM, loads the S-record and sets
 PC to _start. It does not automatically run the target. Press Run in NoICE.
 Configure the correct MC9S12A128 BDM target, enable Use PPAGE, Flash burner and hardware breakpoints
 in NoICE. Keep the NoICE Virtual UART disabled: this firmware does not reserve

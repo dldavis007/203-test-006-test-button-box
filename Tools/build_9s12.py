@@ -8,8 +8,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'Rev 3.05'
-STATIC_PAGE = json.loads((ROOT/'embedded/gcc/target.json').read_text())['static_ppage']
+SOURCE = ROOT / 'Embedded/Src'
+INCLUDE = ROOT / 'Embedded/Include'
+STATIC_PAGE = json.loads((ROOT/'Embedded/Linker/target.json').read_text())['static_ppage']
 BUILD = ROOT / 'build' / '9s12'
 SOURCES = ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines']
 
@@ -240,14 +241,14 @@ def main():
     flags = ['-m68hc12', '-mshort', '-fshort-double',
              '-std=gnu89', '-ffreestanding', '-Os', '-gstabs+', '-fsigned-char', '-fno-common',
              '-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections',
-             '-DBUTTONBOX_GCC', '-DBUTTONBOX_STATIC_PAGE=0x%02X' % STATIC_PAGE, '-Wall', '-W', '-I', str(SOURCE)]
+             '-DBUTTONBOX_GCC', '-DBUTTONBOX_STATIC_PAGE=0x%02X' % STATIC_PAGE, '-Wall', '-W', '-I', str(INCLUDE)]
     probe = BUILD/'call_abi_probe.c'
     probe.write_text('extern unsigned int bb_external(unsigned int);\n'
                      'unsigned int bb_probe(unsigned int x) { return bb_external(x) + 1; }\n')
     print(run([gcc] + flags + ['-S', probe, '-o', BUILD/'call_abi_probe.s']))
     check_near_assembly((BUILD/'call_abi_probe.s').read_text())
     objects = []
-    files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'embedded/gcc/runtime.c', ROOT/'embedded/gcc/compact_io.c', ROOT/'embedded/gcc/startup.S']
+    files = [SOURCE/(name+'.c') for name in SOURCES] + [ROOT/'Embedded/Src/runtime.c', ROOT/'Embedded/Src/compact_io.c', ROOT/'Embedded/Src/startup.S']
     for source in files:
         obj = BUILD/(source.stem+'.o')
         compile_flags = list(flags)
@@ -290,7 +291,7 @@ def main():
     print(run([tool('objcopy'), '-O', 'srec', BUILD/'buttonbox.elf', BUILD/'buttonbox.s19']))
     print(run([tool('size'), '-A', BUILD/'buttonbox.elf']))
     print(run([tool('objdump'), '-h', '-f', BUILD/'buttonbox.elf']))
-    print(run([sys.executable, ROOT/'tools/stabs_to_noice.py', tool('objdump'),
+    print(run([sys.executable, ROOT/'Tools/stabs_to_noice.py', tool('objdump'),
                BUILD/'buttonbox.elf', SOURCE/'Controller.c', BUILD/'buttonbox.noi',
                BUILD/'buttonbox_debug.noi']))
     print('9S12 build complete. Bench validation is required before field use.')

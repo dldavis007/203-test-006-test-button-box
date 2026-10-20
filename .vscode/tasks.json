@@ -7,7 +7,7 @@
       "type": "process",
       "command": "python",
       "args": [
-        "${workspaceFolder}/tests/run_regression.py"
+        "${workspaceFolder}/Tests/run_regression.py"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -31,7 +31,7 @@
       "type": "process",
       "command": "python",
       "args": [
-        "${workspaceFolder}/tools/build_9s12.py"
+        "${workspaceFolder}/Tools/build_9s12.py"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -47,7 +47,7 @@
     },
     {
       "label": "Build + Load NoICE",
-      "detail": "Build firmware, then open NoICE and load the fresh ELF. Target stays halted until Run.",
+      "detail": "Build firmware, then open NoICE and load the fresh page-qualified S-record. Target stays halted until Run.",
       "type": "shell",
       "command": "${workspaceFolder}\\build_and_debug_noice.bat",
       "options": {

@@ -1,7 +1,23 @@
 # 203-TEST-006 Button Box
 
-The restored Rev 3.05 application is in `Rev 3.05/`. Development is on `dev`;
-`main` retains the imported baseline.
+The Rev 3.05 application is in `Embedded/Src` with headers in `Embedded/Include`.
+`dev` retains the hardware-tested baseline at `775691e`; `cleanup` contains the
+folder reorganization and separately committed corrections. `main` retains the
+imported baseline.
+
+## Project layout
+
+| Folder | Contents |
+| --- | --- |
+| `Embedded/Src` | Application C, GCC runtime and startup assembly |
+| `Embedded/Include` | Application and device headers |
+| `Embedded/Linker` | Target memory configuration; linker scripts are generated |
+| `Embedded/ImageCraft` | Current IDE project referencing the shared source |
+| `Tools` | GCC build and NoICE mapping scripts |
+| `Tests` | Host regressions and build-tool checks |
+| `Documents` | Build instructions, cleanup notes and original reference text |
+| `Legacy/ImageCraft` | Unmodified imported project files and build artifacts |
+| `build/9s12` | Generated output, excluded from Git |
 
 ## Independent function settings
 
@@ -25,20 +41,20 @@ compiler executable). From PowerShell:
 .\run_regression.bat
 ```
 
-Or run `python tests/run_regression.py`. The runner extracts the actual keypad
+Or run `python Tests/run_regression.py`. The runner extracts the actual keypad
 scan and output encoder from Subroutines.c, injects physical key samples, and
 compiles/runs assertions. It also tests the actual function-settings codec.
 No PC_SIDE application or interactive simulation is included.
 
 Tests cover all four enable combinations; F1/F2 navigation output and release;
-function replacement and toggling; held disabled keys; internal-menu routing;
+function replacement and toggling; OFF-mode key routing and LED cross gating; internal-menu routing;
 normal travel/Slow/Stop; controller Slow preservation; erased and invalid saved strings;
 and all four settings round trips. They run with signed and unsigned plain char.
 Host unsigned int remains host-sized: these are not processor ABI tests.
 
 ## VS Code
 
-Open the repository root (the folder containing `.vscode` and `Rev 3.05`).
+Open the repository root (the folder containing `.vscode` and `Embedded`).
 Press **Ctrl+Shift+B** to run the default **Build-Run GCC** task, or choose
 **Terminal > Run Task > Build-Run GCC**. It compiles and runs host regression
 tests, not the embedded application. Python and host GCC must be on PATH.
@@ -58,7 +74,9 @@ Exit the entire internal menu to save, then power-cycle to verify persistence.
 
 ## Embedded builds and NoICE
 
-The existing ImageCraft project is retained. The new GNU68HC12 build compiles
+Open `Embedded/ImageCraft/BUTTONBOX.prj` for the relocated ImageCraft project;
+regenerate its make/dependency files in the IDE. The original project is archived
+under `Legacy/ImageCraft`. The new GNU68HC12 build compiles
 all application sources; it is separate from host regression testing.
 
 From PowerShell in the repository root:
@@ -81,14 +99,14 @@ The build emits `build/9s12/buttonbox.elf`, `.s19`, `.map`, and NoICE `.noi` fil
 It stops before launching NoICE on any compiler, unresolved-symbol, memory-layout
 or debug-map failure and removes stale loadable artifacts.
 
-**Validation status:** host logic regression, legacy EEPROM codec, host syntax
-checks of all GCC source paths, and build-layout tests passed. This environment
-has no GNU68HC12 cross-compiler or NoICE, so no target binary or hardware session
-has been validated here. The first Windows cross-build may expose toolchain or
-library differences; send its full output if it fails. Host syntax checks do not
-check HC12 assembly, ABI, linker execution or target library behavior.
+**Validation status:** host regression, settings codec, source syntax and build-tool
+checks pass. The user verified the pre-cleanup GCC build/load, F1/F2 settings,
+EEPROM persistence and mode LEDs on hardware. The reorganized cleanup branch
+still needs a Windows GNU68HC12 build/load and hardware check. ImageCraft is
+not installed here, so its relocated IDE project needs a local build check.
 
-Tracked DBG/S19/LST files under Rev 3.05 are imported baseline artifacts, not
-builds of dev. Use only fresh build/9s12 artifacts for this GCC workflow.
+Tracked DBG/S19/LST files under `Legacy/ImageCraft` are imported baseline
+artifacts. Use fresh `build/9s12` artifacts for GCC debugging.
 
-See [docs/GCC_NOICE.md](docs/GCC_NOICE.md) for memory layout and bench checks.
+See [Documents/GCC_NOICE.md](Documents/GCC_NOICE.md) for memory layout and bench
+checks, and [Documents/CLEANUP.md](Documents/CLEANUP.md) for cleanup scope.

@@ -9,7 +9,7 @@
 #undef getchar
 #undef putchar
 #include <stdlib.h>
-#include "../embedded/gcc/compact_io.h"
+#include "compact_io.h"
 #endif
 
 #ifndef INTR_ON

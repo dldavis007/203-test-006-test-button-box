@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 
-STATIC_PAGE = json.loads((Path(__file__).resolve().parents[1]/'embedded/gcc/target.json').read_text())['static_ppage']
+STATIC_PAGE = json.loads((Path(__file__).resolve().parents[1]/'Embedded/Linker/target.json').read_text())['static_ppage']
 
 STAB_RE = re.compile(
     r"^\s*\d+\s+(SO|FUN|SLINE)\s+\d+\s+(\d+)\s+([0-9A-Fa-f]+)\s+\d+\s*(.*)$"

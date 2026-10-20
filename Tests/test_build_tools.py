@@ -6,7 +6,7 @@ from unittest.mock import patch
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('build_9s12', ROOT/'tools/build_9s12.py')
+spec = importlib.util.spec_from_file_location('build_9s12', ROOT/'Tools/build_9s12.py')
 build = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build)
 
@@ -135,7 +135,7 @@ class FailureTests(unittest.TestCase):
 
 class NoICEMapTests(unittest.TestCase):
     def test_session_loads_current_srecords_and_stays_halted(self):
-        spec = importlib.util.spec_from_file_location('noice', ROOT/'tools/stabs_to_noice.py')
+        spec = importlib.util.spec_from_file_location('noice', ROOT/'Tools/stabs_to_noice.py')
         noice = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(noice)
         stabs = ("0 SO 0 0 00000000 0 Controller.c\n"
@@ -147,7 +147,7 @@ class NoICEMapTests(unittest.TestCase):
             folder = Path(d)
             (folder/"buttonbox.s19").write_text("S9034000BC\n")
             args = ['stabs_to_noice.py', 'm6811-elf-objdump', str(folder/'buttonbox.elf'),
-                    str(ROOT/'Rev 3.05/Controller.c'), str(folder/'buttonbox.noi'),
+                    str(ROOT/'Embedded/Src/Controller.c'), str(folder/'buttonbox.noi'),
                     str(folder/'buttonbox_debug.noi')]
             with patch.object(noice.sys, 'argv', args), patch.object(noice.subprocess, 'check_output', side_effect=[stabs, symbols]):
                 self.assertEqual(noice.main(), 0)

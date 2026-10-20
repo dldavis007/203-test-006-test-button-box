@@ -1,7 +1,7 @@
 name: Button box regression
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, cleanup]
   pull_request:
 jobs:
   regression:
@@ -11,6 +11,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: python tests/run_regression.py
-      - run: python -m unittest discover -s tests -p 'test_*.py'
-      - run: python tests/check_gcc_syntax.py
+      - run: python Tests/run_regression.py
+      - run: python -m unittest discover -s Tests -p 'test_*.py'
+      - run: python Tests/check_gcc_syntax.py
