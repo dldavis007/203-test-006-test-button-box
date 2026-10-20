@@ -28,6 +28,11 @@ char FlashCmd[] = {0x7b,0x01,0x06,0xc6,0x80,0x7b,0x01,0x05,
 //	FlashWrite ( sizeof (TmpStr2), TmpStr2, intptr );	
 
 
+#ifdef BUTTONBOX_GCC
+/* Called normally (JSR/RTS); this assembly wrapper calls the existing RAM code. */
+extern void BBFlashCommand(unsigned char command);
+#endif
+
 void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 {
  	 //Erases and Writes an array of up to 512 char to Flash
@@ -81,8 +86,12 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
      for (i=0; i<j; i += 512, WriteAddr +=256 )
      {
 		 *WriteAddr = TmpData;
+#ifdef BUTTONBOX_GCC
+        BBFlashCommand(0x40);
+#else
 		 asm ("ldab #0x40");
 		 asm ("jsr _FlashCmd");
+#endif
 //		 FCMD = 0x40;
 //		 FSTAT = FSTAT_CCIF;
 //		 while (!(FSTAT & FSTAT_CCIF) );
@@ -98,8 +107,12 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
      {
 	  	 TmpData = tempArray[i]*256 + tempArray[i+1];
 		 *WriteAddr = TmpData;
+#ifdef BUTTONBOX_GCC
+        BBFlashCommand(0x20);
+#else
 		 asm ("ldab #0x20");
 		 asm ("jsr _FlashCmd");
+#endif
 //		 FCMD = 0x20;
 //		 FSTAT = FSTAT_CCIF;
 //		 while (!(FSTAT & FSTAT_CCIF) );

@@ -38,7 +38,7 @@ macros = '\n'.join(line for line in (SRC/'Interrupts.h').read_text().splitlines(
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
-helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'DecodeFunctionSettings', 'EncodeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable'])
+helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'DecodeFunctionSettings', 'EncodeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
 program = r'''
 #include <assert.h>
 #include <stdio.h>
@@ -88,7 +88,7 @@ void clear(void)
 int main(void)
 {
     unsigned int mode;
-    unsigned char record[4], flags;
+    unsigned char record[4], legacy[20], flags;
     int f1, f2, key;
     const int nav_keys[5] = {4, 16, 9, 11, 10};
     const unsigned int nav_bits[5] = {4, 8, 1, 2, 16};
@@ -99,6 +99,16 @@ int main(void)
     assert(defaultMenuc[1].FunctPtr[2] == ToggleF1Enable);
     assert(defaultMenuc[1].FunctPtr[3] == ToggleF2Enable);
     assert(defaultMenuc[1].FunctPtr[4] == ExitMenu);
+    strcpy(MessageRow, " 12"); strcpy(MessageCol, " 23"); strcpy(SerialNum, "12345");
+    EncodeLegacySettings(legacy);
+    assert(!memcmp(legacy, "xxx", 4));
+    assert(!memcmp(legacy + 4, " 12", 4));
+    assert(!memcmp(legacy + 8, " 23", 4));
+    assert(!memcmp(legacy + 12, "12345", 6));
+    strcpy(MessageRow, "  1"); strcpy(MessageCol, "  1"); strcpy(SerialNum, "-----");
+    DecodeLegacySettings(legacy);
+    assert(!strcmp(MessageRow, " 12") && !strcmp(MessageCol, " 23"));
+    assert(!strcmp(SerialNum, "12345"));
     clear(); ButtonBoxData = TC0_RCVD_Data = TeleData_F1 | TeleData_F2;
     ToggleF1Enable();
     assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, "ON"));

@@ -2,3 +2,8 @@
 *.o
 *.s
 *.lis
+
+# GCC firmware and Python caches
+/build/
+__pycache__/
+*.pyc

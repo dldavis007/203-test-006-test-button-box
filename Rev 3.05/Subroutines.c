@@ -6,7 +6,7 @@
 #include "Controller.h"
 #include "mc9s12a128.h"
 #include "Interrupts.h"
-#include "command.h"
+#include "Command.h"
 #include "mcohw.h"
 #include "mco.h"
 #include "EEProm.h"
@@ -15,12 +15,12 @@
 extern char _bss_end[20];
 
 
-extern char Gen_Flags;
+extern volatile char Gen_Flags;
 
 extern char SIN0Buf[SIN0BufLen];
-extern int SIN0Bufptr;
+extern volatile int SIN0Bufptr;
 extern char SOUT0Buf[SOUT0BufLen];
-extern int SOUT0Bufptr;
+extern volatile int SOUT0Bufptr;
 
 extern char SIN1Buf[SIN1BufLen];
 extern int SIN1Bufptr;
@@ -35,12 +35,12 @@ extern CAN_MSG gTxSDO;
 extern CAN_MSG gRxCAN;
 CAN_MSG gTxMsg;
 
-extern unsigned int Timer1;
-extern unsigned int Timer2;
-extern int CntrSwTimeOut;
-extern unsigned int DeBounceTimer;
-extern unsigned int MenuTimer;
-extern unsigned int ToggleTimer;
+extern volatile unsigned int Timer1;
+extern volatile unsigned int Timer2;
+extern volatile int CntrSwTimeOut;
+extern volatile unsigned int DeBounceTimer;
+extern volatile unsigned int MenuTimer;
+extern volatile unsigned int ToggleTimer;
 extern char Seconds;
 
 unsigned char ExSlowPushed;
@@ -54,16 +54,16 @@ unsigned int Third_byte;
 char Cntrl_Slow_Flag;
 
 char SPI0InBuf[2];
-int SPI0InBufptr = 0;
+volatile int SPI0InBufptr = 0;
 char SPI0OutBuf[2];
-int SPI0OutBufptr = 0;
+volatile int SPI0OutBufptr = 0;
 
 int dispPBJTFlag = 0;
 
 char DispBuf[DispBufLen];          //used to display keyboard input
 int DispBufptr = 0;                //index for DispBuf[481]
 
-int ReActivate_Timer;
+volatile int ReActivate_Timer;
 
 char power_on = 1;
 char Ext_Menu_xmitd;
@@ -105,9 +105,9 @@ char internal_menu;
 
 
 
-char CursorDownFlag;
-char CursorUpFlag;
-char SelectFlag;
+signed char CursorDownFlag;
+signed char CursorUpFlag;
+signed char SelectFlag;
 char Trigger_DeviceFlag;
 
 int cam_list[10];   //each elements holds a 2 byte camera address
@@ -1061,6 +1061,26 @@ int ToggleF2Enable(void)
     return 0;
 }
 
+#ifdef BUTTONBOX_GCC
+void EncodeLegacySettings(unsigned char legacy[20])
+{
+    memcpy(legacy, FirstVar, 4);
+    memcpy(legacy + 4, MessageRow, 4);
+    memcpy(legacy + 8, MessageCol, 4);
+    memcpy(legacy + 12, SerialNum, 6);
+    legacy[18] = legacy[19] = 0;
+}
+
+void DecodeLegacySettings(const unsigned char legacy[20])
+{
+    memcpy(FirstVar, legacy, 4);
+    memcpy(MessageRow, legacy + 4, 4);
+    memcpy(MessageCol, legacy + 8, 4);
+    memcpy(SerialNum, legacy + 12, 6);
+    FirstVar[3] = MessageRow[3] = MessageCol[3] = SerialNum[5] = 0;
+}
+#endif
+
 void Load_Variables (void)
 {
  	 char *VarRAMPntr, *VarEEPROMPntr;
@@ -1068,12 +1088,17 @@ void Load_Variables (void)
      unsigned char k;
 	 VarRAMPntr = FirstVar;
 	 VarEEPROMPntr = (char *)0x0800;
-	 if ( *VarEEPROMPntr != 0xff )
+	 if ( (unsigned char)*VarEEPROMPntr != 0xff )
 	 {
-	     do
-	 	 {
-	         *VarRAMPntr++ = *VarEEPROMPntr++; 
-	 	 }while ( VarRAMPntr != NullVar );
+#ifdef BUTTONBOX_GCC
+         /* Preserve the ImageCraft EEPROM offsets without linker-order assumptions. */
+         DecodeLegacySettings((const unsigned char *)0x0800);
+#else
+         do
+         {
+             *VarRAMPntr++ = *VarEEPROMPntr++;
+         }while ( VarRAMPntr != NullVar );
+#endif
          for (k = 0; k < 4; ++k)
              record[k] = ((volatile unsigned char *)0x0880)[k];
          DecodeFunctionSettings(record);
@@ -1090,7 +1115,15 @@ void Save_Variables ( void )
 {
     unsigned char record[4];
     EncodeFunctionSettings(record);
+#ifdef BUTTONBOX_GCC
+    {
+        unsigned char legacy[20];
+        EncodeLegacySettings(legacy);
+        EEWrite(20, (char *)legacy, (int *)0x0800);
+    }
+#else
     EEWrite ( 128, FirstVar, (int *)0x0800 );
+#endif
     Timer2 = 0.05 * RTI_One_Sec;
     while (Timer2);
     EEWrite ( 4, (char *)record, (int *)0x0880 );
@@ -2642,7 +2675,7 @@ void doevents ( void )
 	//if the 2-Wire system is working, start updating the 2-Wire Stack
 	if ( !(Gen_Flags & Gen_Flags_No2Wire) )
 	{
-		if ( power_on && ( ButtonBoxData & TeleData_RotCCW || !strcmp(_bss_end,"Cntrl")) )
+		if ( power_on && ( ButtonBoxData & TeleData_RotCCW || !strncmp(_bss_end,"Cntrl",6)) )
 		{
 	        controller_mode = true;
 			strcpy(_bss_end,"Cntrl");				

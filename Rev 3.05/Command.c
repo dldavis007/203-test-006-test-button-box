@@ -12,9 +12,9 @@
 extern char SIN0Buf[];
 extern char SOUT1Buf[];
 extern int SOUT1Bufptr;
-extern char Gen_Flags;
+extern volatile char Gen_Flags;
 unsigned int jmpAddress;
-extern unsigned int Timer1;
+extern volatile unsigned int Timer1;
 
 
 extern char SW1[];
@@ -92,10 +92,14 @@ void command ( char CmdBuf[] )
 			 
 			 jmpAddress = (unsigned int)hextoi ( ParseBuf );
 			 
+#ifdef BUTTONBOX_GCC
+             ((void (*)(void))jmpAddress)();
+#else
 			 asm ("pshx");
 			 asm ("ldx _jmpAddress");
 			 asm ("jsr 0,x");
 			 asm ("pulx");
+#endif
 			 ParseBuf[0]=NULL;
 		}
         else if( !( strncmp( ParseBuf, "REVISION", 8 ) ) )

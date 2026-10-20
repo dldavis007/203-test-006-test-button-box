@@ -1,6 +1,22 @@
 #ifndef Interrupts_H
 #define Interrupts_H
 
+#if defined(BUTTONBOX_GCC)
+#ifndef BUTTONBOX_HOST_SYNTAX
+#define BB_ISR __attribute__((interrupt))
+#else
+#define BB_ISR
+#endif
+void DUMMY_ENTRY(void) BB_ISR;
+void SCI0_Int_Handler(void) BB_ISR;
+void SCI1_Int_Handler(void) BB_ISR;
+void RTI_Int_Handler(void) BB_ISR;
+void IRQ_Int_Handler(void) BB_ISR;
+void TC0_Int_Handler(void) BB_ISR;
+void TC3_Int_Handler(void) BB_ISR;
+void SPI0_Int_Handler(void) BB_ISR;
+void CANRxISR(void) BB_ISR;
+#else
 #pragma interrupt_handler DUMMY_ENTRY
 #pragma interrupt_handler SCI0_Int_Handler
 #pragma interrupt_handler SCI1_Int_Handler
@@ -10,6 +26,8 @@
 #pragma interrupt_handler TC3_Int_Handler
 #pragma interrupt_handler SPI0_Int_Handler
 #pragma interrupt_handler CANRxISR
+
+#endif
 
 #define TC_50us (int)(50/Tbus/TSCR2_PreScale+0.5)
 #define TC_104us (int)(104/Tbus/TSCR2_PreScale+0.5)

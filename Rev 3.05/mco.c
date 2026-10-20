@@ -41,7 +41,7 @@ extern char deviceSubMenu[20][17];
 extern int sub_Device_Type_Response_ID[20];
 extern char UpdateDisp;
 int No2WireCnt = 0;
-extern char Gen_Flags;      	  	
+extern volatile char Gen_Flags;
 
 // this structure holds all node specific configuration
 MCO_CONFIG gMCOConfig;
@@ -83,7 +83,7 @@ extern UNSIGNED8 gProcImg[];
 // table with SDO Responses for read requests to OD - defined in user_xxx.c
 extern UNSIGNED8 MEM_CONST SDOResponseTable[];
 
-extern unsigned int Timer1;
+extern volatile unsigned int Timer1;
 
 
 /**************************************************************************

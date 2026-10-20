@@ -42,7 +42,7 @@ Press **Ctrl+Shift+B** to run the default **Build-Run GCC** task, or choose
 **Terminal > Run Task > Build-Run GCC**. It compiles and runs host regression
 tests, not the embedded application. Python and host GCC must be on PATH.
 A play button supplied by an extension may run the active C file instead of this
-task; use the task commands above. There is no embedded GCC/NoICE launch task yet.
+task; use the task commands above. Use **Build 9S12 GCC** or **Build + Load NoICE** for the embedded targets below.
 
 ## EEPROM
 
@@ -53,13 +53,39 @@ number remains at 0x0902. Old/erased/invalid records enable both functions.
 Defaults restore both ON. The legacy reset marker takes precedence over this
 record. Existing EEPROM write timing delays separate the two write operations.
 
-## Embedded validation status
+## Embedded builds and NoICE
 
-The ImageCraft project remains the embedded build target. The host regression
-checks do not compile or validate the whole embedded firmware. Rebuild it with
-ImageCraft and check both settings on real hardware: save/restart, defaults,
-held keys, LEDs, CAN outputs, F1 camera menu and F2 Repeater Cart positioning.
-Tracked DBG/S19/LST files are imported baseline artifacts, not builds of dev.
+The existing ImageCraft project is retained. The new GNU68HC12 build compiles
+all application sources; it is separate from host regression testing.
 
-GCC/NoICE migration findings and remaining work are in
-[docs/GCC_NOICE.md](docs/GCC_NOICE.md).
+From PowerShell in the repository root:
+
+```powershell
+.\build_embedded.bat
+.\build_and_debug_noice.bat
+```
+
+The second command rebuilds, launches NoICE and loads fresh firmware/debug data.
+It leaves the target halted at `_start`; use NoICE **Run** to start execution.
+Configure NoICE for the actual MC9S12A128 BDM target with its Flash burner and
+hardware breakpoints before loading. Do not reuse a different processor's Flash
+programming configuration.
+
+Default compiler location: `C:\Toolchains\GNU68HC12\bin`.
+Default NoICE: `C:\Program Files (x86)\NoICE\bin\NoICE12.exe`.
+Override with `GNU68HC12_BIN` and `NOICE_EXE` environment variables if needed.
+The build emits `build/9s12/buttonbox.elf`, `.s19`, `.map`, and NoICE `.noi` files.
+It stops before launching NoICE on any compiler, unresolved-symbol, memory-layout
+or debug-map failure and removes stale loadable artifacts.
+
+**Validation status:** host logic regression, legacy EEPROM codec, host syntax
+checks of all GCC source paths, and build-layout tests passed. This environment
+has no GNU68HC12 cross-compiler or NoICE, so no target binary or hardware session
+has been validated here. The first Windows cross-build may expose toolchain or
+library differences; send its full output if it fails. Host syntax checks do not
+check HC12 assembly, ABI, linker execution or target library behavior.
+
+Tracked DBG/S19/LST files under Rev 3.05 are imported baseline artifacts, not
+builds of dev. Use only fresh build/9s12 artifacts for this GCC workflow.
+
+See [docs/GCC_NOICE.md](docs/GCC_NOICE.md) for memory layout and bench checks.

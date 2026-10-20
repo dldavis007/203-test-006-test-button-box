@@ -12,10 +12,10 @@
 
 char wd_flag = 0, wdInit = 0, wdStarted = 0;
 
-extern int SIN0Bufptr;
-extern int SOUT0Bufptr;
+extern volatile int SIN0Bufptr;
+extern volatile int SOUT0Bufptr;
 extern char SOUT0Buf[SOUT0BufLen];
-extern unsigned int WD_Timer;
+extern volatile unsigned int WD_Timer;
 
 
 void main (void)
@@ -226,11 +226,21 @@ int getchar(void)
 	return SCI0DRL;
 	}
 
+#ifndef BUTTONBOX_GCC
 extern int _textmode;
+#endif
 
+#ifdef BUTTONBOX_GCC
+int putchar(int c)
+#else
 int putchar(char c)
+#endif
 	{
+#ifdef BUTTONBOX_GCC
+    if (c == '\n')
+#else
 	if (_textmode && c == '\n')
+#endif
 		putchar('\r');
 	while ((SCI0SR1 & SCI0SR1_TDRE) == 0)
 		;

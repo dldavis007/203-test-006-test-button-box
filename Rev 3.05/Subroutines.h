@@ -58,14 +58,14 @@ void setDefaultMenu(void);
 
 typedef enum { false = 0, true = !false } bool;
 
-typedef struct MatrixTbl
+struct MatrixTbl
 {
  	int BB_Data;
 	char SW_Port_Data[2];
 	char LED_Port_Data[3];
 };
 
-typedef struct MenuStruct 
+struct MenuStruct
 {
 char Index[4];
 char Entry[12][21];           //menu text
@@ -76,7 +76,7 @@ int (*FunctPtr[11])( void );        //pointer to function
 
 extern struct MenuStruct Menuc[];   //holds menu data
 
-typedef struct MenuStack 
+struct MenuStack
 {
 char Index[4];
 char CursorPos;

@@ -37,8 +37,8 @@ If queue occupied, waits until it is clear
 #include "Interrupts.h"
 #include "Subroutines.h"
 
-extern char Gen_Flags;
-extern unsigned int Timer1;
+extern volatile char Gen_Flags;
+extern volatile unsigned int Timer1;
 
 // Global timer/conter variable, incremented every millisecond
 UNSIGNED16 gTimCnt = 0;

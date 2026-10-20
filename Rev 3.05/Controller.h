@@ -8,7 +8,7 @@
 #define INTR_OFF()	asm("sei")
 #endif
 
-extern unsigned int Timer1;
+extern volatile unsigned int Timer1;
 extern void WriteCharMem(void);
 extern void ReadCharMem(void);
 extern bool CharsInMem;
@@ -22,7 +22,11 @@ void InitSPI ( void );
 void PWMInit ( void );
 void AtoDInit ( void );
 int getchar(void);
+#ifdef BUTTONBOX_GCC
+int putchar(int c);
+#else
 int putchar(char c);
+#endif
 void InitCANopen ( void );
 void InitWatchdog(void);
 void COP_Trig(void); 

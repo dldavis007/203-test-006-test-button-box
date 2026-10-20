@@ -4,14 +4,20 @@
 //
 // A Reset vector for this program.
 //
+#ifndef BUTTONBOX_GCC
 #pragma nonpaged_function _start
+#endif
 
 extern void _start(void);
 //extern void ic0_interrupt(void);
 //extern void CANInit ( void );
 
 
+#ifdef BUTTONBOX_GCC
+__attribute__((section(".vectors"), used))
+#else
 #pragma abs_address:0xFF80
+#endif
 void (*interrupt_vectors[])(void) =
 {
 		
@@ -81,5 +87,7 @@ void (*interrupt_vectors[])(void) =
         _start  		/* RESET */
 };
 
+#ifndef BUTTONBOX_GCC
 #pragma end_abs_address
+#endif
 #endif
