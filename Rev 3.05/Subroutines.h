@@ -15,6 +15,8 @@ void Save_Variables ( void );
 void Load_Serial_Num ( void );
 void Save_Serial_Num ( void );
 int setSerial ( void );
+int ToggleF1Enable(void);
+int ToggleF2Enable(void);
 int Var1to13Funct ( void );
 int Var1to30Funct ( void );
 int ExitMenu ( void );

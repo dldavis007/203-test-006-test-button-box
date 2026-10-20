@@ -475,6 +475,10 @@ char SerialNum[]      = "-----";
 char NullVar[]        = "";
 
 //The following Menu Variables are NOT saved in EEPROM
+/* Independent record at 0x0880; legacy settings remain at 0x0800. */
+char F1Enable[4] = "ON";
+char F2Enable[4] = "ON";
+
 char Rev[]		      = Revision;
 char BattSerNum[] 	  = "  -  -   ";
 char BattSOC[] 		  = "---";
@@ -526,20 +530,20 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
                                             "    SETTINGS MENU   ",
 											" MESSAGE ROW        ",
                                             " MESSAGE COL        ",
+                                            " F1                 ",
+											" F2                 ",
                                             " EXIT               ",
-											"                    ",
                                             "                    ",
                                             "                    ",
                                             "                    ",
                                             "                    ",
                                             "                    ",
                                             "                    ",
-                                            "                    ",
-                                            15,15,0,0,0,0,0,0,0,0,0,
+                                            15,15,12,12,0,0,0,0,0,0,0,
                                             MessageRow,
                                             MessageCol,
-                                            NullVar,
-                                            NullVar,
+                                            F1Enable,
+                                            F2Enable,
                                             NullVar,
                                             NullVar,
                                             NullVar,
@@ -549,9 +553,9 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
                                             NullVar,
                                             &Var1to13Funct,
                                             &Var1to30Funct,
+                                            &ToggleF1Enable,
+                                            &ToggleF2Enable,
                                             &ExitMenu,
-                                            &NullFunction,
-                                            &NullFunction,
                                             &NullFunction,
                                             &NullFunction,
                                             &NullFunction,
@@ -1006,9 +1010,62 @@ int setSerial ( void )
     return 0;
 }
 
+/* Only a disabled function is filtered; ordinary controls are untouched. */
+unsigned int EnabledFunctionData(unsigned int data)
+{
+    if (strcmp(F1Enable, "ON")) data &= ~TeleData_F1;
+    if (strcmp(F2Enable, "ON")) data &= ~TeleData_F2;
+    return data;
+}
+
+void DecodeFunctionSettings(const unsigned char record[4])
+{
+    unsigned char flags = 3; /* Old, erased or invalid records enable both. */
+    if (record[0] == 0xA6 && record[1] == 1 && record[2] <= 3 &&
+        record[3] == (unsigned char)(record[2] ^ 0xFF))
+        flags = record[2];
+    strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
+    strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
+}
+
+void EncodeFunctionSettings(unsigned char record[4])
+{
+    record[0] = 0xA6;
+    record[1] = 1;
+    record[2] = (!strcmp(F1Enable, "ON") ? 1 : 0) |
+                (!strcmp(F2Enable, "ON") ? 2 : 0);
+    record[3] = (unsigned char)(record[2] ^ 0xFF);
+}
+
+int ToggleF1Enable(void)
+{
+    if (!strcmp(F1Enable, "ON")) strcpy(F1Enable, "OFF");
+    else strcpy(F1Enable, "ON");
+    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
+    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
+    LoadMenu(MenuStackc[StackPointer].Index);
+    InsertCursor();
+    btnDisplayTitler();
+    return 0;
+}
+
+int ToggleF2Enable(void)
+{
+    if (!strcmp(F2Enable, "ON")) strcpy(F2Enable, "OFF");
+    else strcpy(F2Enable, "ON");
+    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
+    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
+    LoadMenu(MenuStackc[StackPointer].Index);
+    InsertCursor();
+    btnDisplayTitler();
+    return 0;
+}
+
 void Load_Variables (void)
 {
  	 char *VarRAMPntr, *VarEEPROMPntr;
+     unsigned char record[4];
+     unsigned char k;
 	 VarRAMPntr = FirstVar;
 	 VarEEPROMPntr = (char *)0x0800;
 	 if ( *VarEEPROMPntr != 0xff )
@@ -1017,14 +1074,28 @@ void Load_Variables (void)
 	 	 {
 	         *VarRAMPntr++ = *VarEEPROMPntr++; 
 	 	 }while ( VarRAMPntr != NullVar );
+         for (k = 0; k < 4; ++k)
+             record[k] = ((volatile unsigned char *)0x0880)[k];
+         DecodeFunctionSettings(record);
 	 }
 	 else
-	     Save_Variables();
+     {
+         strcpy(F1Enable, "ON");
+         strcpy(F2Enable, "ON");
+         Save_Variables();
+     }
 }
 
 void Save_Variables ( void )
 {
- 	 EEWrite ( 128, FirstVar, (int *)0x0800 );
+    unsigned char record[4];
+    EncodeFunctionSettings(record);
+    EEWrite ( 128, FirstVar, (int *)0x0800 );
+    Timer2 = 0.05 * RTI_One_Sec;
+    while (Timer2);
+    EEWrite ( 4, (char *)record, (int *)0x0880 );
+    Timer2 = 0.05 * RTI_One_Sec;
+    while (Timer2);
 }
 
 //retrieve serial number from EEProm
@@ -1517,6 +1588,8 @@ void btnDisplayTitler ( void )
 
 int RestoreDefaults ( void )
 {
+    strcpy(F1Enable, "ON");
+    strcpy(F2Enable, "ON");
     FirstVar[0] = 0xFF;    //indicates data needs to be replaced with defaults
     Save_Variables();         
     ResetProc ();
@@ -2064,7 +2137,9 @@ int Trigger_Device ( void )
 void doevents ( void )
 {
 	int i,j;
-	
+
+    ButtonBoxData = EnabledFunctionData(ButtonBoxData);
+    TC0_RCVD_Data = EnabledFunctionData(TC0_RCVD_Data);
 	if (TC0_RCVD_Data != (ButtonBoxData << 8 | ButtonBoxData))
 	{
 		TC0_RCVD_Data = ButtonBoxData;
@@ -2257,6 +2332,16 @@ void doevents ( void )
 			while (Timer1);
 			if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0b00000111)) )
 			{   //Switch is pressed
+                if (Keypad_Matrix[Sw_Index].BB_Data &
+                    (TeleData_F1 | TeleData_F2))
+                {
+                    if (EnabledFunctionData(Keypad_Matrix[Sw_Index].BB_Data) !=
+                        (unsigned int)Keypad_Matrix[Sw_Index].BB_Data)
+                    {
+                        SwitchUpData &= ~Keypad_Matrix[Sw_Index].BB_Data;
+                        continue;
+                    }
+                }
 				if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | (((SwitchData & TeleData_F1) || (SwitchData & TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
 				{   //Switch is a toggle function 
 					if (SwitchUpData & Keypad_Matrix[Sw_Index].BB_Data) 
@@ -2393,7 +2478,7 @@ void doevents ( void )
 		if(tempData & TeleData_RotCW) // Dn
 		    Third_byte |= 0b00000010;
 			
-		tempData &= ~(TeleData_Down | TeleData_Up | (Cntrl_Slow_Flag?0:TeleData_Slow) | TeleData_RotCW); // These keys are used for Menu navigation when F1 is pushed
+		tempData &= ~(TeleData_Down | TeleData_Up | (Cntrl_Slow_Flag?0:TeleData_Slow) | TeleData_RotCW); // These keys are used for Menu navigation when F1 or F2 is selected
 	}
 	
 	gProcImg[IN_digi_0] = tempData & 0xFF;
