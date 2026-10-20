@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def extract(source, name):
-    match = re.search(r'^(?:void|int|char) ' + name + r'\s*\([^;]*?\)\s*\{', source, re.M)
+    match = re.search(r'^(?:void|int|char|unsigned int|UNSIGNED8) ' + name + r'\s*\([^;]*?\)\s*\{', source, re.M)
     start, pos, depth = match.start(), match.end(), 1
     while depth:
         depth += (source[pos] == '{') - (source[pos] == '}')
@@ -47,6 +47,20 @@ int main(void) {
     ltrim(empty); assert(!empty[0]);
     parse(token, command); assert(!token[0]);
     assert(hextoi("1aFZ") == 0x1af);
+    return 0;
+}
+''')
+
+    def test_flash_word_preserves_all_byte_pairs(self):
+        source = (ROOT/'Embedded/Src/Flash.c').read_text()
+        run_c('#include <assert.h>\n' + extract(source, 'FlashWord') + r'''
+int main(void) {
+    unsigned int high, low;
+    for (high = 0; high < 256; ++high)
+        for (low = 0; low < 256; ++low) {
+            unsigned int word = FlashWord((char)high, (char)low);
+            assert(word == high * 256 + low);
+        }
     return 0;
 }
 ''')

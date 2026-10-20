@@ -33,13 +33,23 @@ char FlashCmd[] = {0x7b,0x01,0x06,0xc6,0x80,0x7b,0x01,0x05,
 extern void BBFlashCommand(unsigned char command);
 #endif
 
+/* Preserve both byte values when plain char is signed. */
+unsigned int FlashWord(unsigned char high, unsigned char low)
+{
+    return ((unsigned int)high << 8) | (unsigned int)low;
+}
+
 void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 {
  	 //Erases and Writes an array of up to 512 char to Flash
 	 
-	 int i, j, TmpData;
+	 int i, j;
+     unsigned int TmpData = 0;
 	 char *tempAddr;
 	 char tempArray[1024];
+
+     if (ArraySize <= 0 || ArraySize > 512)
+         return;
 	 
      
 	 
@@ -85,7 +95,7 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
      for (i=0; i<j; i += 512, WriteAddr +=256 )
      {
-		 *WriteAddr = TmpData;
+		 *(volatile unsigned int *)WriteAddr = TmpData;
 #ifdef BUTTONBOX_GCC
         BBFlashCommand(0x40);
 #else
@@ -105,8 +115,8 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
      for (i=0;i<j;i+=2, WriteAddr++)
      {
-	  	 TmpData = tempArray[i]*256 + tempArray[i+1];
-		 *WriteAddr = TmpData;
+	  	 TmpData = FlashWord(tempArray[i], tempArray[i+1]);
+		 *(volatile unsigned int *)WriteAddr = TmpData;
 #ifdef BUTTONBOX_GCC
         BBFlashCommand(0x20);
 #else

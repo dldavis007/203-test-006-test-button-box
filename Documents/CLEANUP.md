@@ -1,6 +1,7 @@
 # Cleanup branch
 
 Baseline: dev commit 775691e, reported working on hardware on 2026-10-20.
+The user also reported the reorganized branch fdbdf24 working on hardware.
 The cleanup branch starts with directory changes only. Subsequent source
 corrections are separate commits. No CAN IDs, EEPROM offsets, F1/F2 semantics,
 startup address or PPAGE setting are intentionally changed by the relocation.
@@ -41,8 +42,11 @@ Windows build/load and hardware regression remain outstanding for this branch.
 
 - CANRxISR writes through an uninitialized pointer. CAN reception currently
   polls in mcohw.c; repair the ownership/queue design before enabling RX IRQs.
-- FlashWrite uses an uninitialized erase dummy and signed-byte arithmetic;
-  review it separately with Flash/character-table hardware validation.
+- FlashWrite now initializes the erase dummy, packs unsigned bytes, uses
+  volatile command-address stores and rejects lengths outside 1-512 bytes.
+  All 65,536 byte pairs are tested under both char modes. The Flash command
+  sequence remains unchanged; no active application caller currently uses this
+  helper. A hardware test is needed before using it for new Flash writes.
 - mco.c needs -O0 for the old GCC backend. Review char-range warnings against
   protocol types before changing signedness globally.
 - Serial parsing APIs lack destination sizes; adding bounds changes API and
