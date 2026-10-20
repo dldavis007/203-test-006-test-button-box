@@ -175,11 +175,11 @@ def main():
             "HALT",
             "OUT 010H 021H",  # RAM at 0x2000 before ELF data is loaded
             "OUT 012H 009H",  # EEPROM at 0x0800
-            "R PG 0%XH" % STATIC_PAGE,
+            "OUT 030H 0%XH" % STATIC_PAGE,
 
             "LOAD \"%s\" 0%XH:0000H" % (elf_path, STATIC_PAGE),
         ]
-        session_commands.append("R PG 0%XH" % STATIC_PAGE)
+        session_commands.append("OUT 030H 0%XH" % STATIC_PAGE)
         session_commands.extend(commands[2:])
         session_commands.append("W -")
         session_commands.extend("W %s %s" % item for item in ESSENTIAL_WATCHES)
@@ -199,7 +199,7 @@ def main():
             "; Generated NoICE reconnect session - does NOT load target memory",
             "; Use only when the target contains this exact build.",
         ]
-        reconnect_commands.append("R PG 0%XH" % STATIC_PAGE)
+        reconnect_commands.append("OUT 030H 0%XH" % STATIC_PAGE)
         reconnect_commands.extend(commands[2:])
         missing = []
         for name, display_type in ESSENTIAL_WATCHES:

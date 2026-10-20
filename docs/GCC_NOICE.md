@@ -72,7 +72,7 @@ Images that exceed this static 48 KB arrangement still fail; it is not a general
 NoICE must have Use PPAGE enabled. The generated load command explicitly supplies
 the static page: `LOAD "buttonbox.elf" 03DH:0000H`. NoICE documents page-qualified
 LOAD offsets; outside the paged window the fixed/RAM addresses remain unpaged.
-The session sets PG to 0x3D before and after loading, and generated function/line
+The session writes PPAGE at register address 0x0030 to 0x3D before and after loading, and generated function/line
 addresses inside the window explicitly use `03DH:08xxxH` notation. At reset the
 fixed startup also selects 0x3D. The .s19 file has logical 16-bit addresses; any
 separate programmer must be configured to map its window to page 0x3D.
@@ -161,3 +161,7 @@ addresses, load addresses and sizes. These reject Flash/window overflow, vector
 size/address errors, RAM overlap, misplaced reset-persistent storage, insufficient
 stack reserve and initializer overlap with Flash configuration bytes. Validation
 runs before S19 or NoICE session generation; failure removes the ELF too.
+
+Some NoICE12 configurations do not expose a register named PG. The generated
+sessions use `OUT 030H 03DH` instead of `R PG 03DH`; the explicit page-qualified
+LOAD and window source mappings remain unchanged.
