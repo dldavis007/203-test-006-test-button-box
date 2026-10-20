@@ -124,7 +124,7 @@ void TC3_Int_Handler ( void )
         MCOHW_TimerISR();
 	}
 
-	if(((ButtonBoxData & TeleData_F1) || (ButtonBoxData & TeleData_F2)) && (Sw_Index == 4|Sw_Index == 9|Sw_Index == 10|Sw_Index == 11|Sw_Index == 16))
+	if ((ButtonBoxData & AlternateFunctionMask) && (Sw_Index == 4 || Sw_Index == 9 || Sw_Index == 10 || Sw_Index == 11 || Sw_Index == 16))
 	{
         // LEDs
         PTP = (PTP & ~0x0E) | (Keypad_Matrix[Sw_Index].LED_Port_Data[0] & 0x0E); //Output a High on the Column

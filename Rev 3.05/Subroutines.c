@@ -49,6 +49,7 @@ unsigned char FastPushed;
 
 unsigned int ButtonBoxData;
 unsigned int LEDData;
+volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
 unsigned int tempData;
 unsigned int Third_byte;
 char Cntrl_Slow_Flag;
@@ -1025,12 +1026,15 @@ void NormalizeFunctionSettings(void)
         strcpy(F1Enable, "ON");
     if (strcmp(F2Enable, "ON") && strcmp(F2Enable, "OFF"))
         strcpy(F2Enable, "ON");
+    AlternateFunctionMask = (!strcmp(F1Enable, "ON") ? TeleData_F1 : 0) |
+                            (!strcmp(F2Enable, "ON") ? TeleData_F2 : 0);
 }
 
 int ToggleF1Enable(void)
 {
     if (!strcmp(F1Enable, "ON")) strcpy(F1Enable, "OFF");
     else strcpy(F1Enable, "ON");
+    NormalizeFunctionSettings();
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
     btnDisplayTitler();
@@ -1041,6 +1045,7 @@ int ToggleF2Enable(void)
 {
     if (!strcmp(F2Enable, "ON")) strcpy(F2Enable, "OFF");
     else strcpy(F2Enable, "ON");
+    NormalizeFunctionSettings();
     LoadMenu(MenuStackc[StackPointer].Index);
     InsertCursor();
     btnDisplayTitler();
@@ -1094,6 +1099,7 @@ void Load_Variables (void)
      {
          strcpy(F1Enable, "ON");
          strcpy(F2Enable, "ON");
+         NormalizeFunctionSettings();
          Save_Variables();
      }
 }
@@ -1605,6 +1611,7 @@ int RestoreDefaults ( void )
 {
     strcpy(F1Enable, "ON");
     strcpy(F2Enable, "ON");
+    NormalizeFunctionSettings();
     FirstVar[0] = 0xFF;    //indicates data needs to be replaced with defaults
     Save_Variables();         
     ResetProc ();

@@ -41,6 +41,7 @@ callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'Toggle
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
 helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'NormalizeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
+led_condition = re.search(r'if \((\(ButtonBoxData & AlternateFunctionMask\).*?)\)\n', (SRC/'Interrupts.c').read_text()).group(1)
 program = r'''
 #include <assert.h>
 #include <stdio.h>
@@ -51,6 +52,7 @@ program = r'''
 #define DeBounceTime 10
 ''' + macros + r'''
 unsigned int ButtonBoxData, TC0_RCVD_Data, tempData, Third_byte;
+volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
 unsigned int DeBounceTimer, Timer1;
 int CntrSwTimeOut = -1;
 unsigned char PORTB, PORTA;
@@ -64,7 +66,7 @@ void LoadMenu(char index[]) { (void)index; }
 void InsertCursor(void) {}
 void btnDisplayTitler(void) {}
 void DeSelect(void) { Gen_Flags &= ~Gen_Flags_Menu_Active; }
-''' + helpers + matrix + '\nvoid scan(unsigned long pressed) {\n' + scan + r'''
+''' + helpers + '\nint navigation_led(int Sw_Index) { return ' + led_condition + '; }\n' + matrix + '\nvoid scan(unsigned long pressed) {\n' + scan + r'''
 }
 void tick(unsigned long pressed)
 {
@@ -180,6 +182,14 @@ int main(void)
     for (flags = 0; flags < 4; ++flags) {
         strcpy(F1Enable, (flags & 1) ? "ON" : "OFF");
         strcpy(F2Enable, (flags & 2) ? "ON" : "OFF");
+        NormalizeFunctionSettings();
+        assert(AlternateFunctionMask == ((flags & 1 ? TeleData_F1 : 0) | (flags & 2 ? TeleData_F2 : 0)));
+        ButtonBoxData = TeleData_F1;
+        assert(!!navigation_led(4) == !!(flags & 1));
+        ButtonBoxData = TeleData_F2;
+        assert(!!navigation_led(16) == !!(flags & 2));
+        ButtonBoxData = TeleData_F1 | TeleData_F2;
+        assert(!navigation_led(1)); /* F1 LED remains in the ordinary latch path. */
         EncodeLegacySettings(legacy);
         { /* Round-trip through the actual EEPROM word packing. */
             int n;

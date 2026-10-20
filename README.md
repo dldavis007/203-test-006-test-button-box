@@ -13,7 +13,7 @@ with the controlled equipment.
 OFF disables that key's alternate navigation mode. F1/F2 still latch on each
 press/release cycle, set their transmitted message bits and drive their LEDs.
 With an OFF function selected, navigation and speed keys keep their ordinary
-roles. ON retains the shared third-byte navigation encoding. The controller
+roles, and the five navigation LEDs are not forced into the cross pattern. ON retains the shared third-byte navigation encoding. The controller
 Slow exception remains intact.
 
 ## Regression tests

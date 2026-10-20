@@ -4,6 +4,8 @@
 #define Revision "3.05"
 #define _SCI
 
+extern volatile unsigned char AlternateFunctionMask;
+
 
 void Scan_Batteries ( void );
 int NullFunction ( void );
