@@ -4,7 +4,7 @@ This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
 The initial housekeeping pass retained identical optimized host assembly.
-The Settings.c, Display.c, Menu.c and DeviceMenus.c splits are separate compilation-unit changes that
+The Settings.c, Display.c, Menu.c, DeviceMenus.c and BatteryDiagnostics.c splits are separate compilation-unit changes that
 require target memory checks; their moved bodies and existing storage remain intact.
 
 ## Current owners and intended boundaries
@@ -23,7 +23,7 @@ require target memory checks; their moved bodies and existing storage remain int
 | Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | Button decoding, alternate-mode handling and outgoing command assembly. Separate functions before changing visibility. |
 | Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | Discovery and camera shortcuts remain in Subroutines.c. DeviceMenus.c owns four external-menu/trigger commands; camera-state declarations are in DeviceMenus.h. |
 | Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
-| Subroutines.c | BattNum, ptrDispBatt and battery display strings | Battery discovery/diagnostics and menu display. |
+| Subroutines.c | BattNum, ptrDispBatt and battery display strings | BatteryDiagnostics.c owns the three battery functions; all storage remains here, declared in BatteryDiagnostics.h. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
 | runtime.c, or ImageCraft startup | _bss_end[20] | Persistent startup marker. Preserve its GCC .noinit placement and existing startup ownership. |
 | Legacy MCO files | CAN buffers/configuration, process image, response tables and filter state | Protected integration, not application cleanup. Application declarations remain local to Subroutines.c. |
@@ -66,11 +66,13 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
 3. Internal-menu functions are extracted to Menu.c with settings/display calls
    and original storage intact. Host checks pass; target/hardware verification
    was confirmed by the owner, including a successful ImageCraft build.
-4. Four camera/device menu commands are extracted to DeviceMenus.c. Target
-   GCC/ImageCraft build and hardware verification are pending. Discovery and
+4. Four camera/device menu commands are extracted to DeviceMenus.c. The owner
+   confirmed the 6754a2a pass working. Discovery and
    selection shortcuts remain in Subroutines.c; review its shared static CAN
    message buffer before extracting those functions. The MCO stack is unchanged.
-5. Separate button scanning and command encoding from doevents.
+5. Battery diagnostics are extracted to BatteryDiagnostics.c with original
+   state retained. Host checks pass; target/hardware verification is pending.
+6. Separate button scanning and command encoding from doevents.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and

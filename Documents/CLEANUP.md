@@ -2,11 +2,10 @@
 
 ## Current baseline and scope
 
-The owner confirmed menu extraction at 54ad773 working on hardware and reported
-the ImageCraft build running successfully. The working ImageCraft configuration
-and root Legacy removal are synchronized at 7915b16 on cleanup-preserve-mco.
-7915b16 is the baseline for the external-device menu command extraction. Keep changes small
-and separately testable. The Node-ID-zero startup regression and recovery are
+The owner confirmed the external-device menu extraction at 6754a2a working.
+That is the baseline for the battery diagnostics extraction. Working ImageCraft
+settings remain those synchronized at 7915b16. Keep changes small and separately
+testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
@@ -264,6 +263,36 @@ are unchanged. Separate compilation can change target code size and placement.
 Target GCC/NoICE and ImageCraft builds/hardware checks are pending for this pass.
 Check camera selection, camera-menu entry, connected-device main and auxiliary
 menus, trigger commands, return to the internal menu and F1/F2 modes/settings.
+
+## Battery diagnostic function extraction
+
+BatteryDiagnostics.c now owns Scan_Batteries, ClrBattErr and NextBatt. Their
+bodies are unchanged from 6754a2a. BatteryDiagnostics.h declares the existing
+functions and battery display/state variables. All storage remains defined in
+Subroutines.c in its previous order, including the battery menu pointers. GCC
+and ImageCraft source lists include the new module; ImageCraft project options
+are unchanged.
+
+All 24 host unit tests, both F1/F2 regression char modes and strict application
+syntax checks pass. The new test links the actual battery module and compact
+formatter, supplies scripted CAN process-image replies and replaces asynchronous
+timeouts in the stack stub. It checks battery selection and wrapping, stale
+selection fallback, serial/status/temperature formatting, alarm text, clear-error
+requests, menu refresh and the existing three RPDO changes/filter handling.
+It runs in both char modes. No live CAN stack, bus timing or battery hardware
+is exercised by the host test, and no CAN stack code changes.
+
+The remaining Subroutines.c is exact after removing the moved function block.
+Host data/BSS section order, sizes, initialized bytes and symbolic pointer
+relocations match the previous baseline. BatteryDiagnostics.c adds no mutable
+global/static storage. Existing EEPROM records and declarations, MCO integration,
+startup, interrupts, prior menu/display modules, constant tables, linker settings
+and the 1280-byte stack requirement are unchanged.
+
+GCC/NoICE and ImageCraft target build/hardware verification are pending for this
+pass. Check startup, ordinary buttons and menus, plus battery status, NEXT and
+CLEAR ERROR with battery hardware available. Target code size/placement can
+change with separate compilation, so retain the target memory validation.
 
 ## Structure
 

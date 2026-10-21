@@ -7,6 +7,7 @@
 #include "Display.h"
 #include "Menu.h"
 #include "DeviceMenus.h"
+#include "BatteryDiagnostics.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -26,10 +27,7 @@ int findCameras(void);
 int duplicate_add(void);
 void ext_menu(void);
 
-/* Battery diagnostics and analog input. */
-void Scan_Batteries(void);
-int ClrBattErr(void);
-int NextBatt(void);
+/* Analog input. */
 int ATDGetLevel(char ATD_Num);
 
 /* Application message assembly and menu rendering. */
