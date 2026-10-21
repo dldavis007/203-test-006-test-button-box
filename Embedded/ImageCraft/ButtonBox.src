@@ -12,6 +12,7 @@
 ..\Src\Display.c
 ..\Src\Menu.c
 ..\Src\DeviceMenus.c
+..\Src\ButtonInput.c
 [Headers]
 ..\Include\Controller.h
 ..\Include\Command.h
@@ -30,6 +31,7 @@
 ..\Include\Display.h
 ..\Include\Menu.h
 ..\Include\DeviceMenus.h
+..\Include\ButtonInput.h
 [Documents]
 ..\..\Documents\Legacy\MCO Reference.txt
 ..\..\Documents\Legacy\Revision History.txt

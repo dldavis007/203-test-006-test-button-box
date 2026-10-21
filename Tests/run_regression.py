@@ -1,4 +1,4 @@
-"""Compile actual firmware scan/encoding code with injected keypad samples.
+"""Compile actual firmware scan/encoding functions and their debounce call site.
 No PC_SIDE firmware, CAN simulator, or interactive bench is built.
 """
 from pathlib import Path
@@ -31,12 +31,14 @@ def function(name, source=None):
 begin = s.index('\tif ( !DeBounceTimer )', s.index('void doevents'))
 end = s.index('\n\tif (ButtonBoxData & TeleData_Reset)', begin)
 scan = s[begin:end]
+button_source = (SRC / 'ButtonInput.c').read_text()
+button_functions = '\n'.join(function(n, button_source) for n in ['ScanButtons', 'EncodeButtonCommands'])
 # Replace only electrical input and asynchronous delay. Keep actual scan order,
 # latching, settings gate, interlocks and all three output assignments.
 condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )'
-assert scan.count(condition) == 1
-scan = scan.replace(condition, 'if (pressed & (1UL << Sw_Index))')
-scan = scan.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
+assert button_functions.count(condition) == 1
+button_functions = button_functions.replace(condition, 'if (pressed & (1UL << Sw_Index))')
+button_functions = button_functions.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
 scan = scan.replace('unsigned int MaskBit = 0x8000;', '')
 matrix = (SRC / 'KeypadMatrix.inc').read_text()
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
@@ -81,7 +83,7 @@ void LoadMenu(unsigned char index[]) { (void)index; }
 void InsertCursor(void) {}
 void btnDisplayTitler(void) {}
 void DeSelect(void) { Gen_Flags &= ~Gen_Flags_Menu_Active; }
-''' + helpers + '\nint navigation_led(int Sw_Index) { return ' + led_condition + '; }\n' + matrix + '\nvoid scan(unsigned long pressed) {\n' + scan + r'''
+''' + helpers + '\nint navigation_led(int Sw_Index) { return ' + led_condition + '; }\n' + matrix + '\nstatic unsigned long pressed;\n' + button_functions + '\nvoid scan(unsigned long samples) {\npressed = samples;\n' + scan + r'''
 }
 void tick(unsigned long pressed)
 {
@@ -127,6 +129,15 @@ int main(void)
     DecodeLegacySettings(legacy);
     assert(!strcmp(MessageRow, " 12") && !strcmp(MessageCol, " 23"));
     assert(!strcmp(SerialNum, "12345"));
+    /* Debounce skips electrical scanning, but outgoing encoding still runs. */
+    clear();
+    DeBounceTimer = 1;
+    scan(KEY(1));
+    assert(!(ButtonBoxData & TeleData_F1) && DeBounceTimer == 1);
+    ButtonBoxData = TeleData_F1 | TeleData_Down;
+    scan(0);
+    assert(Third_byte == 4 && (tempData & TeleData_F1));
+    assert(!(tempData & TeleData_Down) && DeBounceTimer == 1);
     clear(); ButtonBoxData = TC0_RCVD_Data = TeleData_F1 | TeleData_F2;
     ToggleF1Enable();
     assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, " ON"));

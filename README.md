@@ -37,8 +37,8 @@ Battery diagnostics are no longer supported. STATUS now shows SOFTWARE REV,
 SERIAL NUM and EXIT. Battery scanning, RAM/display state and battery-only CAN
 requests/replies are removed. Camera discovery and its shared receive buffer
 remain supported. Saved settings and EEPROM offsets are unchanged. This removal
-has passed host tests; target GCC/ImageCraft builds and hardware verification
-are pending. See Documents/CLEANUP.md for scope and bench checks.
+was confirmed working by the owner in both GCC and ImageCraft at 032d18e.
+See Documents/CLEANUP.md for scope and bench checks.
 
 ## Regression tests
 
@@ -49,8 +49,8 @@ compiler executable). From PowerShell:
 .\run_regression.bat
 ```
 
-Or run `python Tests/run_regression.py`. The runner extracts the actual keypad
-scan and output encoder from Subroutines.c, injects physical key samples, and
+Or run `python Tests/run_regression.py`. The runner extracts the actual scan/encoder functions from ButtonInput.c and
+their debounce call site from Subroutines.c, injects physical key samples, and
 compiles/runs assertions. It also tests the actual function-settings codec.
 No PC_SIDE application or interactive simulation is included.
 

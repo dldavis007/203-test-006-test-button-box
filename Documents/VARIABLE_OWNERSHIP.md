@@ -4,7 +4,7 @@ This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
 The initial housekeeping pass retained identical optimized host assembly.
-The Settings.c, Display.c, Menu.c and DeviceMenus.c splits are separate compilation-unit changes that
+The Settings.c, Display.c, Menu.c, DeviceMenus.c and ButtonInput.c splits are separate compilation-unit changes that
 require target memory checks; their moved bodies and existing storage remain intact.
 
 ## Current owners and intended boundaries
@@ -20,7 +20,7 @@ require target memory checks; their moved bodies and existing storage remain int
 | Subroutines.c | FirstVar, MessageRow, MessageCol, SerialNum, F1Enable, F2Enable, NullVar | Protected saved-variable sequence. Settings.c owns persistence/normalization; Settings.h exposes declarations. Menu tables hold pointers into the same arrays. |
 | MenuTables.inc, included by Subroutines.c | defaultMenuc, Menuc, defaultMenuStackc, MenuStackc | Menu templates/runtime arrays. The include preserves their translation unit and definition order. Menuc is shared through ApplicationState.h. |
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Menu.c owns navigation/editing functions; storage stays in Subroutines.c. Menu.h exposes the required declarations. |
-| Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | Button decoding, alternate-mode handling and outgoing command assembly. Separate functions before changing visibility. |
+| Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | ButtonInput.c owns scan/encoding functions; storage stays here, declared in ButtonInput.h. Menu/camera handling remains in doevents. |
 | Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | Discovery and camera shortcuts remain in Subroutines.c. DeviceMenus.c owns four external-menu/trigger commands; camera-state declarations are in DeviceMenus.h. |
 | Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
@@ -73,8 +73,12 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
    intermediate extraction. Battery globals, startup scan, menu rows, module and
    four battery-only PDO registrations are removed; saved settings are unchanged.
    Remaining CAN registrations and Node-ID-zero behavior are tested. Target
-   GCC/ImageCraft and hardware verification are pending.
-6. Separate button scanning and command encoding from doevents.
+   GCC/ImageCraft operation was confirmed by the owner at 032d18e.
+6. ScanButtons and EncodeButtonCommands are extracted to ButtonInput.c. The
+   debounce gate and function-local static release history stay in doevents; no
+   storage moves. Host checks pass; target/hardware verification is pending.
+7. After hardware confirmation, simplify duplicated F1/F2 expressions as a
+   separate behavior-preserving change.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and

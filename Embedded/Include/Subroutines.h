@@ -7,6 +7,7 @@
 #include "Display.h"
 #include "Menu.h"
 #include "DeviceMenus.h"
+#include "ButtonInput.h"
 
 #define Revision "3.05"
 #define _SCI

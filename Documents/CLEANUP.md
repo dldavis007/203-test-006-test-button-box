@@ -2,12 +2,11 @@
 
 ## Current baseline and scope
 
-The owner confirmed the external-device menu extraction at 6754a2a working.
-The subsequent battery extraction at ee9feec was not hardware-tested before the
-owner explicitly requested retirement of the entire unused battery system.
-ee9feec is the baseline for that removal. Working ImageCraft settings remain
-those synchronized at 7915b16. Keep changes separately testable. The Node-ID-zero
-startup regression and recovery are documented in STARTUP_NODE_ZERO.md.
+The owner confirmed battery retirement at 032d18e working with both GCC and
+ImageCraft. That is the baseline for extracting button scanning and command
+encoding. Working ImageCraft settings remain those synchronized at 7915b16.
+Keep changes separately testable. The Node-ID-zero startup regression and
+recovery are documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
 mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
@@ -343,6 +342,44 @@ external menus/triggers, F1/F2 operation, shortened STATUS menu, serial number a
 saved settings after restart. Battery menu entries/requests must be absent.
 Historical battery extraction notes above describe the intermediate commit,
 not the current feature set.
+
+## Button scan and command encoding extraction
+
+ButtonInput.c now owns ScanButtons and EncodeButtonCommands. doevents retains
+the original debounce gate and its function-local static SwitchUpData in the
+same scope and order, passes its address to ScanButtons, then calls the encoder
+every loop, including when debounce skips scanning. No persistent state moves
+into the new module. ButtonInput.h declares these interfaces, the existing
+EnabledFunctionData helper and required application globals. Both compiler
+source lists include the module; working ImageCraft options are unchanged.
+
+The scanner expressions and operation order are retained. Its only mechanical
+changes are one indentation level and replacing SwitchUpData references with
+parenthesized dereferences of the supplied state pointer. The encoder body is
+unchanged. Reset handling, camera selection, internal-menu handling and the rest
+of doevents remain in their prior order. Repeated F1/F2 expressions and other
+logic simplification are deliberately left for a later hardware-verified pass.
+
+All 24 host unit tests, both F1/F2 regression char modes and strict application
+syntax checks pass. The existing regression harness now compiles the actual
+new function bodies and actual debounce call-site fragment, replacing only
+physical keypad input and the asynchronous scan delay as before. It retains
+settings, latching/release, navigation, travel/stop, controller Slow, menu routing,
+LED and EEPROM coverage. New assertions show debounce suppresses scanning while
+third-byte encoding continues on each loop.
+
+Host objects retain data/BSS section order, sizes, initialized bytes and symbolic
+pointer relocations, including the release-history static in doevents.
+ButtonInput.c adds no mutable global/static storage. Saved declarations/codecs,
+MCO integration, startup, interrupts, existing modules, constant tables, ImageCraft
+options and target memory settings are unchanged. The 1280-byte stack reserve
+remains enforced; new function calls can affect target code placement and stack
+use, so target build and hardware verification remain necessary.
+
+GCC/NoICE and ImageCraft target checks are pending. Check key press/hold/release,
+F1/F2 toggling and OFF behavior, alternate navigation and cross LEDs, travel/stop,
+controller forward/reverse/Slow, internal/external menus, camera selection,
+reset and saved settings after restart.
 
 ## Structure
 
