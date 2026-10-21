@@ -2,8 +2,9 @@
 
 ## Current baseline and scope
 
-The owner confirmed settings save/load working on hardware at 855bfd6 on
-cleanup-preserve-mco. That is the starting point for the display extraction. Keep changes small
+The owner confirmed normal menu rendering/navigation working on hardware at
+651f2ee on cleanup-preserve-mco, after confirming settings save/load at 855bfd6.
+651f2ee is the starting point for the internal-menu extraction. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
 
@@ -183,6 +184,33 @@ reserve is still 1280 bytes. A new target build/map validation and hardware chec
 are required because separate compilation can change code placement and size.
 Check startup, readable menu/message text, menu navigation, F1/F2 LEDs and modes,
 and saved settings. ImageCraft build verification remains deferred by agreement.
+
+## Internal-menu function extraction
+
+Menu.c now owns 19 existing functions for menu loading, cursor movement, numeric
+editing, selection, F1/F2 setting callbacks, menu exit and restoring defaults.
+Menu.h declares their interface and existing menu constants. Function bodies
+are unchanged. The GCC and ImageCraft source lists include the new module.
+
+All menu arrays, cursor/editing state and saved variables remain defined in
+Subroutines.c and MenuTables.inc in their original order. Host object comparison
+confirms mutable data/BSS section order, sizes and initialized bytes are unchanged.
+The const menu template has identical bytes and symbolic pointer relocations;
+its host section name changes because callbacks are now external to that source.
+Menu.c adds no mutable global/static storage.
+
+All 22 unit tests, both F1/F2 regression char modes and application syntax checks
+pass. The new test links the actual Menu.c and menu tables, covering navigation,
+numeric wrapping, F1/F2 callbacks, serial-save requests, submenu exit, full-menu
+save and restore-default requests. Persistence and display calls are stubbed in
+this test; physical EEPROM, SPI and target execution still need hardware checks.
+
+MCO files, Settings.c, Display.c, interrupts, startup, EEPROM variable declarations,
+menu/keypad/font data and target linker configuration are unchanged. The minimum
+stack reserve remains 1280 bytes. Target build/map validation and hardware testing
+are pending for this extraction. Check menu entry, cursor movement, numeric
+editing, F1/F2 ON/OFF, full exit and saved values after restart. Actual ImageCraft
+compiler verification remains deferred by agreement.
 
 ## Structure
 

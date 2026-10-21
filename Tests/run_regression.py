@@ -38,13 +38,14 @@ assert scan.count(condition) == 1
 scan = scan.replace(condition, 'if (pressed & (1UL << Sw_Index))')
 scan = scan.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
 scan = scan.replace('unsigned int MaskBit = 0x8000;', '')
-matrix = s[s.index('const struct MatrixTbl Keypad_Matrix[18]'):s.index('void setDefaultMenu')]
+matrix = (SRC / 'KeypadMatrix.inc').read_text()
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
                    if line.startswith('#define TeleData_') or line.startswith('#define Gen_Flags_'))
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
-helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'ToggleF1Enable', 'ToggleF2Enable'])
+helpers = function('EnabledFunctionData') + '\n' + '\n'.join(
+    function(n, (SRC/'Menu.c').read_text()) for n in ['ToggleF1Enable', 'ToggleF2Enable'])
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
 led_condition = re.search(r'if \((\(ButtonBoxData & AlternateFunctionMask\).*?)\)\n', (SRC/'Interrupts.c').read_text()).group(1)
 program = r'''

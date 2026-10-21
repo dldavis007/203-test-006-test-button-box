@@ -104,7 +104,7 @@ int main(void) {
 ''')
 
     def test_variable_editors_reject_invalid_menu_state(self):
-        source = (ROOT/'Embedded/Src/Subroutines.c').read_text()
+        source = (ROOT/'Embedded/Src/Menu.c').read_text()
         header = (ROOT/'Embedded/Include/Subroutines.h').as_posix()
         helpers = '\n'.join(extract(source, name) for name in ['dispVariable', 'IncVariable', 'DecVariable'])
         run_c('#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <assert.h>\n#include "' + header + '"\n' + r'''

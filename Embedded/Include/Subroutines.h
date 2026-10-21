@@ -5,6 +5,7 @@
 #include "HardwareConfig.h"
 #include "Settings.h"
 #include "Display.h"
+#include "Menu.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -12,28 +13,8 @@
 /* Application loop. */
 void doevents(void);
 
-/* Saved settings and settings-menu actions. */
-int setSerial(void);
-int RestoreDefaults(void);
-int ToggleF1Enable(void);
-int ToggleF2Enable(void);
-int Var1to13Funct(void);
-int Var1to30Funct(void);
+/* Legacy menu callback declaration. */
 int VarSerNumFunct(void);
-
-/* Internal menu navigation and variable editing. */
-void setDefaultMenu(void);
-void LoadMenu(unsigned char Index[]);
-int ExitMenu(void);
-void CursorUp(void);
-void CursorDown(void);
-void Select(void);
-void DeSelect(void);
-void InsertCursor(void);
-void IncVariable(void);
-void DecVariable(void);
-void dispVariable(char* vPtr, double *value, char format);
-int NullFunction(void);
 
 /* Device discovery, camera selection and external menus. */
 void Scan(void);
@@ -56,11 +37,8 @@ int ATDGetLevel(char ATD_Num);
 
 /* Application message assembly and menu rendering. */
 void bldMessages(void);
-void btnDisplayTitler(void);
 
 /* Application sizes, timing and message flags. */
-#define MenuSize 11
-#define MenuStackSize 5
 
 #define WIM_ID 0x310
 
