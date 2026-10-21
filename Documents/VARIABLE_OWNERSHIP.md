@@ -3,7 +3,9 @@
 This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
-The optimized host assembly matches the source snapshot before this pass.
+The initial housekeeping pass retained identical optimized host assembly.
+The subsequent Settings.c split is a separate compilation-unit change requiring
+a fresh target memory check; its function bodies and saved storage remain intact.
 
 ## Current owners and intended boundaries
 
@@ -15,7 +17,7 @@ The optimized host assembly matches the source snapshot before this pass.
 | Subroutines.c | ButtonBoxData, AlternateFunctionMask, SPI0 buffers/indices, ReActivate_Timer, UpdateMenu, legacy_mode | Shared with interrupts; grouped declarations are in ApplicationState.h. |
 | Subroutines.c | controller_mode, resequenceNodes, deviceSubMenu, sub_Device_Type_Response_ID, UpdateDisp | Also consumed by the legacy MCO integration. Preserve names, types, qualifiers and external linkage. |
 | Subroutines.c | CharsInMem | Display-startup result read by Controller.c; declared in ApplicationState.h. |
-| Subroutines.c | FirstVar, MessageRow, MessageCol, SerialNum, F1Enable, F2Enable, NullVar | Protected saved-variable sequence. Settings persistence owns the contents; menu tables hold pointers into it. |
+| Subroutines.c | FirstVar, MessageRow, MessageCol, SerialNum, F1Enable, F2Enable, NullVar | Protected saved-variable sequence. Settings.c owns persistence/normalization; Settings.h exposes declarations. Menu tables hold pointers into the same arrays. |
 | MenuTables.inc, included by Subroutines.c | defaultMenuc, Menuc, defaultMenuStackc, MenuStackc | Menu templates/runtime arrays. The include preserves their translation unit and definition order. Menuc is shared through ApplicationState.h. |
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Internal menu navigation/editing state; candidate ownership for a future menu module. |
 | Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | Button decoding, alternate-mode handling and outgoing command assembly. Separate functions before changing visibility. |
@@ -54,8 +56,9 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
 
 ## Extraction sequence
 
-1. Extract settings/EEPROM functions while retaining saved storage order and
-   explicit GCC EEPROM offsets. Keep menu callbacks/pointers valid.
+1. Settings/EEPROM functions have been extracted to Settings.c. Saved storage
+   remains in Subroutines.c and explicit GCC EEPROM offsets are unchanged.
+   Menu callbacks/pointers remain valid; target/hardware verification is pending.
 2. Extract display/SPI and message functions, preserving interrupt interfaces.
 3. Extract internal-menu functions with their documented settings/display calls.
 4. Extract camera/device discovery and selection without changing the MCO stack.

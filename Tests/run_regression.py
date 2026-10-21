@@ -44,7 +44,7 @@ macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines(
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
 menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
-helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'NormalizeFunctionSettings', 'ToggleF1Enable', 'ToggleF2Enable', 'EncodeLegacySettings', 'DecodeLegacySettings'])
+helpers = '\n'.join(function(n) for n in ['EnabledFunctionData', 'ToggleF1Enable', 'ToggleF2Enable'])
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
 led_condition = re.search(r'if \((\(ButtonBoxData & AlternateFunctionMask\).*?)\)\n', (SRC/'Interrupts.c').read_text()).group(1)
 program = r'''
@@ -60,6 +60,13 @@ volatile unsigned int ButtonBoxData;
 unsigned int TC0_RCVD_Data, tempData, Third_byte;
 volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
 unsigned int DeBounceTimer, Timer1;
+volatile unsigned int Timer2;
+/* Codec/mode tests must not invoke physical EEPROM writes. */
+void EEWrite(int length, char data[], int *address)
+{
+    (void)length; (void)data; (void)address;
+    assert(0);
+}
 int CntrSwTimeOut = -1;
 unsigned char PORTB, PORTA;
 char Cntrl_Slow_Flag, MenuCheck, Gen_Flags, internal_menu;
@@ -225,6 +232,10 @@ with tempfile.TemporaryDirectory() as d:
     source.write_text(program)
     for char_mode in ['-fsigned-char', '-funsigned-char']:
         subprocess.run([os.environ.get('CC', 'gcc'), '-std=gnu89', '-Wall', '-Wextra',
-                        '-Wno-parentheses', '-Wno-missing-braces', char_mode,
-                        '-I', str(INC), str(source), '-o', str(binary)], check=True)
+                        '-Wno-parentheses', '-Wno-missing-braces',
+                        # Native GCC treats the unused hardware-load path's 0x0800
+                        # EEPROM address as page zero. Codec tests use RAM buffers.
+                        '-Wno-stringop-overread', char_mode,
+                        '-DBUTTONBOX_GCC', '-DBUTTONBOX_HOST_SYNTAX', '-I', str(INC), str(source),
+                        str(SRC/'Settings.c'), '-o', str(binary)], check=True)
         subprocess.run([str(binary)], check=True)

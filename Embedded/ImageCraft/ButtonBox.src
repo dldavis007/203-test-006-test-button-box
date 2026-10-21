@@ -8,6 +8,7 @@
 ..\Src\mcohw.c
 ..\Src\Interrupts.c
 ..\Src\Subroutines.c
+..\Src\Settings.c
 [Headers]
 ..\Include\Controller.h
 ..\Include\Command.h
@@ -22,6 +23,7 @@
 ..\Include\mco.h
 ..\Include\Interrupts.h
 ..\Include\Subroutines.h
+..\Include\Settings.h
 [Documents]
 ..\..\Documents\Legacy\MCO Reference.txt
 ..\..\Documents\Legacy\Revision History.txt

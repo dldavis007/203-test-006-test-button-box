@@ -119,6 +119,40 @@ char modes and source syntax checks pass.
 The latest table extraction and this pass still require target/hardware checks;
 1f66f89 remains the last explicitly hardware-confirmed revision in this record.
 
+## Settings compilation-unit extraction
+
+Settings.c and Settings.h now contain the persistence interface and seven
+unchanged function bodies: NormalizeFunctionSettings, EncodeLegacySettings,
+DecodeLegacySettings, Load_Variables, Save_Variables, Load_Serial_Num and
+Save_Serial_Num. Settings.h declares the saved variables, whose actual definitions
+remain together in Subroutines.c in their original order. Menu callbacks and
+button-mode selection remain in Subroutines.c.
+
+Both the GCC source list and ImageCraft ButtonBox.src include Settings.c. The
+host syntax checker also includes it. The F1/F2 regression now compiles and links
+the real Settings.c instead of extracting copies of its codec/normalization
+functions. It exercises RAM buffers; physical EEPROM load/save paths are not
+executed on the host. The harness rejects unexpected EEPROM writes. A native
+GCC page-zero warning for the unused 0x0800 hardware-load path is disabled only
+in that host test build; production compiler warning flags are unchanged.
+
+All 20 unit tests and both F1/F2 regression char modes pass. GCC application
+syntax is checked with warnings as errors, and the new module's ImageCraft
+conditional path also parses under host GNU89. These are not target builds.
+The seven moved function bodies and saved-variable declaration block compare
+exactly with c263b2a. The host Subroutines object preserves mutable data/BSS
+section order, sizes and initialized bytes. Settings.c adds no mutable global
+or static storage. All MCO files, the EEPROM driver, startup assembly and target
+configuration are unchanged; the minimum stack reserve remains 1280 bytes.
+
+Unlike the preceding textual data includes, this is a separate compilation
+unit. Compiler optimization, code placement and the final target map may change.
+The target memory validator is unchanged and must pass a fresh 9S12 build.
+Hardware checks are still required: startup, all F1/F2 modes, EEPROM save on menu
+exit, values after restart, defaults and serial-number preservation. The GCC
+record remains 28 bytes at 0x0800; the ImageCraft contiguous save remains 128
+bytes; the separate serial-number address remains 0x0902.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.

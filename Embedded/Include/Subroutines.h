@@ -3,6 +3,7 @@
 
 #include "ApplicationState.h"
 #include "HardwareConfig.h"
+#include "Settings.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -11,10 +12,6 @@
 void doevents(void);
 
 /* Saved settings and settings-menu actions. */
-void Load_Variables(void);
-void Save_Variables(void);
-void Load_Serial_Num(void);
-void Save_Serial_Num(void);
 int setSerial(void);
 int RestoreDefaults(void);
 int ToggleF1Enable(void);
