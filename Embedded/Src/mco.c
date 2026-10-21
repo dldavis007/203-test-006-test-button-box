@@ -513,9 +513,10 @@ void MCO_InitRPDO
 {
 
 #ifdef CHECK_PARAMETERS
-  // check PDO range and check node id range 1 - 127
+  // This button box intentionally uses Node-ID 0 with explicit PDO CAN IDs.
+  // Node_ID is unsigned; preserve the legacy accepted range 0 - 127.
   if (((PDO_NR < 1)             || (PDO_NR > NR_OF_RPDOS))      || 
-      ((gMCOConfig.Node_ID == 0) || (gMCOConfig.Node_ID > 127)))
+      (gMCOConfig.Node_ID > 127))
   {
     MCOUSER_FatalError(0x8804);
   }
@@ -566,9 +567,10 @@ void MCO_InitTPDO
 {
 
 #ifdef CHECK_PARAMETERS
-  // check PDO range, node id, len range 1 - 8 and event time or inhibit time set
+  // Allow the application's Node-ID 0, as in MCO_InitRPDO above.
+  // Check PDO range, node id, len range 1 - 8 and event/inhibit time.
   if (((PDO_NR < 1)             || (PDO_NR > NR_OF_TPDOS))     ||
-      ((gMCOConfig.Node_ID == 0) || (gMCOConfig.Node_ID > 127)) ||
+      (gMCOConfig.Node_ID > 127) ||
       ((len < 1)                || (len > 8))                  ||
       ((event_time == 0)        && (inhibit_time == 0)))
   {
