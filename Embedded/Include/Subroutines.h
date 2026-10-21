@@ -7,59 +7,70 @@
 #define Revision "3.05"
 #define _SCI
 
+/* Application loop. */
+void doevents(void);
 
-void Scan_Batteries ( void );
-int NullFunction ( void );
-int ClrBattErr ( void );
-int NextBatt ( void );
-int VarSerNumFunct ( void );
-void Load_Variables (void);
-void Save_Variables ( void );
-void Load_Serial_Num ( void );
-void Save_Serial_Num ( void );
-int setSerial ( void );
+/* Saved settings and settings-menu actions. */
+void Load_Variables(void);
+void Save_Variables(void);
+void Load_Serial_Num(void);
+void Save_Serial_Num(void);
+int setSerial(void);
+int RestoreDefaults(void);
 int ToggleF1Enable(void);
 int ToggleF2Enable(void);
-int Var1to13Funct ( void );
-int Var1to30Funct ( void );
-int ExitMenu ( void );
-void CursorUp( void );
-void CursorDown( void );
-void IncVariable ( void );
-void DecVariable ( void );
+int Var1to13Funct(void);
+int Var1to30Funct(void);
+int VarSerNumFunct(void);
+
+/* Internal menu navigation and variable editing. */
+void setDefaultMenu(void);
+void LoadMenu(unsigned char Index[]);
+int ExitMenu(void);
+void CursorUp(void);
+void CursorDown(void);
+void Select(void);
+void DeSelect(void);
+void InsertCursor(void);
+void IncVariable(void);
+void DecVariable(void);
 void dispVariable(char* vPtr, double *value, char format);
-void Select ( void );
-void DeSelect ( void );
-void LoadMenu ( unsigned char Index[] );
-void InsertCursor ( void );
-void btnDisplayTitler ( void );
-int RestoreDefaults ( void );
-int ATDGetLevel ( char ATD_Num );
-void ext_menu ( void );
-void Scan ( void );
-void menuSort( void );
+int NullFunction(void);
+
+/* Device discovery, camera selection and external menus. */
+void Scan(void);
+void menuSort(void);
 void scan_cameras(void);
 void addressCamera(void);
 int findCameras(void);
 int duplicate_add(void);
-int ExternalMenu ( void );
-int ExternalSubMenu ( void );
-int CameraMenu ( void );
-int Trigger_Device ( void );
-void doevents ( void );
-void Xmit_Rcv_SPI ( void );
+int ExternalMenu(void);
+int ExternalSubMenu(void);
+int CameraMenu(void);
+int Trigger_Device(void);
+void ext_menu(void);
+
+/* Battery diagnostics and analog input. */
+void Scan_Batteries(void);
+int ClrBattErr(void);
+int NextBatt(void);
+int ATDGetLevel(char ATD_Num);
+
+/* Video display, messages and character memory. */
+void Xmit_Rcv_SPI(void);
 void resetTitler(void);
-void showMenu ( void );
-char DispTranslate ( char *TranChar );
+void showMenu(void);
+char DispTranslate(char *TranChar);
 void bldMessages(void);
-void DisplayMsg ( char Message[] );
-void showMessage ( char Message[], int row );
-void ClearTitler ( void );
-void DisplayTitler ( void );
+void DisplayMsg(char Message[]);
+void showMessage(char Message[], int row);
+void ClearTitler(void);
+void DisplayTitler(void);
+void btnDisplayTitler(void);
 void WriteCharMem(void);
 void ReadCharMem(void);
-void setDefaultMenu(void);
 
+/* Application sizes, timing and message flags. */
 #define MenuSize 11
 #define MenuStackSize 5
 

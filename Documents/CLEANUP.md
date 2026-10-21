@@ -2,7 +2,7 @@
 
 ## Current baseline and scope
 
-The owner confirmed 8e46696 on cleanup-preserve-mco working on hardware.
+The owner confirmed 21c7ebc on cleanup-preserve-mco working on hardware.
 That is the baseline for subsequent application cleanup. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
@@ -49,8 +49,21 @@ Preprocessor macro definitions match 8e46696 exactly except for the new include
 guard. Optimized host assembly for all 11 C sources also matches after ignoring
 source annotations. All 20 unit tests, both F1/F2 regression char modes and source
 syntax checks pass. No .c definitions, MCO files, EEPROM code, startup assembly,
-linker configuration or build tools changed. The target build and hardware check
-for this pass are pending.
+linker configuration or build tools changed. The owner subsequently confirmed
+this pass working on hardware at commit 21c7ebc.
+
+## Application interface readability pass
+
+Subroutines.h now groups its 51 existing function declarations by application
+loop, saved settings, internal menu, device/camera control, battery diagnostics
+and video display. Prototype spacing is consistent. All signatures and names
+are preserved; the existing application constants are unchanged.
+
+Subroutines.h is the only firmware file changed in this pass. Optimized host
+assembly for all 11 C files matches 21c7ebc after ignoring source annotations.
+All 20 unit tests, both F1/F2 regression char modes and source syntax checks pass.
+No runtime implementation or storage declaration changed. The target build and
+hardware check for this pass remain pending.
 
 ## Structure
 
