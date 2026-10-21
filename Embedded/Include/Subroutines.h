@@ -1,10 +1,10 @@
 #ifndef Subroutines_H
 #define Subroutines_H
 
+#include "ApplicationState.h"
+
 #define Revision "3.05"
 #define _SCI
-
-extern volatile unsigned char AlternateFunctionMask;
 
 
 void Scan_Batteries ( void );
@@ -56,34 +56,8 @@ void showMessage ( char Message[], int row );
 void ClearTitler ( void );
 void DisplayTitler ( void );
 void WriteCharMem(void);
+void ReadCharMem(void);
 void setDefaultMenu(void);
-
-typedef enum { false = 0, true = !false } bool;
-
-struct MatrixTbl
-{
- 	int BB_Data;
-	char SW_Port_Data[2];
-	char LED_Port_Data[3];
-};
-
-struct MenuStruct
-{
-unsigned char Index[4];
-char Entry[12][21];           //menu text
-unsigned char Pos[11];                 //position of variable
-char *VarPntr[11];                  //pointer to variable
-int (*FunctPtr[11])( void );        //pointer to function
-};
-
-extern struct MenuStruct Menuc[];   //holds menu data
-
-struct MenuStack
-{
-unsigned char Index[4];
-unsigned char CursorPos;
-unsigned char FirstLine;
-};
 
 #define MenuSize 11
 #define MenuStackSize 5
@@ -240,18 +214,5 @@ unsigned char FirstLine;
 //PORT-E define
 #define HW_COP         0x40
 
-/* Shared application state defined in Subroutines.c. */
-extern volatile unsigned int ButtonBoxData;
-extern volatile int ReActivate_Timer;
-extern volatile char SPI0InBuf[2], SPI0OutBuf[2];
-extern volatile int SPI0InBufptr, SPI0OutBufptr;
-extern volatile char UpdateMenu;
-extern char UpdateDisp;
-extern bool controller_mode;
-extern volatile bool legacy_mode;
-extern bool resequenceNodes;
-extern char deviceSubMenu[20][17];
-extern int sub_Device_Type_Response_ID[20];
-extern const struct MatrixTbl Keypad_Matrix[18];
 
 #endif

@@ -18,10 +18,6 @@
 #define INTR_OFF()	asm("sei")
 #endif
 
-extern void WriteCharMem(void);
-extern void ReadCharMem(void);
-extern bool CharsInMem;
-
 int ResetProc (void);
 void InitPorts ( void );
 void InitInterrupts ( void );
