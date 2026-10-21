@@ -7,6 +7,21 @@
 
 extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
 
+/* Slow toggles in ordinary mode and acts as a momentary navigation key
+   while an enabled F1/F2 mode is selected. Recompute from current scan data. */
+static unsigned int SlowToggleMask(unsigned int data)
+{
+    return (EnabledFunctionData(data) & (TeleData_F1 | TeleData_F2))
+        ? 0 : TeleData_Slow;
+}
+
+/* Function bits keep latching even when their alternate mode is disabled. */
+static unsigned int LatchedButtonMask(unsigned int data)
+{
+    return TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev |
+           TeleData_Fwd | TeleData_ExSlow | SlowToggleMask(data) | TeleData_Fast;
+}
+
 /* Called only when the existing debounce gate in doevents has expired. */
 void ScanButtons(unsigned int *releasedSwitches)
 {
@@ -19,7 +34,7 @@ void ScanButtons(unsigned int *releasedSwitches)
 	SwitchData = ButtonBoxData;
 	
 	//Keep all latched data
-	SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast );
+	SwitchData &= LatchedButtonMask(SwitchData);
 
 	//Data Port T     Port B     Port P     Port T     Port J
 	//	   Switch	  Switch	 LED  		LED	 	   LED
@@ -34,7 +49,7 @@ void ScanButtons(unsigned int *releasedSwitches)
 		while (Timer1) { /* wait for interrupt */ }
 		if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )
 		{   //Switch is pressed
-			if ( Keypad_Matrix[Sw_Index].BB_Data & ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast ) )
+			if ( Keypad_Matrix[Sw_Index].BB_Data & LatchedButtonMask(SwitchData) )
 			{   //Switch is a toggle function 
 				if ((*releasedSwitches) & Keypad_Matrix[Sw_Index].BB_Data) 
 				{	//Switch is pressed and was previously released
@@ -110,7 +125,7 @@ void ScanButtons(unsigned int *releasedSwitches)
 	    SwitchData &= ~(TeleData_Fwd | TeleData_Rev);
 		
 	if ( !(SwitchData & TeleData_Rev) && !(SwitchData & TeleData_Fwd) ) //No Reverse or Forward
-	    SwitchData &= ~(TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast);
+	    SwitchData &= ~(TeleData_ExSlow | SlowToggleMask(SwitchData) | TeleData_Fast);
 	
 	if ( SwitchData & TeleData_Fwd && (*releasedSwitches) & TeleData_Rev ) //FORWARD
 	    SwitchData &= ~TeleData_Rev;

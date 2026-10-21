@@ -82,6 +82,10 @@ Exit the entire internal menu to save, then power-cycle to verify persistence.
 
 ## Embedded builds and NoICE
 
+Save and close ImageCraft before pulling updates: it writes its in-memory
+source list back to ButtonBox.src on exit and can overwrite changes just pulled.
+Reopen the project after updating, so newly added source files are compiled.
+
 Open `Embedded/ImageCraft/BUTTONBOX.prj` for the relocated ImageCraft project;
 regenerate its make/dependency files in the IDE. Keep the ImageCraft build-folder
 setting blank and use `..\Include;C:\iccv712\include\` for the include paths.

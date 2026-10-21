@@ -76,9 +76,10 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
    GCC/ImageCraft operation was confirmed by the owner at 032d18e.
 6. ScanButtons and EncodeButtonCommands are extracted to ButtonInput.c. The
    debounce gate and function-local static release history stay in doevents; no
-   storage moves. Host checks pass; target/hardware verification is pending.
-7. After hardware confirmation, simplify duplicated F1/F2 expressions as a
-   separate behavior-preserving change.
+   storage moves. The owner confirmed the 3be12c8 pass working.
+7. Duplicate latch-mask expressions are factored into private SlowToggleMask
+   and LatchedButtonMask helpers, with no new state or cached scan snapshot.
+   Exhaustive host comparisons pass; target/hardware verification is pending.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and

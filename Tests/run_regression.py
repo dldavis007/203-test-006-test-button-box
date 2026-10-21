@@ -18,7 +18,7 @@ for data_name in ('MenuTables.inc', 'KeypadMatrix.inc'):
 
 def function(name, source=None):
     s = source if source is not None else (SRC / "Subroutines.c").read_text()
-    match = re.search(r'^(?:unsigned int|void|int) ' + name + r'\([^;]*?\)\s*\{', s, re.M)
+    match = re.search(r'^(?:static )?(?:unsigned int|void|int) ' + name + r'\([^;]*?\)\s*\{', s, re.M)
     assert match, name
     start = match.start()
     pos = match.end()
@@ -32,7 +32,7 @@ begin = s.index('\tif ( !DeBounceTimer )', s.index('void doevents'))
 end = s.index('\n\tif (ButtonBoxData & TeleData_Reset)', begin)
 scan = s[begin:end]
 button_source = (SRC / 'ButtonInput.c').read_text()
-button_functions = '\n'.join(function(n, button_source) for n in ['ScanButtons', 'EncodeButtonCommands'])
+button_functions = '\n'.join(function(n, button_source) for n in ['SlowToggleMask', 'LatchedButtonMask', 'ScanButtons', 'EncodeButtonCommands'])
 # Replace only electrical input and asynchronous delay. Keep actual scan order,
 # latching, settings gate, interlocks and all three output assignments.
 condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & (Keypad_Matrix[Sw_Index].SW_Port_Data[1] & 0x07)) )'
@@ -129,6 +129,22 @@ int main(void)
     DecodeLegacySettings(legacy);
     assert(!strcmp(MessageRow, " 12") && !strcmp(MessageCol, " 23"));
     assert(!strcmp(SerialNum, "12345"));
+    /* Exhaustively compare the refactored masks with the previous expressions
+       for every 16-bit state and all four independent setting combinations. */
+    for (f1 = 0; f1 <= 1; ++f1) for (f2 = 0; f2 <= 1; ++f2) {
+        unsigned long raw;
+        strcpy(F1Enable, f1 ? " ON" : "OFF");
+        strcpy(F2Enable, f2 ? " ON" : "OFF");
+        for (raw = 0; raw <= 0xffffUL; ++raw) {
+            unsigned int data = (unsigned int)raw;
+            unsigned int old_slow =
+                ((EnabledFunctionData(data) & (TeleData_F1 | TeleData_F2)) ? 0 : TeleData_Slow);
+            unsigned int old_latched = TeleData_F1 | TeleData_F2 | TeleData_F3 |
+                TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | old_slow | TeleData_Fast;
+            assert(SlowToggleMask(data) == old_slow);
+            assert(LatchedButtonMask(data) == old_latched);
+        }
+    }
     /* Debounce skips electrical scanning, but outgoing encoding still runs. */
     clear();
     DeBounceTimer = 1;

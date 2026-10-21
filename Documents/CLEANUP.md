@@ -2,11 +2,11 @@
 
 ## Current baseline and scope
 
-The owner confirmed battery retirement at 032d18e working with both GCC and
-ImageCraft. That is the baseline for extracting button scanning and command
-encoding. Working ImageCraft settings remain those synchronized at 7915b16.
-Keep changes separately testable. The Node-ID-zero startup regression and
-recovery are documented in STARTUP_NODE_ZERO.md.
+The owner confirmed the ButtonInput extraction at 3be12c8 working after the
+ImageCraft project reloaded its new source list. That is the baseline for
+factoring duplicated button latch masks. Working ImageCraft settings remain
+those synchronized at 7915b16. Keep changes separately testable. The Node-ID-zero
+startup regression and recovery are documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
 mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
@@ -380,6 +380,38 @@ GCC/NoICE and ImageCraft target checks are pending. Check key press/hold/release
 F1/F2 toggling and OFF behavior, alternate navigation and cross LEDs, travel/stop,
 controller forward/reverse/Slow, internal/external menus, camera selection,
 reset and saved settings after restart.
+
+## Button latch-mask factoring
+
+ButtonInput.c now names the existing expressions with two private helpers:
+SlowToggleMask returns the Slow bit only in ordinary mode, and LatchedButtonMask
+combines the fixed latched keys with that conditional bit. The repeated full
+mask at scan start and toggle classification calls the second helper; the
+no-travel speed clear calls the first. These expressions are still evaluated
+at each original location using current SwitchData. Do not cache one mask at
+scan start: pressing a function key earlier in the matrix can change how Slow
+is handled later in the same scan. Raw function bits continue to latch even
+when their alternate mode is OFF.
+
+All 24 host unit tests, both signed/unsigned-char regressions and strict
+application syntax checks pass. The regression also exhaustively compares both
+helpers with the previous expressions across all 65536 input values and four
+F1/F2 settings combinations. Existing press/release, command encoding, controller
+Slow, travel/stop, menus, LEDs, debounce and EEPROM cases remain covered.
+
+Only ButtonInput.c changes among Embedded files. Replacing its three helper
+call sites with their original expressions reconstructs the previous source
+exactly. Host data/BSS contents, order and pointer relocations are unchanged;
+the module still adds no mutable storage. EEPROM, MCO, startup, interrupts,
+project lists/options and the 1280-byte stack requirement are untouched.
+Target GCC/ImageCraft build and hardware checks remain pending because compiler
+inlining, code placement and call overhead can differ.
+
+When updating locally, save and close ImageCraft before pulling. Its in-memory
+project source list is written back on exit and can overwrite a freshly pulled
+ButtonBox.src. Reopen Embedded/ImageCraft/BUTTONBOX.prj after the pull. If an
+update was pulled while the IDE was open, preserve the updated source list
+before closing and restore it afterward, then reopen the project.
 
 ## Structure
 
