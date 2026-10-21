@@ -11,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'Embedded/Src'
 INC = ROOT / 'Embedded/Include'
 s = (SRC / 'Subroutines.c').read_text()
+# Read the actual extracted firmware tables before selecting test fragments.
+for data_name in ('MenuTables.inc', 'KeypadMatrix.inc'):
+    s = s.replace('#include "' + data_name + '"', (SRC/data_name).read_text())
+
 
 def function(name, source=None):
     s = source if source is not None else (SRC / "Subroutines.c").read_text()

@@ -2,7 +2,7 @@
 
 ## Current baseline and scope
 
-The owner confirmed 6877736 on cleanup-preserve-mco working on hardware.
+The owner confirmed 1f66f89 on cleanup-preserve-mco working on hardware.
 That is the baseline for subsequent application cleanup. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
@@ -77,8 +77,27 @@ Replacing the include with its original table text reconstructs the previous
 Subroutines.c exactly. Optimized host assembly, including data, for all 11 C files
 also matches 6877736 after ignoring source annotations. All 20 unit tests, both
 F1/F2 regression char modes and source syntax checks pass. MCO, EEPROM layout,
-startup and the stack reserve are unchanged. The target build and hardware check
-for this pass are pending.
+startup and the stack reserve are unchanged. The owner subsequently confirmed
+this pass working on hardware at commit 1f66f89.
+
+## Menu and keypad table extraction
+
+MenuTables.inc holds the default menu templates and runtime menu arrays in
+exactly their previous order. KeypadMatrix.inc holds the 18-entry button/port/LED
+mapping. Both are included by Subroutines.c at their original definition
+locations. They are not compiled as separate source files. EEPROM variables
+remain in Subroutines.c in their original order.
+
+Expanding these two data includes reconstructs the previous Subroutines.c
+exactly. All types, array dimensions, contents, qualifiers and symbol scope are
+preserved. The regression harness reads the real extracted tables before
+selecting its test fragments, retaining the existing F1/F2 menu and scan checks.
+
+Optimized host assembly, including data, for all 11 C files matches 1f66f89 after
+ignoring source annotations. All 20 unit tests, both F1/F2 regression char modes
+and source syntax checks pass. MCO files, startup, build tools, EEPROM layout
+and the 1280-byte stack reserve are unchanged. The target build/hardware check
+for this pass is pending.
 
 ## Structure
 
