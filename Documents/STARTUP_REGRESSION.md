@@ -133,3 +133,47 @@ Do not assume a displayed source line alone identifies the executed instruction.
 No cleanup has been reapplied. Once a candidate is supported, create one change
 from 65ced39 and perform one hardware check. Keep the working image available.
 EEPROM record offsets and the 1280-byte reserve remain fixed during isolation.
+
+## Full-disassembly review (2026-10-21)
+
+The second archive includes full objdump output for the exact working and
+reverted ELFs. Main retains the same initialization call order and interrupt
+enable position. Both sets of ISR prologues save _.frame, _.tmp, _.z and _.xy;
+their epilogues restore them before RTI. Keypad addressing in the failed TC3
+handler uses Flash address 0xED75 with the expected seven-byte entry stride.
+Default-menu copying still uses 311-byte records and the expected 30-byte
+default menu-stack copy. These observations identify no definite compiler or
+startup fault; they do not certify all generated code or execution.
+
+The next step is an execution checkpoint on the already-built failed image,
+not another collection script or a speculative cleanup patch. Its existing
+NoICE debug session is:
+
+`build/startup-diagnosis/worktrees/regression/build/9s12/buttonbox_debug.noi`
+
+That session loads the failed 35b2044 image and leaves execution halted at
+_start. Close another NoICE instance before opening it. Keep the known-good
+image/session available for restoration. Do not use build_and_debug_noice.bat
+for this test: that rebuilds the current checkout instead of the failed case.
+
+Set one hardware breakpoint at a time, remove it when reached, and proceed
+from the current halt to the next checkpoint:
+
+| Failed-image address | Meaning when reached |
+| --- | --- |
+| 0xEFA6 | main entry: startup copy/clear and transfer to main completed |
+| 0xEFCC | immediately before CLI: peripheral initialization returned |
+| 0xEFD1 | InitCANopen returned, with interrupts enabled |
+| 0xEFED | initialization including EEPROM load/menu setup reached the main loop |
+
+These are fixed-region addresses; no page qualifier is needed for these
+breakpoints. PPAGE must remain 0x3D. If a checkpoint is not reached, halt before
+resetting/reloading and capture PC, SP, PPAGE, the instruction view, and the last
+checkpoint reached. Record whether the failure is a hang, reset or unexpected
+execution, and whether it happens during a debugger pause. A watchdog reset
+caused by a long pause must be distinguished from the original free-running
+failure. Addresses apply only to the archived regression ELF, not a rebuild or
+the currently working image.
+
+No firmware edits have been made as a result of this review. The EEPROM codec,
+record offsets, reset-marker allocation and 1280-byte reserve remain unchanged.
