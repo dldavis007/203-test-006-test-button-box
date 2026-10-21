@@ -2,7 +2,7 @@
 
 ## Current baseline and scope
 
-The owner confirmed b79ca05 on cleanup-preserve-mco working on hardware.
+The owner confirmed 8e46696 on cleanup-preserve-mco working on hardware.
 That is the baseline for subsequent application cleanup. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
@@ -34,7 +34,23 @@ The new headers compile independently. All 20 host unit tests, both F1/F2
 regression char modes and source syntax checks pass. Optimized host assembly
 for all 11 C files matches the b79ca05 source snapshot after ignoring source-path
 annotations. This is additional host verification, not a target compiler or
-hardware result. The target build/hardware check for this pass remains pending.
+hardware result. The owner subsequently confirmed this pass working on hardware
+at commit 8e46696.
+
+## Hardware-configuration header pass
+
+HardwareConfig.h now holds the board clock, GPIO initialization, ADC, SPI, PWM,
+interrupt configuration values and display/alarm/watchdog pin assignments that
+were mixed into Subroutines.h. The legacy alternate-clock notes are preserved.
+Subroutines.h includes the new header for existing callers, while retaining
+application constants such as menu sizes, display-buffer length and message flags.
+
+Preprocessor macro definitions match 8e46696 exactly except for the new include
+guard. Optimized host assembly for all 11 C sources also matches after ignoring
+source annotations. All 20 unit tests, both F1/F2 regression char modes and source
+syntax checks pass. No .c definitions, MCO files, EEPROM code, startup assembly,
+linker configuration or build tools changed. The target build and hardware check
+for this pass are pending.
 
 ## Structure
 
