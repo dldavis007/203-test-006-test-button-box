@@ -2,6 +2,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 import importlib.util
+import json
 import tempfile
 import unittest
 import zipfile
@@ -52,6 +53,34 @@ class StartupDiagnosticsTests(unittest.TestCase):
             diag.srecords(valid[:-2] + '00')
         with self.assertRaises(ValueError):
             diag.srecords(valid + '\n' + record(0x4000, [4]))
+
+    def test_existing_disassembly_does_not_build_or_touch_worktrees(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            manifest = {'cases': {label: {'commit': commit, 'build_exit': 0}
+                                  for label, commit in diag.CASES}}
+            (output/'report.json').write_text(json.dumps(manifest))
+            (output/'report.txt').write_text('Original report retained')
+            for label, _ in diag.CASES:
+                (output/label).mkdir()
+                (output/label/'buttonbox.elf').write_bytes(b'ELF fixture')
+            with patch.object(diag, 'capture', return_value='full listing') as capture, \
+                 patch.object(diag.subprocess, 'run') as run:
+                self.assertEqual(diag.disassemble_existing(output), 0)
+                run.assert_not_called()
+                self.assertEqual(capture.call_count, 2)
+                for call in capture.call_args_list:
+                    self.assertEqual(call.args[0][1], '-d')
+                    self.assertEqual(len(call.args[0]), 3)
+            with zipfile.ZipFile(output/'startup-diagnostics.zip') as archive:
+                self.assertEqual(archive.read('regression/disassembly.txt'), b'full listing')
+                self.assertEqual(archive.read('report.txt'), b'Original report retained')
+            manifest['cases']['working']['commit'] = 'wrong commit'
+            (output/'report.json').write_text(json.dumps(manifest))
+            with patch.object(diag, 'capture') as capture:
+                with self.assertRaises(RuntimeError):
+                    diag.disassemble_existing(output)
+                capture.assert_not_called()
 
     def test_collector_only_builds_and_retains_separate_artifacts(self):
         headers, symbols, records = fixture()

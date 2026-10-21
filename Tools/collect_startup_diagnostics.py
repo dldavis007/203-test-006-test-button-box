@@ -20,6 +20,7 @@ CASES = [('working', '65ced39d268d532984f195e218ece2bd5e5eb556'),
 ARTIFACTS = ['buttonbox.elf', 'buttonbox.s19', 'buttonbox.map', 'merged.map',
              'final_sections.txt', 'sections.txt', 'retained_sections.txt',
              'buttonbox_debug.noi', 'pruning.map']
+EXTRA_ARTIFACTS = ['build.log', 'symbols.txt', 'startup_disassembly.txt', 'disassembly.txt']
 
 
 def capture(command, cwd):
@@ -117,15 +118,51 @@ def tool(name):
     return str(path) if path.is_file() else prefix + name
 
 
+def archive_results(output):
+    with zipfile.ZipFile(output/'startup-diagnostics.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+        for filename in ['report.txt', 'report.json']:
+            archive.write(output/filename, filename)
+        for label, _ in CASES:
+            for filename in ARTIFACTS + EXTRA_ARTIFACTS:
+                path = output/label/filename
+                if path.exists():
+                    archive.write(path, label+'/'+filename)
+
+
+def disassemble_existing(output):
+    """Read the previously collected ELFs; never rebuild or load a device."""
+    manifest = json.loads((output/'report.json').read_text())
+    # Validate both inputs before generating anything, including commit identity.
+    for label, commit in CASES:
+        case = manifest['cases'][label]
+        if case['commit'] != commit or case['build_exit'] != 0:
+            raise RuntimeError('Expected successful exact-commit build for ' + label)
+        if not (output/label/'buttonbox.elf').is_file():
+            raise RuntimeError('Missing collected ELF for ' + label)
+    for label, _ in CASES:
+        elf = output/label/'buttonbox.elf'
+        listing = capture([tool('objdump'), '-d', elf], ROOT)
+        (output/label/'disassembly.txt').write_text(listing)
+    archive_results(output)
+    print('Updated startup-diagnostics.zip with full disassembly; no rebuild or target loading.')
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', action='store_true', help='show cases without creating worktrees or compiling')
+    parser.add_argument('--disassemble-existing', action='store_true',
+                        help='add full disassembly to the existing archive without rebuilding or loading hardware')
     args = parser.parse_args(argv)
+    if args.plan and args.disassemble_existing:
+        parser.error('--plan and --disassemble-existing cannot be combined')
     if args.plan:
         for label, commit in CASES:
             print('%s: %s (build only; no NoICE or device programming)' % (label, commit))
         return 0
     output = ROOT/'build/startup-diagnosis'
+    if args.disassemble_existing:
+        return disassemble_existing(output)
     output.mkdir(parents=True, exist_ok=True)
     manifest = dict(cases={}, tool_versions={})
     for name in ['gcc', 'ld']:
@@ -139,7 +176,7 @@ def main(argv=None):
         tree = output/'worktrees'/label
         artifacts = output/label
         artifacts.mkdir(parents=True, exist_ok=True)
-        for filename in ['symbols.txt', 'startup_disassembly.txt']:
+        for filename in ['symbols.txt', 'startup_disassembly.txt', 'disassembly.txt']:
             stale = artifacts/filename
             if stale.exists():
                 stale.unlink()
@@ -170,6 +207,7 @@ def main(argv=None):
             (artifacts/'symbols.txt').write_text(symbols)
             (artifacts/'startup_disassembly.txt').write_text(capture(
                 [tool('objdump'), '-d', '--start-address=0x4000', '--stop-address=0x4050', elf], ROOT))
+            (artifacts/'disassembly.txt').write_text(capture([tool('objdump'), '-d', elf], ROOT))
             manifest['cases'][label]['image'] = inspect_image(headers, symbols, (artifacts/'buttonbox.s19').read_text())
     (output/'report.json').write_text(json.dumps(manifest, indent=2)+'\n')
     lines = ['Button-box startup comparison', 'No NoICE session or target programming was performed.',
@@ -193,14 +231,7 @@ def main(argv=None):
         lines.extend(difflib.unified_diff(before.read_text().splitlines(), after.read_text().splitlines(),
                                           fromfile='working', tofile='regression', lineterm=''))
     (output/'report.txt').write_text('\n'.join(lines)+'\n')
-    with zipfile.ZipFile(output/'startup-diagnostics.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
-        for filename in ['report.txt', 'report.json']:
-            archive.write(output/filename, filename)
-        for label, _ in CASES:
-            for filename in ARTIFACTS + ['build.log', 'symbols.txt', 'startup_disassembly.txt']:
-                path = output/label/filename
-                if path.exists():
-                    archive.write(path, label+'/'+filename)
+    archive_results(output)
     print('Collected: %s' % output)
     print('Share startup-diagnostics.zip for diagnosis; worktrees and Git metadata are excluded.')
     return 0 if all(case['build_exit'] == 0 and not case.get('image', {}).get('issues')

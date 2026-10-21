@@ -9,7 +9,8 @@ Its tree is identical to `a071ac6`. The two reverted commits remain in history:
   target compilation/linking completed but the RAM reserve validation failed.
 - `35b2044`: read-only keypad/default-stack/vector tables, menu-editor guards
   and additional RAM reporting. It built/loaded but was reported to crash
-  immediately. No crash PC, failed ELF/map or readback was captured here.
+  immediately. Exact working/failed ELF, S-record, maps and startup disassembly
+  have now been collected; a crash PC and target readback are still missing.
 
 The immediate startup crash has **not** been diagnosed. Passing host tests did
 not establish target correctness. Do not reapply the warning pass as a group.
@@ -26,15 +27,44 @@ was unchanged; the follow-up merely printed additional RAM figures. However,
 changes in retained code/data and read-only placement can change the generated
 addresses even with the same linker script.
 
-An earlier uploaded ELF (before these cleanup commits, not the exact `65ced39`
-image) ends BSS at `0x3AF2`: 1294 stack bytes, just 14 bytes above the reserve.
-Growing the scan-ID array from 12 to 20 16-bit entries adds 16 bytes. This is
-consistent with the RAM validation failure; it does not prove the cause without
-the exact pair of maps, and it does not explain the later startup crash.
+The uploaded `startup-diagnostics.zip` contains successful builds of both exact
+commits on GCC 3.3.6. Comparing their generated images establishes:
 
-The collector's section/symbol/S-record reader was also checked against that
-real earlier ELF: its reset vector is `0x4000` and the allocated Flash and data
-initializer ranges are present in its generated S-record.
+| Item | Working 65ced39 | Reverted 35b2044 |
+| --- | --- | --- |
+| Reset / startup | 0x4000 | 0x4000 |
+| Main | 0x7357 | 0xEFA6 |
+| Data initializer in Flash | 0xF0F2 | 0xF272 |
+| Initialized RAM | 0x2014..0x241F | 0x2014..0x2387 |
+| BSS / software registers | 0x2420..0x3AF5 | 0x2388..0x3A6D |
+| Available stack below 0x4000 | 1290 bytes | 1426 bytes |
+| Margin above required 1280 bytes | 10 bytes | 146 bytes |
+| Keypad table | RAM 0x23A0 | Flash 0xED75 |
+| Default menu stack table | RAM 0x2372 | Flash 0xF201 |
+| RTI interrupt handler | 0x69BA | PPAGE 0x3D:0xAA9A |
+
+The startup instruction sequence is unchanged. It masks interrupts, maps RAM,
+sets SP to 0x4000 and PPAGE to 0x3D, copies the exact initialized-data length,
+clears BSS/software registers, and calls the main address shown above. Its
+address/length operands agree with each image's section map. Neither image has
+missing allocated Flash/data-initializer bytes or conflicting S-record writes.
+
+The 18 keypad entries and default menu-stack bytes match exactly, including
+when the working RAM data is read from its Flash initializer. The 11 default
+menu records also match after resolving their variable/function pointers by
+symbol name. All 64 vector slots resolve to the same handler names in both
+images, including the reset vector. FirstVar, MessageRow, MessageCol, SerialNum,
+F1Enable and F2Enable have identical default bytes and relative offsets.
+These checks compare generated files, not device memory or EEPROM readback.
+
+The failed image passes the static stack-reserve check with *more* available
+RAM. This does not prove runtime stack use is safe, or explain the earlier
+962cccc reserve failure (that intermediate commit was not collected). The
+literal startup sequence, corrupt table initializers and an obvious vector
+mismatch are not supported as causes by this evidence. Interrupt code generation,
+runtime behavior, and actual Flash/page loading remain unverified. In particular,
+the moved RTI handler requires the static PPAGE selection to remain correct;
+its new address alone is not evidence of a bug.
 
 ## Collect on the Windows toolchain machine
 
@@ -62,7 +92,7 @@ python Tools/collect_startup_diagnostics.py --plan
 ```
 
 The collector keeps build logs, ELF, S-record, map files, section listings,
-symbol addresses and startup disassembly separately. `report.txt`/`report.json`
+symbol addresses, startup disassembly and full disassembly separately. `report.txt`/`report.json`
 show the stack margin, reset destination, startup/main bytes, initialization
 symbols and table locations. S-record checks reject invalid checksums or
 conflicting writes and flag missing allocated section data. These are file
@@ -73,15 +103,33 @@ The archive includes only the selected reports/build artifacts, not the Git
 worktree metadata or complete worktrees. If a build fails, the archive still
 contains its log and available map/section files.
 
-## Next decision
+## Next diagnostic step: use the already-built ELFs
 
-Compare the exact images first: reset/vector values, main and initialization
-addresses, data/BSS/soft-register placement, RAM margin, and read-only table
-locations. A valid generated image does not rule out a loader, interrupt,
-compiler-code-generation or runtime problem. Do not attribute the crash to a
-particular const/volatile/type change without evidence.
+From `startup-diagnosis`, update the diagnostic tools and run:
 
-Once a candidate is supported, create one change from `65ced39` and perform one
-hardware check with the failing PC/reset source and expected memory bytes
-recorded. Keep the working firmware available throughout. EEPROM offsets and
-the stack reserve remain fixed during isolation.
+```powershell
+git fetch github
+git switch startup-diagnosis
+git pull --ff-only github startup-diagnosis
+python Tools/collect_startup_diagnostics.py --disassemble-existing
+```
+
+This validates the recorded commit identities, runs objdump on the two collected
+ELFs, and adds `working/disassembly.txt` and `regression/disassembly.txt` to
+`build/startup-diagnosis/startup-diagnostics.zip`. It does not rebuild, start
+NoICE, load firmware, change EEPROM, or touch the detached diagnostic worktrees.
+Upload the updated archive. The original collector now includes full disassembly
+as well, for future collections.
+
+If the existing failing image is tested again in NoICE, capture the point of
+failure before resetting or loading another image. Set a hardware breakpoint at
+its `main` (0xEFA6); confirm PPAGE reads 0x3D. Then use the source view to step
+through initialization, especially the first interrupt enable, CAN initialization,
+ReadCharMem, Load_Variables and setDefaultMenu. Record the last completed call
+and the PC, SP, PPAGE and disassembly at the first failure. A hang in a wait loop,
+a watchdog reset and execution from erased Flash require different fixes.
+Do not assume a displayed source line alone identifies the executed instruction.
+
+No cleanup has been reapplied. Once a candidate is supported, create one change
+from 65ced39 and perform one hardware check. Keep the working image available.
+EEPROM record offsets and the 1280-byte reserve remain fixed during isolation.
