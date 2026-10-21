@@ -8,7 +8,7 @@
 __pycache__/
 *.pyc
 
-# Fresh ImageCraft output; imported reference artifacts remain under Legacy.
+# Generated ImageCraft output beside the active project.
 /Embedded/ImageCraft/*.o
 /Embedded/ImageCraft/*.s19
 /Embedded/ImageCraft/*.dbg*

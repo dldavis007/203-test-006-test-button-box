@@ -212,6 +212,25 @@ are pending for this extraction. Check menu entry, cursor movement, numeric
 editing, F1/F2 ON/OFF, full exit and saved values after restart. Actual ImageCraft
 compiler verification remains deferred by agreement.
 
+## ImageCraft verification and obsolete project removal
+
+The owner confirmed the menu extraction at 54ad773 working on hardware, then
+built/linked all 12 application sources using ImageCraft 7.08 and reported that
+it operates. The linker reported "Device 90% full". Detailed ImageCraft memory
+and complete functional verification were not supplied.
+
+Use Embedded/ImageCraft/BUTTONBOX.prj, leave its build-folder setting blank, and
+use ..\Include;C:\iccv712\include\ as the include paths. A separate output
+folder caused the IDE to generate incorrect source paths. Keep crt12initrm.o;
+runtime.c, compact_io.c and startup.S are GCC-only and excluded from ImageCraft.
+
+The root Legacy folder, containing a duplicate old IDE project and imported
+build outputs, was removed because it led to opening the wrong project.
+Those files remain recoverable from Git history. Documents/Legacy retains the
+original reference text used by the active project. Generated ImageCraft outputs
+beside the active project are already ignored. No firmware source, startup,
+EEPROM format, MCO integration or memory configuration changed in this removal.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.
@@ -220,7 +239,6 @@ compiler verification remains deferred by agreement.
 - Tools: target build and NoICE session generation.
 - Tests: host regressions and syntax/build-layout checks.
 - Documents: build instructions, cleanup decisions and diagnosis.
-- Legacy/ImageCraft: imported legacy outputs.
 - build: generated and ignored artifacts.
 
 The ImageCraft project remains under Embedded/ImageCraft. Its compiler paths

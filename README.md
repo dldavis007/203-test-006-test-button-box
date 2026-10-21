@@ -16,7 +16,6 @@ imported baseline.
 | `Tools` | GCC build and NoICE mapping scripts |
 | `Tests` | Host regressions and build-tool checks |
 | `Documents` | Build instructions, cleanup notes and original reference text |
-| `Legacy/ImageCraft` | Unmodified imported project files and build artifacts |
 | `build/9s12` | Generated output, excluded from Git |
 
 ## Independent function settings
@@ -75,9 +74,12 @@ Exit the entire internal menu to save, then power-cycle to verify persistence.
 ## Embedded builds and NoICE
 
 Open `Embedded/ImageCraft/BUTTONBOX.prj` for the relocated ImageCraft project;
-regenerate its make/dependency files in the IDE. The original project is archived
-under `Legacy/ImageCraft`. The new GNU68HC12 build compiles
-all application sources; it is separate from host regression testing.
+regenerate its make/dependency files in the IDE. Keep the ImageCraft build-folder
+setting blank and use `..\Include;C:\iccv712\include\` for the include paths.
+A separate build folder caused incorrect generated source paths in the owner's IDE.
+Exclude GCC-only runtime.c, compact_io.c and startup.S; retain the custom
+crt12initrm.o startup object. Generated files beside the project are ignored.
+The GNU68HC12 build compiles all application sources separately from host tests.
 
 From PowerShell in the repository root:
 
@@ -100,14 +102,15 @@ It stops before launching NoICE on any compiler, unresolved-symbol, memory-layou
 or debug-map failure and removes stale loadable artifacts.
 
 **Validation status:** host regression, settings codec, source syntax and build-tool
-checks pass. Shared declarations are organized by owning header, and the host
-source check treats warnings as errors (excluding target-only address-width casts). The user verified the pre-cleanup GCC build/load, F1/F2 settings,
-EEPROM persistence and mode LEDs on hardware. The reorganized cleanup branch
-still needs a Windows GNU68HC12 build/load and hardware check. ImageCraft is
-not installed here, so its relocated IDE project needs a local build check.
+checks pass. The owner confirmed the cleanup through menu extraction at 54ad773
+working on hardware, then successfully compiled/linked all 12 application sources
+with ImageCraft 7.08 and reported operation. The ImageCraft linker reported
+"Device 90% full"; detailed RAM/stack and complete functional checks were not
+provided. ImageCraft is not installed in the development environment.
 
-Tracked DBG/S19/LST files under `Legacy/ImageCraft` are imported baseline
-artifacts. Use fresh `build/9s12` artifacts for GCC debugging.
+The obsolete root Legacy folder was removed to prevent opening the wrong IDE
+project. Its former files remain available in Git history. Original reference
+documents remain under Documents/Legacy. Use fresh build artifacts for debugging.
 
 See [Documents/GCC_NOICE.md](Documents/GCC_NOICE.md) for memory layout and bench
 checks, and [Documents/CLEANUP.md](Documents/CLEANUP.md) for cleanup scope.
