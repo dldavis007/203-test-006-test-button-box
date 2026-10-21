@@ -2,7 +2,7 @@
 
 ## Current baseline and scope
 
-The owner confirmed 21c7ebc on cleanup-preserve-mco working on hardware.
+The owner confirmed 6877736 on cleanup-preserve-mco working on hardware.
 That is the baseline for subsequent application cleanup. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
@@ -62,8 +62,23 @@ are preserved; the existing application constants are unchanged.
 Subroutines.h is the only firmware file changed in this pass. Optimized host
 assembly for all 11 C files matches 21c7ebc after ignoring source annotations.
 All 20 unit tests, both F1/F2 regression char modes and source syntax checks pass.
-No runtime implementation or storage declaration changed. The target build and
-hardware check for this pass remain pending.
+No runtime implementation or storage declaration changed. The owner
+subsequently confirmed this pass working on hardware at commit 6877736.
+
+## Character-font data extraction
+
+The 347-line CMDI definition moved from Subroutines.c to CharacterFontData.inc
+in Embedded/Src. Subroutines.c includes it at the exact former definition
+location. This is a data include, not another compilation unit. Symbol name,
+const char type, initializer bytes and definition order are preserved. Existing
+GCC and ImageCraft source lists require no extra compilation step.
+
+Replacing the include with its original table text reconstructs the previous
+Subroutines.c exactly. Optimized host assembly, including data, for all 11 C files
+also matches 6877736 after ignoring source annotations. All 20 unit tests, both
+F1/F2 regression char modes and source syntax checks pass. MCO, EEPROM layout,
+startup and the stack reserve are unchanged. The target build and hardware check
+for this pass are pending.
 
 ## Structure
 
