@@ -1,57 +1,63 @@
-# Startup regression: Node-ID zero rejected by warning cleanup
+# Preserve the working MCO integration during cleanup
 
-The button box's MCOUSER_ResetCommunication explicitly calls
-`MCO_Init(125, 0x00, 0)` before configuring RPDOs and TPDOs with explicit CAN IDs.
-MCO_Init stores that zero in gMCOConfig.Node_ID. This is existing application
-behavior; this fix does not change the unit's Node-ID or bus identifiers.
+## Identified startup regression
 
-Commit 962cccc changed two parameter guards, in MCO_InitRPDO and MCO_InitTPDO,
-from `Node_ID < 0` to `Node_ID == 0`. Because Node_ID is unsigned, the old
-comparison could never reject zero. The replacement newly rejected the
-application's configured value. The changed guard remains in 35b2044.
+The button box calls `MCO_Init(125, 0x00, 0)` before configuring RPDOs and TPDOs
+with explicit CAN IDs. Node-ID zero is intentional application behavior. The
+C48 controller also operates as Node-ID zero, according to the project owner.
+Do not replace these integration choices with assumptions from generic CANopen
+comments or conventional Node-ID ranges.
 
-Hardware stepping located the failure at the first MCO_InitRPDO parameter guard.
-The caller and generated disassembly corroborate it: the caller initializes
-Node-ID zero, while the regression adds an explicit zero branch to fatal error
-0x8804. TPDO initialization has the same defect and would reject it with 0x8806.
+962cccc changed the RPDO and TPDO parameter guards from `Node_ID < 0` to
+`Node_ID == 0`. Node_ID is unsigned, so the old lower-bound check never rejected
+zero. The new check rejected this application's configured value. Hardware
+stepping located the failure in the first MCO_InitRPDO guard; the caller and
+uploaded disassembly corroborate that path. MCOUSER_FatalError then restarts
+CAN initialization recursively with the same inputs, consuming stack on each
+retry. The zero rejection is established; the final crash PC was not captured.
 
-MCOUSER_FatalError calls InitCANopen, which calls MCOUSER_ResetCommunication and
-reaches the same failing initializer again. With unchanged inputs this recurses,
-consuming stack on each retry. This explains a startup failure despite adequate
-statically reserved stack. The precise final crash PC/stack exhaustion has not
-been captured; the invalid zero rejection itself is established.
+## Current restoration test branch
 
-## Isolated correction
+The first correction, 93e182d on startup-fix-node-zero, removed the new zero
+checks and was confirmed working on hardware. That branch is preserved.
+Following the owner's direction, cleanup-preserve-mco now restores mco.c,
+mcohw.c, user.c, mco.h and mcohw.h byte-for-byte from working commit 65ced39,
+instead of including general MCO cleanup. nodecfg.h and procimg.h also match
+that baseline. Tests pin all seven files to that baseline, normalizing Windows
+line endings. The owner-approved baseline includes earlier hardware-verified
+porting and driver changes; it is not an upstream vendor-library replacement.
 
-The `startup-fix-node-zero` branch is based on the exact failed 35b2044 commit.
-The only firmware edits remove the zero rejection from both PDO guards and
-explain the intentional zero configuration. Values above 127 remain rejected.
-All other failed-commit cleanup remains present so this is a controlled test of
-the identified cause. The hardware-verified `cleanup` branch remains at 65ced39.
+Application declarations were adjusted to compile with those original headers.
+The incidental volatile change to controller_mode was also undone to match the
+original MCO declaration. The application scan's adjacent-entry guards retain
+the existing 20-entry loop limit without exporting a new MCO capacity macro.
+No new MCO behavior, scan buffer, response handler or fatal-error policy is
+introduced. The test of the removed scan-response helper was removed with it.
 
-There are no EEPROM codec, saved-variable, linker, startup, RAM allocation or
-stack-reserve edits. The build still validates at least 1280 bytes for stack.
-Addresses from the archived regression disassembly do not apply to a rebuild.
+The application syntax check remains strict. Legacy MCO warnings stay visible
+and do not become errors in the host syntax check. Do not rewrite MCO behavior
+merely to eliminate a warning. A demonstrated defect or substantial benefit
+must be proposed and validated separately. Examples requiring separate review
+include the existing 12-entry response-ID array versus application scans of
+20 entries, unbounded response lookup, and the legacy SDO sentinel macro.
+They have not been silently repaired as part of this cleanup.
 
-## Validation and hardware check
+The unit tests exercise the actual PDO initializers, accepting Node-ID 0..127
+and rejecting 128..255, and check PDO number, TPDO length, timing and offsets.
+The stack files also have a baseline-integrity test. Target compilation and
+hardware confirmation are still required after this restoration.
 
-A host regression extracts the actual RPDO/TPDO initializers. It reproduces the
-old failure for zero, then verifies the corrected code accepts every Node-ID
-0..127, rejects 128..255, preserves explicit CAN IDs and rejects invalid PDO
-numbers, TPDO lengths, offsets and timing parameters. It runs with signed and
-unsigned plain char. All 20 unit tests and the F1/F2 regression suite pass.
-No target compiler or hardware is available in the analysis environment.
-
-On the Windows toolchain machine:
+EEPROM storage, saved-variable offsets, startup assembly, linker generation
+and the required 1280-byte stack reserve are unchanged. cleanup remains at the
+hardware-verified 65ced39. This branch retains the other application cleanup
+for testing; it has not been merged into cleanup.
 
 ```powershell
 git fetch github
-git switch --track github/startup-fix-node-zero
+git switch cleanup-preserve-mco
+git pull --ff-only github cleanup-preserve-mco
 .\build_and_debug_noice.bat
 ```
 
-Run through initialization normally, then check button operation, F1/F2 enabled
-and disabled modes, LEDs and saved settings. Report any remaining failure with
-its PC, SP, PPAGE and instruction view. A successful hardware run validates this
-specific recovery; it does not by itself validate every other cleanup behavior.
-The fatal-error recovery policy is unchanged and should be reviewed separately.
+If the branch has not previously been checked out, use
+`git switch --track github/cleanup-preserve-mco` instead of `git switch`.

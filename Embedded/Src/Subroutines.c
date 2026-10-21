@@ -12,6 +12,15 @@
 #include "EEProm.h"
 #include "string.h"
 
+/* Application access to the legacy MCO integration; keep stack files unchanged. */
+extern CAN_MSG gTxSDO, gRxCAN;
+extern int Device_Type_Response_ID[];
+extern int Device_Type_Response_ID_ptr;
+extern char Device_Menus[20][17];
+extern UNSIGNED8 gCANFilter;
+extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
+
+
 
 
 
@@ -53,7 +62,7 @@ char Ext_Menu_xmitd;
 
 
 bool resequenceNodes = false;
-volatile bool controller_mode = false;
+bool controller_mode = false;
 volatile bool legacy_mode = false;
 bool vid18_addr = false;
 bool vid18_update = false;
@@ -1533,7 +1542,7 @@ void Scan ( void )
     {
 	    if (Device_Type_Response_ID[i] >= 0x5E1 && Device_Type_Response_ID[i] <= 0x5E9) 
 		{ 
-		     if (i + 1 < DEVICE_SCAN_CAPACITY && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])  //if duplicate detected
+		     if (i + 1 < 20 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])  //if duplicate detected
 			 {
 			     Device_Type_Response_ID[i] = 0;
 				 Device_Type_Response_ID[i+1] = 0;
@@ -1570,7 +1579,7 @@ void Scan ( void )
 			 }	
 		
 	    }
-	 	else if ( i + 1 < DEVICE_SCAN_CAPACITY && Device_Type_Response_ID[i] != 0 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])
+	 	else if ( i + 1 < 20 && Device_Type_Response_ID[i] != 0 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])
 		{
 		    for(j=i; j<19; j++) {                   //move Type Responses up (remove duplicates, they should be consecutive)
 			    Device_Type_Response_ID[j] = Device_Type_Response_ID[j+1];

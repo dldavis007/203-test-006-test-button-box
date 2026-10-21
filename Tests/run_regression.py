@@ -60,7 +60,7 @@ int CntrSwTimeOut = -1;
 unsigned char PORTB, PORTA;
 char Cntrl_Slow_Flag, MenuCheck, Gen_Flags, internal_menu;
 unsigned char StackPointer;
-volatile bool controller_mode;
+bool controller_mode;
 unsigned char gProcImg[PROCIMG_SIZE];
 ''' + menu + menu_stubs + r'''
 

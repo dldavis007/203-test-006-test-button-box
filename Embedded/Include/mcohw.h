@@ -192,8 +192,4 @@ UNSIGNED16 time_now;
 void MCOHW_TimerISR
   (
   void
-  );/* Filter state owned by mcohw.c. */
-extern unsigned char gCANFilter;
-extern unsigned char setFilters[8];
-
-
+  );

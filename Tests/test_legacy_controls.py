@@ -103,48 +103,6 @@ int main(void) {
 }
 ''')
 
-    def test_scan_replies_respect_table_and_payload_bounds(self):
-        source = (ROOT/'Embedded/Src/mco.c').read_text()
-        run_c(r'''
-#include <assert.h>
-#include <string.h>
-typedef unsigned long UNSIGNED32;
-typedef struct { UNSIGNED32 ID; unsigned char LEN; unsigned char BUF[8]; } CAN_MSG;
-#define DEVICE_SCAN_CAPACITY 20
-int Device_Type_Response_ID[DEVICE_SCAN_CAPACITY];
-int Device_Type_Response_ID_ptr;
-char Device_Menus[DEVICE_SCAN_CAPACITY][17];
-''' + extract(source, 'RecordDeviceMenuResponse') + r'''
-int main(void) {
-    CAN_MSG message;
-    int i, part;
-    memset(&message, 0, sizeof message); message.LEN = 8;
-    for (i = 0; i < 25; ++i) {
-        message.ID = 0x580 + i;
-        RecordDeviceMenuResponse(&message);
-    }
-    assert(Device_Type_Response_ID_ptr == DEVICE_SCAN_CAPACITY);
-    for (i = 0; i < DEVICE_SCAN_CAPACITY; ++i)
-        assert(Device_Type_Response_ID[i] == 0x580 + i);
-    message.ID = 0x593;
-    memcpy(message.BUF + 4, "TEST", 4);
-    for (part = 1; part <= 4; ++part) {
-        message.BUF[3] = part;
-        RecordDeviceMenuResponse(&message);
-    }
-    assert(!strcmp(Device_Menus[19], "TESTTESTTESTTEST"));
-    message.BUF[3] = 255; RecordDeviceMenuResponse(&message);
-    assert(!strcmp(Device_Menus[19], "TESTTESTTESTTEST"));
-    message.BUF[3] = 1; message.ID = 0x5ff;
-    RecordDeviceMenuResponse(&message); /* Unknown ID cannot overrun the table. */
-    message.ID = 0x593; message.LEN = 4;
-    memcpy(message.BUF + 4, "FAIL", 4);
-    RecordDeviceMenuResponse(&message);
-    assert(!strcmp(Device_Menus[19], "TESTTESTTESTTEST"));
-    return 0;
-}
-''')
-
     def test_variable_editors_reject_invalid_menu_state(self):
         source = (ROOT/'Embedded/Src/Subroutines.c').read_text()
         header = (ROOT/'Embedded/Include/Subroutines.h').as_posix()
