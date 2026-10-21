@@ -11,9 +11,6 @@
 
 unsigned int jmpAddress;
 
-
-
-
 void command ( char CmdBuf[] )
 {
     char ParseBuf[64] = "\0";
@@ -110,9 +107,6 @@ void command ( char CmdBuf[] )
     //printf ( "\r\n>" );
     
 }
-
-
-
 
 char Checksum ( char *str )
 {

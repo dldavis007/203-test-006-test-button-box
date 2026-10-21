@@ -12,7 +12,6 @@ static char Seconds = 60;
 
 static int Tick = RTI_One_Sec;
 
-
 volatile char Gen_Flags;
 
 volatile unsigned int Timer1;
@@ -32,8 +31,6 @@ static unsigned char TC0_State;
 static unsigned char TC0_BitCounter;
 static unsigned char QBit;
 static unsigned int TC0_Data_Bit;
-
-
 
 void DUMMY_ENTRY ( void )
 {
@@ -129,7 +126,6 @@ void TC3_Int_Handler ( void )
 	if (Sw_Index == 6)
 	    Sw_Index++;
 }
-
 
 void RTI_Int_Handler ( void )
 {
@@ -241,7 +237,6 @@ void SCI0_Int_Handler ( void )
 	 }
 }
 
-
 void SCI1_Int_Handler ( void ) 
 {
 
@@ -270,9 +265,7 @@ void SPI0_Int_Handler ( void )
 		   
         SPI0CR1 &= ~SPICR1_SPTIE;
     }
-	
 
 }
-
 
 #include "vectors.h"

@@ -10,28 +10,20 @@
 #include "mcohw.h"
 #include "mco.h"
 #include "EEProm.h"
-#include "string.h"
 
 /* Application access to the legacy MCO integration; keep stack files unchanged. */
-extern CAN_MSG gTxSDO, gRxCAN;
 extern int Device_Type_Response_ID[];
 extern int Device_Type_Response_ID_ptr;
 extern char Device_Menus[20][17];
 extern UNSIGNED8 gCANFilter;
 extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
 
-
-
-
-
-
-
+/* Button scan, transmitted data and alternate-function selection. */
 unsigned int TC0_RCVD_Data;
 
 volatile char UpdateMenu;
 
 static CAN_MSG gTxMsg;
-
 
 unsigned char ExSlowPushed;
 unsigned char SlowPushed;
@@ -44,6 +36,7 @@ unsigned int tempData;
 unsigned int Third_byte;
 char Cntrl_Slow_Flag;
 
+/* Display SPI exchange; the interrupt handler shares these buffers. */
 volatile char SPI0InBuf[2];
 volatile int SPI0InBufptr = 0;
 volatile char SPI0OutBuf[2];
@@ -56,10 +49,9 @@ int DispBufptr = 0;                //index for DispBuf[481]
 
 volatile int ReActivate_Timer;
 
+/* Startup mode and device-discovery state. */
 char power_on = 1;
 char Ext_Menu_xmitd;
-
-
 
 bool resequenceNodes = false;
 bool controller_mode = false;
@@ -74,7 +66,7 @@ int sub_Device_Type_Response_ID[20];
 bool AuxDeviceLimitExceeded = false;
 bool AuxDeviceMenuFull = false;
 
-
+/* Received video messages and display assembly. */
 char VCI_Flag2;     //more flags specific to VCI
 char MsgIDtable[5];
 char UpdateDisp;
@@ -88,20 +80,21 @@ struct MsgStruct
 	char Buffer[30];
 };
 
+/* Internal menu and decoded key state. */
 char MenuCheck;
 char internal_menu;
-
-
 
 signed char CursorDownFlag;
 signed char CursorUpFlag;
 signed char SelectFlag;
 char Trigger_DeviceFlag;
 
+/* Camera addresses and display tags. */
 int cam_list[10];   //each elements holds a 2 byte camera address
 char extCamTagList[10][11];
 int cam_select;    //index of cam_list to select camera
 
+/* Character-display initialization. */
 bool firstWriteSPI = true;
 
 bool CharsInMem = false;
@@ -127,7 +120,6 @@ char BattSOH[] 		  = "---";
 char BattErr[] 		  = "   OK";
 char BatteryTemps[]   = "B:---,C1:---,C2:---";
 
-
 #include "MenuTables.inc"
 
 unsigned char StackPointer = 0;
@@ -145,19 +137,11 @@ int nDigits = 2;
 //specify off for 0, and 1 for on
 #define OFF_ON  9
 
-
 struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 
-
-/***************************************************************************/ 
-
-// external declaration for the process image array
-
-/**************************************************************************/
-
+/* Button matrix and LED wiring. */
 
 #include "KeypadMatrix.inc"
-
 
 void setDefaultMenu(void)
 {
@@ -173,7 +157,6 @@ void setDefaultMenu(void)
 	VariableFlag = 0;    
 }
 
-	 
 char BattNum[20][4];
 unsigned char ptrDispBatt = 0;
 
@@ -189,7 +172,6 @@ void Scan_Batteries ( void )
 	gProcImg[OUT_digi_21] = gProcImg[OUT_digi_21+1] = gProcImg[OUT_digi_21+3] = gProcImg[OUT_digi_21+4] = gProcImg[OUT_digi_21+5] = 0;
 	sprintf(BattErr,"   OK");
 
-	
 	//Send Supervisor_General_Request
 	gProcImg[IN_digi_5] = 0x81;
 	for (i=1;i<8;i++)
@@ -236,8 +218,6 @@ void Scan_Batteries ( void )
 	sprintf (BattSOH,"%3d", gProcImg[OUT_digi_21+4]);
 	sprintf (BattSOC,"%3d", gProcImg[OUT_digi_21+5]);
 
-
-
 	//Change RPDO 7 so we can get Alarm Status and Board Temperature
 	gCANFilter--;  //This will probably only work on the last RPDO
 	MCO_InitRPDO(6,0x020,8,OUT_digi_21);
@@ -279,8 +259,7 @@ void Scan_Batteries ( void )
 	//Change RPDO 7 back so we can get Alarm Status SOH and SOC when going to the next battery
 	gCANFilter--;
 	MCO_InitRPDO(6,0x007,8,OUT_digi_21);
-	
-	
+
 	gProcImg[IN_digi_5] = 0x00;//This will clear the data in TPDO 3 so it can be transmitted again if this function is called 
 	gProcImg[IN_digi_13+7] = 0x00;
 	
@@ -848,8 +827,7 @@ void LoadMenu ( unsigned char Index[] )
              Menuc[k].Index[2] == Index[2] && Menuc[k].Index[3] == Index[3] )
              break;
     } 
-	
-	
+
     //Get Menu Title
     for ( j=0;j<=20;j++ )
 	{
@@ -992,8 +970,6 @@ int ATDGetLevel ( char ATD_Num )
 	return (ATD0DR0+ATD0DR1+ATD0DR2+ATD0DR3)/4; 				
 }
 
-
-
 void ext_menu ( void )
 {   //Activates Menus on all devices connected
     int i;
@@ -1063,8 +1039,7 @@ void Scan ( void )
 				 
 				 Timer1 = RTI_One_Sec * 0.25;
         	     while (Timer1) { /* wait for interrupt */ }   //wait here to receive bootup message after CNT-031's reset
-			
-			
+
 				 for (j = 0x661; j < 0x66A; j++)
 				 {
 				     Timer1 = RTI_One_Sec * .015;       
@@ -1404,7 +1379,6 @@ int duplicate_add(void)
     return 0;   //no duplicate addresses
 }
 
-
 int ExternalMenu ( void )
 {
     int i;
@@ -1524,14 +1498,12 @@ int Trigger_Device ( void )
 
 void doevents ( void )
 {
-	
 
 	if (TC0_RCVD_Data != (ButtonBoxData << 8 | ButtonBoxData))
 	{
 		TC0_RCVD_Data = ButtonBoxData;
 	}
-	
-	
+
 	//see if external menu is not active
 	if (!(gProcImg[OUT_digi_0] & 0x01) && controller_mode)
 	{
@@ -1655,8 +1627,7 @@ void doevents ( void )
 					MCO_TransmitPDO(0);
 				}
 			}
-			
-			
+
 		}	
 	}
 	else if (controller_mode)
@@ -1665,10 +1636,7 @@ void doevents ( void )
 		ReActivate_Timer = ReActivate_Time;
 		Gen_Flags |= Gen_Flags_Extern_Menu;		
 	}
-	
-	
-	
-	
+
 	if (UpdateDisp)
 	{
 	    if (Gen_Flags & Gen_Flags_Extern_Menu) 
@@ -1684,14 +1652,11 @@ void doevents ( void )
 		SIN0Bufptr = 0;
 		Gen_Flags &= ~Gen_Flags_SIN0Rcvd;
 	}
-	
-	
+
 	if ( !DeBounceTimer )
 	{
 		unsigned int SwitchData; 
 		static unsigned SwitchUpData;
-		//static unsigned char Prev_Cntrl_Sw;
-		
 		unsigned char Sw_Index;
 		char StopFlag=0;
 		
@@ -1702,7 +1667,6 @@ void doevents ( void )
 		//Keep all latched data
 		SwitchData &= ( TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | ((EnabledFunctionData(SwitchData) & (TeleData_F1 | TeleData_F2))?0:TeleData_Slow) | TeleData_Fast );
 
-		
 		//Data Port T     Port B     Port P     Port T     Port J
 		//	   Switch	  Switch	 LED  		LED	 	   LED
 		//     0b01110000,0b00111111,0b00011111,0b00000110,0b11000000,		Mask bits
@@ -1741,7 +1705,6 @@ void doevents ( void )
 			}
 		}
 
-
 		if ( SwitchData & TeleData_Data )
 		    Disp_Menu_Port |= Disp_Menu_Bit;		// The Data bit is temporarily used for the option button	
 		else
@@ -1756,14 +1719,11 @@ void doevents ( void )
 		    Disp_Down_Port |= Disp_Down_Bit;	
 		else
 		    Disp_Down_Port &= ~Disp_Down_Bit;
-		
-		
 
 		if ( gProcImg[OUT_digi_12] & 0x34 )
 		{
 			CntrSwTimeOut = RTI_One_Sec * 0.125; 
 			//C48 Controller Switches
-			//Prev_Cntrl_Sw = 1;
 			Cntrl_Slow_Flag = 0;
 
 			if( gProcImg[OUT_digi_12] & 0x10 )      //forward is pressed
@@ -1788,7 +1748,6 @@ void doevents ( void )
 		}
 		else if ( CntrSwTimeOut == 0 )
 		{
-			//Prev_Cntrl_Sw = 0;
 			CntrSwTimeOut = -1;
 			StopFlag = 1;
 		}
@@ -1805,16 +1764,12 @@ void doevents ( void )
 		if ( SwitchData & TeleData_Rev && SwitchUpData & TeleData_Fwd ) //REVERSE
 		    SwitchData &= ~TeleData_Fwd;
 
-		
-		
 		if ( SwitchData & TeleData_F1 && SwitchUpData & TeleData_F2 && SwitchUpData & TeleData_F3 ) //F 1
 			SwitchData &= ~(TeleData_F2 | TeleData_F3);
 		if ( SwitchData & TeleData_F2 && SwitchUpData & TeleData_F1 && SwitchUpData & TeleData_F3 ) //F 2
 			SwitchData &= ~(TeleData_F1 | TeleData_F3);
 		if ( SwitchData & TeleData_F3 && SwitchUpData & TeleData_F1 && SwitchUpData & TeleData_F2 ) //F 3
 			SwitchData &= ~(TeleData_F1 | TeleData_F2);
-
-
 
 		SwitchData = SwitchData | 0x0400;
 		ButtonBoxData = SwitchData;
@@ -1994,8 +1949,7 @@ void doevents ( void )
 			dispPBJTFlag = 0;
 		}	
 	}	
-	
-	
+
 	if ( ButtonBoxData & TeleData_Trig && ButtonBoxData & TeleData_F1 ) //AKR Record
 	{
 		Alarm_Port |= Alarm_Bit;
@@ -2091,7 +2045,6 @@ void Xmit_Rcv_SPI ( void )
 	PTM |= 0x08;
 }
 
-
 void WriteCharMem ( void )
 {
     unsigned char CMM, CMAH, CMAL;
@@ -2170,7 +2123,6 @@ void ReadCharMem ( void )
 	
 	Timer1 = .1 * RTI_One_Sec;
 	while (Timer1) { /* wait for interrupt */ }
-
 
     for (CMAL = 0; CMAL < 54; CMAL++)
     {
@@ -2506,7 +2458,6 @@ void bldMessages(void)
 
     COP_Trig();
 }
-
 
 void DisplayMsg ( char Message[] )
 {

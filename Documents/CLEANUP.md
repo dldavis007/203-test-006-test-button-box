@@ -99,6 +99,26 @@ and source syntax checks pass. MCO files, startup, build tools, EEPROM layout
 and the 1280-byte stack reserve are unchanged. The target build/hardware check
 for this pass is pending.
 
+## Housekeeping and ownership review
+
+After 61e4613, the application sources received blank-line cleanup, removal of
+the duplicate string.h include and two unused local extern declarations, and
+replacement/removal of stale comments. Comments identify the existing state
+groups without reordering their definitions. The protected EEPROM declaration
+sequence is byte-for-byte unchanged. All seven MCO baseline files remain intact.
+
+VARIABLE_OWNERSHIP.md records current owners, shared interrupt/MCO dependencies,
+future module boundaries and eight unreferenced-storage candidates. Those
+candidates retain their definitions and RAM placement in this pass; their
+removal is a separate decision from this ownership review. No new volatile or
+static qualifiers were introduced.
+
+Optimized host assembly for all 11 C files matches the pre-pass 61e4613 snapshot
+after ignoring source annotations. All 20 unit tests, both F1/F2 regression
+char modes and source syntax checks pass.
+The latest table extraction and this pass still require target/hardware checks;
+1f66f89 remains the last explicitly hardware-confirmed revision in this record.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.

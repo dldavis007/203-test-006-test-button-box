@@ -8,11 +8,7 @@
 #include "Subroutines.h"
 #include "mco.h"
 
-
-
 volatile char wd_flag = 0, wdInit = 0, wdStarted = 0;
-
-
 
 void main (void)
 {
@@ -48,8 +44,7 @@ void main (void)
     resetTitler();
 
 	COPCTL = 0x47;				//enable COP
-	
-	
+
 	while (1)
 	{
 	    COP_Trig();
@@ -57,7 +52,6 @@ void main (void)
 	}
 	 
 }
-
 
 //Hardware Watchdog 
 void InitWatchdog(void)   
@@ -83,13 +77,11 @@ void COP_Trig(void)
    }
    else
        wd_flag = 1;
-   
-  
+
 }
 
 void InitPorts ( void )
 {
-
 
 	DDRA = DDRA_Init;
     DDRB = DDRB_Init;
@@ -104,8 +96,7 @@ void InitPorts ( void )
     ATD0CTL2 = ATD0CTL2_Init;
     ATD0CTL3 = ATD0CTL3_Init;
     ATD0CTL5 = ATD0CTL5_Init;
-    
-    
+
     PUCR = PUCR_Init;
 	PERM = PERM_Init;
     PPSM = PPSM_Init;
@@ -149,8 +140,6 @@ void InitPLL ( void )
 	while ( !(CRGFLG & 0x08) );
 	CLKSEL |= 0x80;
 }
-
-
 
 void InitSCI ( void )
 {
@@ -199,7 +188,6 @@ void PWMInit ( void )
     PWMDTY6 = PWMDTY6_Init;
     PWMDTY7 = PWMDTY7_Init;
 
-    
     PWMSCLA = PWMSCLA_Init;
     PWMSCLB = PWMSCLB_Init;
     PWME = PWME_Init;
