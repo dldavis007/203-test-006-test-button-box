@@ -15,7 +15,6 @@
 extern int Device_Type_Response_ID[];
 extern int Device_Type_Response_ID_ptr;
 extern char Device_Menus[20][17];
-extern UNSIGNED8 gCANFilter;
 extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
 
 /* Button scan, transmitted data and alternate-function selection. */
@@ -114,11 +113,6 @@ char NullVar[]        = "";
 //The following Menu Variables are NOT saved in EEPROM
 
 char Rev[]		      = Revision;
-char BattSerNum[] 	  = "  -  -   ";
-char BattSOC[] 		  = "---";
-char BattSOH[] 		  = "---";
-char BattErr[] 		  = "   OK";
-char BatteryTemps[]   = "B:---,C1:---,C2:---";
 
 #include "MenuTables.inc"
 
@@ -139,8 +133,6 @@ struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 
 #include "KeypadMatrix.inc"
 
-char BattNum[20][4];
-unsigned char ptrDispBatt = 0;
 
 /* Select active alternate-key modes without changing latched/output bits. */
 unsigned int EnabledFunctionData(unsigned int data)
@@ -1047,7 +1039,6 @@ void doevents ( void )
 			strcpy(_bss_end,"Cntrl");				
 			Gen_Flags |= Gen_Flags_Menu_Active;
 
-			Scan_Batteries();
 
 		    //code before Scan() is so that the RotateCCW doesn't get sent out the CAN bus causing the machines to rotate once the scan is complete.
 			ButtonBoxData &= ~TeleData_RotCCW;

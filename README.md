@@ -31,6 +31,15 @@ With an OFF function selected, navigation and speed keys keep their ordinary
 roles, and the five navigation LEDs are not forced into the cross pattern. ON retains the shared third-byte navigation encoding. The controller
 Slow exception remains intact.
 
+## Retired battery feature
+
+Battery diagnostics are no longer supported. STATUS now shows SOFTWARE REV,
+SERIAL NUM and EXIT. Battery scanning, RAM/display state and battery-only CAN
+requests/replies are removed. Camera discovery and its shared receive buffer
+remain supported. Saved settings and EEPROM offsets are unchanged. This removal
+has passed host tests; target GCC/ImageCraft builds and hardware verification
+are pending. See Documents/CLEANUP.md for scope and bench checks.
+
 ## Regression tests
 
 Install Python 3 and a host GCC compiler available as `gcc` (or set `CC` to the

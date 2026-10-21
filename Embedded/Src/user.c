@@ -210,12 +210,6 @@ void MCOUSER_ResetCommunication
   // RPDO4, ID ($NODEID+0x500), 1 byte, Controller Sw data
   MCO_InitRPDO(4,0x280,1,OUT_digi_12);
 
-  // RPDO5, ID ($NODEID+0x?00), 8 bytes
-  MCO_InitRPDO(5,0x024,8,OUT_digi_13);
-
-  // RPDO6, ID ($NODEID+0x?00), 8 bytes
-  MCO_InitRPDO(6,0x007,8,OUT_digi_21);
-  
   // RPDO7, ID ($NODEID+0x?00), 8 bytes
   MCO_InitRPDO(7,0x500,8,OUT_digi_13);
   
@@ -226,11 +220,6 @@ void MCOUSER_ResetCommunication
   // TPDO2,  default ID ($NODEID+0x280), 95ms event, 0ms inhibit, 3 bytes, Button Box Data
   MCO_InitTPDO(2,0x180,95,0,3,IN_digi_0); 
 
-  // TPDO3, default ID ($NODEID+0x380), 0ms event, 10ms inhibit, 8 bytes
-  MCO_InitTPDO(3,0x110,0,10,8,IN_digi_5); 
-
-  // TPDO4, default ID ($NODEID+0x480), 0ms event, 10ms inhibit, 8 bytes
-  MCO_InitTPDO(4,0x120,0,10,8,IN_digi_13); 
 
 
 }

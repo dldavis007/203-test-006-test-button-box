@@ -3,13 +3,15 @@
 ## Current baseline and scope
 
 The owner confirmed the external-device menu extraction at 6754a2a working.
-That is the baseline for the battery diagnostics extraction. Working ImageCraft
-settings remain those synchronized at 7915b16. Keep changes small and separately
-testable. The Node-ID-zero startup regression and recovery are
-documented in STARTUP_NODE_ZERO.md.
+The subsequent battery extraction at ee9feec was not hardware-tested before the
+owner explicitly requested retirement of the entire unused battery system.
+ee9feec is the baseline for that removal. Working ImageCraft settings remain
+those synchronized at 7915b16. Keep changes separately testable. The Node-ID-zero
+startup regression and recovery are documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
-mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39. A test
+mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
+for the explicitly requested battery-only PDO removal in user.c described below. A test
 checks their baseline content, allowing Windows line endings. A demonstrated
 MCO defect or substantial advantage must be handled as a separate change;
 removing a warning alone is not grounds to change its behavior. Node-ID zero
@@ -293,6 +295,54 @@ GCC/NoICE and ImageCraft target build/hardware verification are pending for this
 pass. Check startup, ordinary buttons and menus, plus battery status, NEXT and
 CLEAR ERROR with battery hardware available. Target code size/placement can
 change with separate compilation, so retain the target memory validation.
+
+## Battery feature retirement (supersedes its extraction)
+
+At the owner's request, remove the unused battery feature completely from the
+active application: BatteryDiagnostics.c/.h, its host diagnostic test, the
+controller-mode startup scan, seven battery-only arrays/variables, declarations,
+STATUS rows and callbacks, and both compiler source lists. STATUS retains
+SOFTWARE REV, SERIAL NUM and EXIT. Its menu index and table dimensions remain
+unchanged, as do the other menus.
+
+The only intentional change to the protected application CAN integration is
+removing four battery-only registrations from user.c:
+
+| Registration | CAN ID | Former use |
+| --- | --- | --- |
+| RPDO 5 | 0x024 | Battery serial replies |
+| RPDO 6 | 0x007 | Battery status replies |
+| TPDO 3 | 0x110 | Battery supervisor request |
+| TPDO 4 | 0x120 | Battery-specific commands |
+
+Keep RPDO 7 / 0x500: camera discovery uses its OUT_digi_13 buffer too. Remaining
+PDO numbers, offsets, process-image size and capacity constants stay unchanged;
+unused slots are not repurposed. No core mco.c/mcohw.c changes, Node-ID-zero
+changes or unrelated protocol corrections are included. The baseline guard pins
+the narrowly changed user.c explicitly; the other six integration files still
+match 65ced39.
+
+All 24 host unit tests, both F1/F2 regression char modes and strict application
+syntax checks pass. The actual menu test verifies the shortened STATUS menu,
+serial display/edit behavior, EXIT and cursor wrapping. A new native test runs
+the actual ResetCommunication body against registration stubs, asserting the
+five retained receive PDOs and two retained transmit PDOs, Node-ID zero, cold
+process-image clearing and warm-reset preservation. The removed battery test
+has been replaced rather than counted as continued coverage of dead code.
+
+EEPROM saved-variable declarations, settings codecs, startup assembly, interrupt
+source, working ImageCraft options and target memory configuration are unchanged.
+Only the seven retired battery globals disappear from host data/BSS (125 bytes);
+remaining data/BSS sections keep their order, sizes and initialized bytes, except
+the intentionally updated STATUS menu template. Absolute RAM addresses may move;
+target memory validation still requires at least 1280 stack bytes.
+
+GCC/NoICE and ImageCraft target builds and hardware checks are pending. Check
+controller-mode startup, camera discovery/selection (including HD camera tags),
+external menus/triggers, F1/F2 operation, shortened STATUS menu, serial number and
+saved settings after restart. Battery menu entries/requests must be absent.
+Historical battery extraction notes above describe the intermediate commit,
+not the current feature set.
 
 ## Structure
 

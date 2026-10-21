@@ -31,10 +31,10 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
     },
     {
         {0, 0, 0, 4},
-        {"     STATUS MENU    ", " SOFTWARE REV       ", " SERIAL NUM         ", " BATT #             ", " STATE OF CHARGE    ", " STATE OF HEALTH    ", " B:---,C1:---,C2:---", " BATT STATUS        ", " CLEAR BATT ERROR   ", " VIEW NEXT BATT     ", " EXIT               ", "                    "},
-        {16, 15, 11, 17, 17, 1, 15, 0, 0, 0, 0},
-        {Rev, SerialNum, BattSerNum, BattSOC, BattSOH, BatteryTemps, BattErr, NullVar, NullVar, NullVar, NullVar},
-        {&NullFunction, &setSerial, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &ClrBattErr, &NextBatt, &ExitMenu, &NullFunction}
+        {"     STATUS MENU    ", " SOFTWARE REV       ", " SERIAL NUM         ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
+        {16, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {Rev, SerialNum, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
+        {&NullFunction, &setSerial, &ExitMenu, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction}
     },
     {
         {0, 0, 0, 5},

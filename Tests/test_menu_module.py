@@ -12,7 +12,7 @@ class MenuModuleTests(unittest.TestCase):
     def test_navigation_editing_callbacks_and_save_boundary(self):
         source = (ROOT/'Embedded/Src/Subroutines.c').read_text()
         start = source.index('char FirstVar[]')
-        end = source.index(';', source.index('char BatteryTemps[]', start)) + 1
+        end = source.index(';', source.index('char Rev[]', start)) + 1
         # Reuse actual default variable and menu definitions, not copied fixtures.
         variables = source[start:end]
         program = r'''
@@ -36,8 +36,6 @@ void Save_Serial_Num(void) { ++serial_saved; }
 void NormalizeFunctionSettings(void) { ++normalized; }
 int ResetProc(void) { ++resets; return 0; }
 int findCameras(void) { return 0; }
-int ClrBattErr(void) { return 0; }
-int NextBatt(void) { return 0; }
 ''' + variables + r'''
 #include "MenuTables.inc"
 
@@ -82,13 +80,18 @@ int main(void)
     CursorUp(); assert(MenuStackc[1].CursorPos == 5);
     CursorDown(); assert(MenuStackc[1].CursorPos == 1);
 
-    /* A longer STATUS menu scrolls rather than wrapping at row eight. */
+    /* STATUS retains revision/serial, with EXIT immediately after them. */
     MenuStackc[1].Index[3] = 4;
-    MenuStackc[1].CursorPos = 8;
+    MenuStackc[1].CursorPos = 1;
     MenuStackc[1].FirstLine = 0;
     LoadMenu(MenuStackc[1].Index);
-    CursorDown();
-    assert(MenuStackc[1].CursorPos == 8 && MenuStackc[1].FirstLine == 1);
+    assert(!strncmp(Menu[1], " SOFTWARE REV", 13));
+    assert(!strncmp(Menu[2], " SERIAL NUM", 11));
+    assert(!strncmp(Menu[3], " EXIT", 5));
+    assert(Menuc[4].VarPntr[0] == Rev && Menuc[4].VarPntr[1] == SerialNum);
+    assert(Menuc[4].FunctPtr[2] == ExitMenu);
+    CursorUp(); assert(MenuStackc[1].CursorPos == 3);
+    CursorDown(); assert(MenuStackc[1].CursorPos == 1);
 
     /* Leaving serial entry after digit five requests its separate save. */
     MenuStackc[1].CursorPos = 2;
