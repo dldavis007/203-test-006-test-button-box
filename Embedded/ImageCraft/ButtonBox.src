@@ -11,6 +11,7 @@
 ..\Src\Settings.c
 ..\Src\Display.c
 ..\Src\Menu.c
+..\Src\DeviceMenus.c
 [Headers]
 ..\Include\Controller.h
 ..\Include\Command.h
@@ -28,6 +29,7 @@
 ..\Include\Settings.h
 ..\Include\Display.h
 ..\Include\Menu.h
+..\Include\DeviceMenus.h
 [Documents]
 ..\..\Documents\Legacy\MCO Reference.txt
 ..\..\Documents\Legacy\Revision History.txt

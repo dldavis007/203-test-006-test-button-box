@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "Display.h"
 #include "Menu.h"
+#include "DeviceMenus.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -23,10 +24,6 @@ void scan_cameras(void);
 void addressCamera(void);
 int findCameras(void);
 int duplicate_add(void);
-int ExternalMenu(void);
-int ExternalSubMenu(void);
-int CameraMenu(void);
-int Trigger_Device(void);
 void ext_menu(void);
 
 /* Battery diagnostics and analog input. */

@@ -2,9 +2,10 @@
 
 ## Current baseline and scope
 
-The owner confirmed normal menu rendering/navigation working on hardware at
-651f2ee on cleanup-preserve-mco, after confirming settings save/load at 855bfd6.
-651f2ee is the starting point for the internal-menu extraction. Keep changes small
+The owner confirmed menu extraction at 54ad773 working on hardware and reported
+the ImageCraft build running successfully. The working ImageCraft configuration
+and root Legacy removal are synchronized at 7915b16 on cleanup-preserve-mco.
+7915b16 is the baseline for the external-device menu command extraction. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
 
@@ -230,6 +231,39 @@ Those files remain recoverable from Git history. Documents/Legacy retains the
 original reference text used by the active project. Generated ImageCraft outputs
 beside the active project are already ignored. No firmware source, startup,
 EEPROM format, MCO integration or memory configuration changed in this removal.
+
+## External-device menu command extraction
+
+DeviceMenus.c now owns ExternalMenu, ExternalSubMenu, CameraMenu and
+Trigger_Device. The four function bodies are copied unchanged from 7915b16.
+DeviceMenus.h exposes their existing signatures and the required camera-state
+externs. All camera arrays, indices and other state remain in Subroutines.c in
+exactly their previous order. Both GCC and ImageCraft source lists include the
+new module; the owner's working ImageCraft project options are unchanged.
+
+Discovery functions remain in Subroutines.c because scan_cameras, addressCamera,
+Scan and ext_menu share its existing static CAN message buffer with other
+application code. Moving these requires a separate decision about that interface;
+this pass does not relocate the buffer or change its linkage. Camera-selection
+shortcuts in doevents also remain intact.
+
+All 23 host unit tests, both F1/F2 regression char modes and strict application
+syntax checks pass. The new test links actual DeviceMenus.c, captures transmitted
+CAN IDs/lengths/payload bytes, and checks selected-camera process-image bytes,
+menu flags, reactivation timing, title clearing, deselection and transmit-error
+notifications in both char modes. It stubs physical CAN/display and fatal-error
+handling; it does not validate bus timing or legacy recovery behavior.
+
+The remaining Subroutines.c text is exact after deleting the moved block. Host
+objects retain data/BSS section order, sizes, initialized bytes and symbolic
+pointer relocations. DeviceMenus.c adds no mutable global/static storage. MCO,
+EEPROM layout/settings, startup, interrupt code, existing menu/display modules,
+constant tables, target memory configuration and the 1280-byte stack requirement
+are unchanged. Separate compilation can change target code size and placement.
+
+Target GCC/NoICE and ImageCraft builds/hardware checks are pending for this pass.
+Check camera selection, camera-menu entry, connected-device main and auxiliary
+menus, trigger commands, return to the internal menu and F1/F2 modes/settings.
 
 ## Structure
 
