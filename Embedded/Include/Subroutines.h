@@ -4,6 +4,7 @@
 #include "ApplicationState.h"
 #include "HardwareConfig.h"
 #include "Settings.h"
+#include "Display.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -53,19 +54,9 @@ int ClrBattErr(void);
 int NextBatt(void);
 int ATDGetLevel(char ATD_Num);
 
-/* Video display, messages and character memory. */
-void Xmit_Rcv_SPI(void);
-void resetTitler(void);
-void showMenu(void);
-char DispTranslate(char *TranChar);
+/* Application message assembly and menu rendering. */
 void bldMessages(void);
-void DisplayMsg(char Message[]);
-void showMessage(char Message[], int row);
-void ClearTitler(void);
-void DisplayTitler(void);
 void btnDisplayTitler(void);
-void WriteCharMem(void);
-void ReadCharMem(void);
 
 /* Application sizes, timing and message flags. */
 #define MenuSize 11

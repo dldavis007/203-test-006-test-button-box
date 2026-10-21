@@ -2,8 +2,8 @@
 
 ## Current baseline and scope
 
-The owner confirmed 1f66f89 on cleanup-preserve-mco working on hardware.
-That is the baseline for subsequent application cleanup. Keep changes small
+The owner confirmed settings save/load working on hardware at 855bfd6 on
+cleanup-preserve-mco. That is the starting point for the display extraction. Keep changes small
 and separately testable. The Node-ID-zero startup regression and recovery are
 documented in STARTUP_NODE_ZERO.md.
 
@@ -148,10 +148,41 @@ configuration are unchanged; the minimum stack reserve remains 1280 bytes.
 Unlike the preceding textual data includes, this is a separate compilation
 unit. Compiler optimization, code placement and the final target map may change.
 The target memory validator is unchanged and must pass a fresh 9S12 build.
-Hardware checks are still required: startup, all F1/F2 modes, EEPROM save on menu
-exit, values after restart, defaults and serial-number preservation. The GCC
+The owner subsequently confirmed settings save/load working on hardware at
+855bfd6. ImageCraft compilation is explicitly deferred to the final cleanup
+verification. Its source list will remain updated in the meantime. The GCC
 record remains 28 bytes at 0x0800; the ImageCraft contiguous save remains 128
 bytes; the separate serial-number address remains 0x0902.
+
+## Display/SPI compilation-unit extraction
+
+Ten unchanged functions now live in Display.c, exposed through Display.h:
+Xmit_Rcv_SPI, WriteCharMem, ReadCharMem, resetTitler, showMenu, DispTranslate,
+DisplayMsg, showMessage, ClearTitler and DisplayTitler. Subroutines.h includes
+Display.h for existing callers. Both compiler source lists and the host syntax
+checker include the new module.
+
+Definitions of all SPI buffers/indices, display buffers, flags, character data
+and startup state remain in Subroutines.c and its data includes. ApplicationState.h
+adds matching extern declarations for the renderer. SPI0_Int_Handler is unchanged.
+CAN message assembly (bldMessages) remains in Subroutines.c with its existing
+function-local static cursor. This avoids moving that persistent storage along
+with the renderer. No storage definitions or qualifiers were changed.
+
+All ten moved function bodies compare exactly with 855bfd6. The host Subroutines
+object retains mutable data/BSS section order, sizes and initialized contents;
+Display.c adds no mutable global/static storage. All 21 unit tests, both F1/F2
+regression char modes and source syntax checks pass. The new native test links
+the real Display.c and actual glyph table, checking digits, alphabet, punctuation,
+control/custom glyphs and extended-byte passthrough in both char modes. Physical
+SPI and display routines are linked but not executed by the host test.
+
+MCO files, the EEPROM driver/settings implementation, interrupt source, startup,
+font/menu/keypad data and target configuration are unchanged. The required stack
+reserve is still 1280 bytes. A new target build/map validation and hardware check
+are required because separate compilation can change code placement and size.
+Check startup, readable menu/message text, menu navigation, F1/F2 LEDs and modes,
+and saved settings. ImageCraft build verification remains deferred by agreement.
 
 ## Structure
 

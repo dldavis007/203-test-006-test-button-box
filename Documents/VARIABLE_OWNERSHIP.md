@@ -4,8 +4,8 @@ This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
 The initial housekeeping pass retained identical optimized host assembly.
-The subsequent Settings.c split is a separate compilation-unit change requiring
-a fresh target memory check; its function bodies and saved storage remain intact.
+The Settings.c and Display.c splits are separate compilation-unit changes that
+require target memory checks; their moved bodies and existing storage remain intact.
 
 ## Current owners and intended boundaries
 
@@ -22,7 +22,7 @@ a fresh target memory check; its function bodies and saved storage remain intact
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Internal menu navigation/editing state; candidate ownership for a future menu module. |
 | Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | Button decoding, alternate-mode handling and outgoing command assembly. Separate functions before changing visibility. |
 | Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | Camera/device discovery and selection. Review shared dependencies before extraction. |
-| Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Video-display initialization and message rendering; candidate ownership for a display module. |
+| Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
 | Subroutines.c | BattNum, ptrDispBatt and battery display strings | Battery discovery/diagnostics and menu display. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
 | runtime.c, or ImageCraft startup | _bss_end[20] | Persistent startup marker. Preserve its GCC .noinit placement and existing startup ownership. |
@@ -59,7 +59,9 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
 1. Settings/EEPROM functions have been extracted to Settings.c. Saved storage
    remains in Subroutines.c and explicit GCC EEPROM offsets are unchanged.
    Menu callbacks/pointers remain valid; target/hardware verification is pending.
-2. Extract display/SPI and message functions, preserving interrupt interfaces.
+2. SPI/rendering functions are extracted to Display.c. Interrupt interfaces and
+   original storage remain intact. CAN message assembly stays in Subroutines.c;
+   the display extraction awaits its target/hardware check.
 3. Extract internal-menu functions with their documented settings/display calls.
 4. Extract camera/device discovery and selection without changing the MCO stack.
 5. Separate button scanning and command encoding from doevents.
