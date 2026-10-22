@@ -9,6 +9,7 @@
 #include "DeviceMenus.h"
 #include "ButtonInput.h"
 #include "CameraDiscovery.h"
+#include "DeviceDiscovery.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -18,11 +19,6 @@ void doevents(void);
 
 /* Legacy menu callback declaration. */
 int VarSerNumFunct(void);
-
-/* Device discovery, camera selection and external menus. */
-void Scan(void);
-void menuSort(void);
-void ext_menu(void);
 
 /* Analog input. */
 int ATDGetLevel(char ATD_Num);

@@ -2,11 +2,13 @@
 
 ## Current baseline and scope
 
-The current baseline is 8860562, the owner's restored relative ImageCraft
-paths with a blank build-folder setting. Both compiler configurations use the
-shared source. This pass extracts camera discovery while preserving the static
-CAN buffer and existing entry points. The Node-ID-zero startup regression and
-recovery are documented in STARTUP_NODE_ZERO.md.
+The current baseline is bdc732a, the camera-discovery extraction. The owner
+reported operation after reloading the ImageCraft firmware; an apparent stop
+around ReadCharMem was not reproduced after that reload and its cause remains
+unconfirmed. This pass extracts device discovery while preserving the static
+CAN buffer and existing public entry points. The owner's relative ImageCraft
+paths and blank build-folder setting remain intact. The Node-ID-zero startup
+regression and recovery are documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
 mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
@@ -455,6 +457,47 @@ the unused-address clear loop stops before index 9, the maximum camera count
 can exceed available menu rows once FIND/EXIT/header are included, and tag
 trimming uses overlapping strncpy. The new fixtures cover normal mixed-camera
 and freshly empty scans, not those boundary cases. Review fixes separately.
+
+## Device discovery extraction
+
+DeviceDiscovery.c now owns the device scan, auxiliary menu sorting and external
+menu activation loop. Public Scan and ext_menu remain small wrappers in
+Subroutines.c and pass its original static gTxMsg to ScanDevices and
+ActivateDeviceMenus. The moved bodies differ only in the names/parameter and
+buffer access; menuSort is copied unchanged. All response handling, SDO requests,
+duplicate-node randomization/resequencing, callback assignment and final
+SDO_restore retain their original order. Three existing extern declarations for
+legacy response state move with the functions. Application-owned device arrays,
+flags and the shared CAN buffer remain in their existing storage order.
+
+DeviceDiscovery.h exposes the interfaces and existing auxiliary-state externs.
+Both compiler source lists include the new module. The ImageCraft project
+options are byte-identical to bdc732a. Save and close the IDE before pulling,
+then reopen Embedded/ImageCraft/BUTTONBOX.prj so it loads the new source list.
+
+All 26 host unit tests, both signed/unsigned-char F1/F2 regression modes and
+strict application syntax checks pass. The new test uses actual discovery
+functions, wrapper bodies and menu templates, with stack/watchdog boundaries
+stubbed and interrupt-only delays replaced in a host copy. It checks all 127
+external-menu activation destinations, transmit-failure notification, the 112
+initial discovery requests, empty scans, primary/auxiliary menu population,
+adjacent auxiliary sorting and the existing duplicate-node randomization,
+resequence and response-table broadcast payloads. It verifies the caller-owned
+CAN buffer is used throughout. Physical CAN timing and stack integration are
+not exercised. Fixtures isolate the application's existing 20-slot scan logic;
+they do not validate the separately documented legacy response-array capacity.
+The existing primary-menu capacity issue is also unchanged.
+
+Host data/BSS section order, sizes, initialized bytes and symbolic pointer
+relocations match bdc732a. DeviceDiscovery.c adds no mutable global/static
+storage. Core MCO files and application PDO setup, EEPROM declarations/codecs,
+startup, interrupts, display/SPI functions including ReadCharMem, other extracted
+modules, constant tables, project options and target memory settings are unchanged.
+The 1280-byte stack requirement remains enforced. Additional calls can change
+target code placement and stack use, so GCC/NoICE and ImageCraft builds and
+hardware checks are pending. Check controller-mode startup/device discovery,
+primary and auxiliary device menu entries, their external menu/trigger commands,
+camera discovery/selection, F1/F2 and saved settings.
 
 ## Structure
 

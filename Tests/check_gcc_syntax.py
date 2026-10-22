@@ -5,7 +5,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 source = ROOT/'Embedded/Src'
 files = [source/(name+'.c') for name in
-         ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines', 'Settings', 'Display', 'Menu', 'DeviceMenus', 'ButtonInput', 'CameraDiscovery']]
+         ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines', 'Settings', 'Display', 'Menu', 'DeviceMenus', 'ButtonInput', 'CameraDiscovery', 'DeviceDiscovery']]
 files += [ROOT/'Embedded/Src/runtime.c', ROOT/'Embedded/Src/compact_io.c']
 legacy_names = {'mco.c', 'user.c', 'mcohw.c'}
 common = [os.environ.get('CC', 'gcc'), '-std=gnu89', '-ffreestanding', '-fsyntax-only',

@@ -4,7 +4,8 @@ This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
 The initial housekeeping pass retained identical optimized host assembly.
-The Settings.c, Display.c, Menu.c, DeviceMenus.c, ButtonInput.c and CameraDiscovery.c splits are separate compilation-unit changes that
+The Settings.c, Display.c, Menu.c, DeviceMenus.c, ButtonInput.c, CameraDiscovery.c
+and DeviceDiscovery.c splits are separate compilation-unit changes that
 require target memory checks; their moved bodies and existing storage remain intact.
 
 ## Current owners and intended boundaries
@@ -21,7 +22,7 @@ require target memory checks; their moved bodies and existing storage remain int
 | MenuTables.inc, included by Subroutines.c | defaultMenuc, Menuc, defaultMenuStackc, MenuStackc | Menu templates/runtime arrays. The include preserves their translation unit and definition order. Menuc is shared through ApplicationState.h. |
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Menu.c owns navigation/editing functions; storage stays in Subroutines.c. Menu.h exposes the required declarations. |
 | Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | ButtonInput.c owns scan/encoding functions; storage stays here, declared in ButtonInput.h. Menu/camera handling remains in doevents. |
-| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | CameraDiscovery.c owns camera discovery; wrappers pass the existing static CAN buffer from Subroutines.c. Camera shortcuts and device discovery remain here. DeviceMenus.c owns four external-menu/trigger commands; shared declarations are in the relevant module headers. |
+| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | CameraDiscovery.c owns camera discovery; wrappers pass the existing static CAN buffer from Subroutines.c. Camera shortcuts remain here; DeviceDiscovery.c owns device discovery and sorting, with wrappers passing the same static buffer. DeviceMenus.c owns four external-menu/trigger commands; shared declarations are in the relevant module headers. |
 | Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
 | runtime.c, or ImageCraft startup | _bss_end[20] | Persistent startup marker. Preserve its GCC .noinit placement and existing startup ownership. |
@@ -82,9 +83,12 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
    Exhaustive host comparisons pass; target/hardware verification is pending.
 8. Camera discovery is extracted to CameraDiscovery.c. Existing public scan
    wrappers pass the shared static CAN buffer by pointer; all state stays in
-   Subroutines.c. Host checks pass; GCC/ImageCraft and hardware checks are pending.
-9. Device Scan/menuSort/ext_menu and the remaining doevents responsibilities
-   remain candidates for separate, hardware-tested changes.
+   Subroutines.c. The owner reported operation after reloading ImageCraft firmware.
+9. Device discovery is extracted to DeviceDiscovery.c. Scan/ext_menu wrappers
+   retain the existing public API and shared buffer; menuSort moves unchanged.
+   Host checks pass; target GCC/ImageCraft and hardware checks are pending.
+10. Remaining doevents responsibilities are candidates for separate, hardware-tested
+    changes. Review retained unused declarations and unusual behavior separately.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and

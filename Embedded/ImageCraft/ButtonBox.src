@@ -14,6 +14,7 @@
 ..\Src\DeviceMenus.c
 ..\Src\ButtonInput.c
 ..\Src\CameraDiscovery.c
+..\Src\DeviceDiscovery.c
 [Headers]
 ..\Include\Controller.h
 ..\Include\Command.h
@@ -34,6 +35,7 @@
 ..\Include\DeviceMenus.h
 ..\Include\ButtonInput.h
 ..\Include\CameraDiscovery.h
+..\Include\DeviceDiscovery.h
 [Documents]
 ..\..\Documents\Legacy\MCO Reference.txt
 ..\..\Documents\Legacy\Revision History.txt
