@@ -169,6 +169,68 @@ void addressCamera(void)
     RandomizeCameraAddresses(&gTxMsg);
 }
 
+/* Service active internal-menu keys at the original point in doevents().
+ * Keep the existing flag/repeat behavior and callback order unchanged. */
+static void ServiceInternalMenuKeys(void)
+{
+	if ( ( TC0_RCVD_Data & TeleData_Down ) && CursorDownFlag == 0 )
+	    CursorDownFlag = 1;
+	else if ( CursorDownFlag == -1 && !( TC0_RCVD_Data & TeleData_Down ) )
+	    CursorDownFlag = 0;
+	
+	if ( ( TC0_RCVD_Data &  TeleData_Up ) && CursorUpFlag == 0 )
+	    CursorUpFlag = 1;
+	else if ( CursorUpFlag == -1 && !( TC0_RCVD_Data & TeleData_Up ) )
+	    CursorUpFlag = 0;
+	
+	if ( ( TC0_RCVD_Data & TeleData_Select ) && SelectFlag == 0 )
+	   SelectFlag = 1;
+	else if ( SelectFlag == -1 && !( TC0_RCVD_Data & TeleData_Select ) )
+	    SelectFlag = 0;
+	if ( ( TC0_RCVD_Data & TeleData_Trig ) && Trigger_DeviceFlag == 0 )
+	    Trigger_DeviceFlag = 1;
+	else if ( Trigger_DeviceFlag == -1 && !( TC0_RCVD_Data & TeleData_Trig ) )
+	    Trigger_DeviceFlag = 0;
+	
+	if ( !MenuTimer )
+	{
+		MenuTimer = MenuTime;
+		
+		if ( CursorDownFlag )
+		{
+			CursorDown ();
+			CursorDownFlag = -1;
+		}
+		if ( CursorUpFlag )
+		{
+			CursorUp ();
+			CursorUpFlag = - 1;
+		}					
+		
+		if ( SelectFlag )
+		{
+			MenuTimer = MenuTime * 2; //briefly disable select after menu is selected
+			Select ();          //select menu item at cursor position
+			SelectFlag = - 1;
+		}
+		
+		if ( Trigger_DeviceFlag )
+		{
+			Trigger_Device ();
+			Trigger_DeviceFlag = - 1;
+		}
+
+		if ( UpdateMenu )
+		{
+			LoadMenu (MenuStackc[StackPointer].Index);
+			if (!VariableFlag)
+			    InsertCursor ();
+			btnDisplayTitler ();
+			UpdateMenu = 0;
+		}
+	}
+}
+
 void doevents ( void )
 {
 
@@ -183,62 +245,7 @@ void doevents ( void )
 		//external menu is not active
 		if ( Gen_Flags & Gen_Flags_Menu_Active )
 		{
-			if ( ( TC0_RCVD_Data & TeleData_Down ) && CursorDownFlag == 0 )
-			    CursorDownFlag = 1;
-			else if ( CursorDownFlag == -1 && !( TC0_RCVD_Data & TeleData_Down ) )
-			    CursorDownFlag = 0;
-			
-			if ( ( TC0_RCVD_Data &  TeleData_Up ) && CursorUpFlag == 0 )
-			    CursorUpFlag = 1;
-			else if ( CursorUpFlag == -1 && !( TC0_RCVD_Data & TeleData_Up ) )
-			    CursorUpFlag = 0;
-			
-			if ( ( TC0_RCVD_Data & TeleData_Select ) && SelectFlag == 0 )
-			   SelectFlag = 1;
-			else if ( SelectFlag == -1 && !( TC0_RCVD_Data & TeleData_Select ) )
-			    SelectFlag = 0;
-			if ( ( TC0_RCVD_Data & TeleData_Trig ) && Trigger_DeviceFlag == 0 )
-			    Trigger_DeviceFlag = 1;
-			else if ( Trigger_DeviceFlag == -1 && !( TC0_RCVD_Data & TeleData_Trig ) )
-			    Trigger_DeviceFlag = 0;
-			
-			if ( !MenuTimer )
-			{
-				MenuTimer = MenuTime;
-				
-				if ( CursorDownFlag )
-				{
-					CursorDown ();
-					CursorDownFlag = -1;
-				}
-				if ( CursorUpFlag )
-				{
-					CursorUp ();
-					CursorUpFlag = - 1;
-				}					
-				
-				if ( SelectFlag )
-				{
-					MenuTimer = MenuTime * 2; //briefly disable select after menu is selected
-					Select ();          //select menu item at cursor position
-					SelectFlag = - 1;
-				}
-				
-				if ( Trigger_DeviceFlag )
-				{
-					Trigger_Device ();
-					Trigger_DeviceFlag = - 1;
-				}
-
-				if ( UpdateMenu )
-				{
-					LoadMenu (MenuStackc[StackPointer].Index);
-					if (!VariableFlag)
-					    InsertCursor ();
-					btnDisplayTitler ();
-					UpdateMenu = 0;
-				}
-			}
+			ServiceInternalMenuKeys();
 		}
 		else
 		{   //Neither Internal nor External menu active

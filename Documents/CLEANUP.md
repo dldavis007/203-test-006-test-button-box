@@ -499,6 +499,26 @@ hardware checks are pending. Check controller-mode startup/device discovery,
 primary and auxiliary device menu entries, their external menu/trigger commands,
 camera discovery/selection, F1/F2 and saved settings.
 
+## Active internal-menu key handling
+
+The device-discovery extraction in 01aea39 was confirmed working in hardware.
+The next pass gives active-menu key handling a private
+ServiceInternalMenuKeys() helper in Subroutines.c. Its original guarded call
+position in doevents(), flag types, repeat behavior, timer assignments, menu
+refresh behavior and callback order are preserved. Camera shortcuts, menu entry,
+reset handling and CAN behavior are unchanged. No source-list updates are needed.
+
+All 27 host tests pass. The new key-handling test covers all 16 input combinations,
+timer gating, repeats, release rearming of signed navigation flags, callback
+order and cursor suppression while editing. Both signed/unsigned-char F1/F2
+regressions and strict application syntax checks pass. Host data/BSS section
+order, sizes, initialized bytes and symbolic relocations match the prior source.
+No globals, EEPROM declarations, startup, MCO files or memory limits changed;
+the build still enforces the 1280-byte stack reserve. Target code placement and
+call overhead require GCC/NoICE and ImageCraft hardware verification. Check menu
+navigation, select delay, held-key repeats, device triggers from the menu,
+variable editing, exit/save, camera shortcuts and all F1/F2 setting combinations.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.
