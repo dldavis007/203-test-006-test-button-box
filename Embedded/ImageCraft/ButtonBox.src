@@ -16,6 +16,9 @@
 ..\Src\CameraDiscovery.c
 ..\Src\DeviceDiscovery.c
 [Headers]
+..\Src\CharacterFontData.inc
+..\Src\MenuTables.inc
+..\Src\KeypadMatrix.inc
 ..\Include\FixedTypes.h
 ..\Include\LegacyCanInterface.h
 ..\Include\Controller.h
