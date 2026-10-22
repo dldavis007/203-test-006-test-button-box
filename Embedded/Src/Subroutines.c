@@ -231,6 +231,28 @@ static void ServiceInternalMenuKeys(void)
 	}
 }
 
+/* Enter the internal menu without changing initialization/display order. */
+static void EnterInternalMenu(void)
+{
+	StackPointer = 0;
+	MenuStackc[StackPointer].Index[0] = 0;
+	MenuStackc[StackPointer].Index[1] = 0;
+	MenuStackc[StackPointer].Index[2] = 0;
+	MenuStackc[StackPointer].Index[3] = 0;
+	MenuStackc[StackPointer].CursorPos = 1;
+	MenuStackc[StackPointer].FirstLine = 0;
+	Gen_Flags |= Gen_Flags_Menu_Active;
+	
+	LoadMenu( MenuStackc[StackPointer].Index );
+	InsertCursor();
+	btnDisplayTitler();			
+	TC0_RCVD_Data &= ~0x07;  //Make sure up/down/select not active
+	CursorDownFlag = 0;
+	CursorUpFlag = 0;
+	SelectFlag = 0;
+	internal_menu = 0;
+}
+
 void doevents ( void )
 {
 
@@ -253,23 +275,7 @@ void doevents ( void )
 			{
 				if (internal_menu)
 				{
-					StackPointer = 0;
-					MenuStackc[StackPointer].Index[0] = 0;
-					MenuStackc[StackPointer].Index[1] = 0;
-					MenuStackc[StackPointer].Index[2] = 0;
-					MenuStackc[StackPointer].Index[3] = 0;
-					MenuStackc[StackPointer].CursorPos = 1;
-					MenuStackc[StackPointer].FirstLine = 0;
-					Gen_Flags |= Gen_Flags_Menu_Active;
-					
-					LoadMenu( MenuStackc[StackPointer].Index );
-					InsertCursor();
-					btnDisplayTitler();			
-					TC0_RCVD_Data &= ~0x07;  //Make sure up/down/select not active
-					CursorDownFlag = 0;
-					CursorUpFlag = 0;
-					SelectFlag = 0;
-					internal_menu = 0;
+					EnterInternalMenu();
 				}
 				else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Down) && !(TC0_RCVD_Data & TeleData_Select))
 				{

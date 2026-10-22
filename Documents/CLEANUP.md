@@ -519,6 +519,24 @@ call overhead require GCC/NoICE and ImageCraft hardware verification. Check menu
 navigation, select delay, held-key repeats, device triggers from the menu,
 variable editing, exit/save, camera shortcuts and all F1/F2 setting combinations.
 
+## Internal-menu entry handling
+
+The active-menu key extraction in f3f1752 was confirmed working in hardware.
+This pass moves only the internal-menu entry statements to a private
+EnterInternalMenu() helper in Subroutines.c. The existing controller/F1/F2 and
+pending-entry guards remain in doevents(), including the else-if relationship
+with camera shortcuts. Initialization, rendering, input clearing and flag reset
+retain their original order. No globals, headers or source lists change.
+
+All 28 host tests pass, along with both signed/unsigned-char F1/F2 regressions
+and strict application syntax checks. The new test checks entry across all
+65,536 input masks, display callback ordering, unrelated input/flag preservation,
+and untouched non-root stack entries. Host data/BSS section order, sizes,
+initialized bytes and symbolic relocations match f3f1752. EEPROM layout, startup,
+MCO and the 1280-byte stack requirement remain unchanged. Target builds and
+hardware checks are pending: menu entry/exit, initial cursor position, no stray
+selection on entry, camera shortcuts, F1/F2 gating and saved settings.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.
