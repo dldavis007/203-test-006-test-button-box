@@ -9,7 +9,7 @@
 
 void ActivateDeviceMenus(CAN_MSG *message)
 {   //Activates Menus on all devices connected
-    int i;
+    int16_t i;
 	for (i=0x201;i<0x280;i++)
 	{
         message->ID = i;
@@ -28,7 +28,7 @@ void ActivateDeviceMenus(CAN_MSG *message)
 
 void ScanDevices(CAN_MSG *message)
 {
-	int i,j,k, cntr;
+	int16_t i,j,k, cntr;
 	
 	Timer1 = RTI_One_Sec * 2.25;
 	while ( Timer1 )
@@ -181,7 +181,7 @@ void ScanDevices(CAN_MSG *message)
 	    if ( Device_Type_Response_ID[i] != 0 ) 
 		{
             //main menu items
-            if( (unsigned char)Device_Menus[i][15] != 0xff && Device_Menus[i][15] != 0x00 )    //0xff indicates auxiliary menus, WIM = 0xA6                   
+            if( (uint8_t)Device_Menus[i][15] != 0xff && Device_Menus[i][15] != 0x00 )    //0xff indicates auxiliary menus, WIM = 0xA6                   
 		    {  						   		   					   		  	    //0x32 indicates main menu items
     	    	Device_Menus[i][15] = 0x32;
 				strcpy(Menuc[0].Entry[j+8], Menuc[0].Entry[j+7]);		
@@ -191,7 +191,7 @@ void ScanDevices(CAN_MSG *message)
     			j++;
     		}
       	    //auxiliary menu items   
-      	    if( (unsigned char)Device_Menus[i][15] == 0xff )                                   //0xff indicates auxiliary menus
+      	    if( (uint8_t)Device_Menus[i][15] == 0xff )                                   //0xff indicates auxiliary menus
             {
 			    if (k < 10)  //supports max of 10 aux devices
 				{
@@ -219,13 +219,13 @@ void ScanDevices(CAN_MSG *message)
 
 void menuSort( void )       //seperate sub-menu items from primary menu items
 {
-    int index = 0;          //index for main menu array
-    int i;                  //index used to advance main menu items
-    int subIndex = 0;       //index for sub menu array
+    int16_t index = 0;          //index for main menu array
+    int16_t i;                  //index used to advance main menu items
+    int16_t subIndex = 0;       //index for sub menu array
 
     for(index = 0; index < 19; index++) {
 	    COP_Trig();
-        if( (unsigned char)Device_Menus[index][15] == 0xff ) {    //0xff indicates sub menu of Auxiliary Equip
+        if( (uint8_t)Device_Menus[index][15] == 0xff ) {    //0xff indicates sub menu of Auxiliary Equip
             sub_Device_Type_Response_ID[subIndex] = Device_Type_Response_ID[index];
             strcpy( &deviceSubMenu[subIndex++][0], &Device_Menus[index][0]);
             

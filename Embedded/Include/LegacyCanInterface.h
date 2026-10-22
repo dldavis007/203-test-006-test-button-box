@@ -1,6 +1,8 @@
 #ifndef LEGACY_CAN_INTERFACE_H
 #define LEGACY_CAN_INTERFACE_H
 
+
+#include "FixedTypes.h"
 #include "mco.h"
 #include "procimg.h"
 

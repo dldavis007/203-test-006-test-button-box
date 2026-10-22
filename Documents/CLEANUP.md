@@ -2,15 +2,14 @@
 
 ## Current baseline and scope
 
-The structural cleanup is complete pending the owner's combined target build
-and hardware acceptance. The last explicitly hardware-confirmed step is
-f3f1752 (active internal-menu keys). The internal-menu entry extraction in
-3d955a2 and this final batch are to be checked together, as requested.
-The final batch isolates camera shortcuts and reset handling, consolidates
-application declarations for the legacy CAN integration, and removes inert
-branches and an undefined callback prototype. The owner's relative ImageCraft
-paths and blank build-folder setting remain intact. The Node-ID-zero startup
-regression and recovery are documented in STARTUP_NODE_ZERO.md.
+The structural cleanup batch c2349f9 was reported working by the owner.
+The subsequent IN58 scan exclusion is 2a4f7ef. At the owner's request, the
+application now uses fixed-width numeric declarations; scope, explicit native
+ABI exceptions and pending target checks are in FIXED_WIDTH_TYPES.md. This type
+migration is a separate change from structural cleanup. ImageCraft's relative
+paths/blank build-folder setting, EEPROM layout and protected startup settings
+remain intact. The Node-ID-zero startup regression and recovery are documented
+in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
 mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
@@ -636,7 +635,5 @@ compiler path is verified.
 - Proprietary CNT-031 discovery/resequence CAN identifiers and commands, and
   intentional Node-ID-zero behavior. Any standards migration needs coordinated
   firmware changes and compatibility review, not a cleanup edit.
-- Trigger_DeviceFlag is plain char; unsigned-char builds do not treat its -1
-  comparison like signed navigation flags. The legacy type is preserved here.
 - Removal of retained unreferenced storage or the F2+F3 display animation, if
   desired, requires a separate reviewed change and target validation.

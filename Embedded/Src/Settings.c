@@ -20,7 +20,7 @@ void NormalizeFunctionSettings(void)
 }
 
 #ifdef BUTTONBOX_GCC
-void EncodeLegacySettings(unsigned char legacy[28])
+void EncodeLegacySettings(uint8_t legacy[28])
 {
     memcpy(legacy, FirstVar, 4);
     memcpy(legacy + 4, MessageRow, 4);
@@ -31,7 +31,7 @@ void EncodeLegacySettings(unsigned char legacy[28])
     legacy[26] = legacy[27] = 0;
 }
 
-void DecodeLegacySettings(const unsigned char legacy[28])
+void DecodeLegacySettings(const uint8_t legacy[28])
 {
     memcpy(FirstVar, legacy, 4);
     memcpy(MessageRow, legacy + 4, 4);
@@ -54,11 +54,11 @@ void Load_Variables (void)
      VarRAMPntr = FirstVar;
 #endif
 	 VarEEPROMPntr = (char *)0x0800;
-	 if ( (unsigned char)*VarEEPROMPntr != 0xff )
+	 if ( (uint8_t)*VarEEPROMPntr != 0xff )
 	 {
 #ifdef BUTTONBOX_GCC
          /* Preserve the ImageCraft EEPROM offsets without linker-order assumptions. */
-         DecodeLegacySettings((const unsigned char *)0x0800);
+         DecodeLegacySettings((const uint8_t *)0x0800);
 #else
          do
          {
@@ -80,12 +80,12 @@ void Save_Variables ( void )
 {
 #ifdef BUTTONBOX_GCC
     {
-        unsigned char legacy[28];
+        uint8_t legacy[28];
         EncodeLegacySettings(legacy);
-        EEWrite(28, (char *)legacy, (int *)0x0800);
+        EEWrite(28, (char *)legacy, (int16_t *)0x0800);
     }
 #else
-    EEWrite ( 128, FirstVar, (int *)0x0800 );
+    EEWrite ( 128, FirstVar, (int16_t *)0x0800 );
 #endif
     Timer2 = 0.05 * RTI_One_Sec;
     while (Timer2) { /* wait for interrupt */ }
@@ -96,7 +96,7 @@ void Load_Serial_Num ( void )
 {
     char *VarEEPROMPntr2;
     char tempSerialNum[5];            //temporary serial number
-    int k;
+    int16_t k;
     VarEEPROMPntr2 = (char *)0x0902;
     
     tempSerialNum[0] = *VarEEPROMPntr2;
@@ -123,7 +123,7 @@ void Save_Serial_Num ( void )
     
     EEpromPtr = &SerialNum[0];
 
- 	EEWrite ( 5, EEpromPtr, (int *)0x0902 );
+ 	EEWrite ( 5, EEpromPtr, (int16_t *)0x0902 );
     Timer2 = 0.05 * RTI_One_Sec;   //EEProm is not available for brief period after EEWrite
     while (Timer2) { /* wait for interrupt */ }
 }

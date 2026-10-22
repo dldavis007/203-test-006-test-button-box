@@ -12,7 +12,7 @@
 
 void Xmit_Rcv_SPI ( void )
 {   
-    int i;
+    int16_t i;
 	
 	if(firstWriteSPI) //dummy write
 	{
@@ -36,7 +36,7 @@ void Xmit_Rcv_SPI ( void )
 
 void WriteCharMem ( void )
 {
-    unsigned char CMM, CMAH, CMAL;
+    uint8_t CMM, CMAH, CMAL;
 	
     SPI0OutBufptr = 0;
    	SPI0OutBuf[0] = 0x00;	   //Disable OSD
@@ -86,8 +86,8 @@ void WriteCharMem ( void )
 
 void ReadCharMem ( void )
 {
-    unsigned char CMM, CMAH, CMAL;
-	int i;
+    uint8_t CMM, CMAH, CMAL;
+	int16_t i;
 	
     SPI0OutBufptr = 0;
    	SPI0OutBuf[0] = 0x00;	   //Disable OSD
@@ -162,13 +162,13 @@ void resetTitler(void)
 //puts Menu in proper location, leaves room for messages on top line
 void showMenu ( void )
 {
-    int i, j;
+    int16_t i, j;
 
 	MenuCheck=1;
 	
 	for (i=0; i<=8; i++)
 	{
-	 	int DispAddr;
+	 	int16_t DispAddr;
 		
 		DispAddr = ( i + 2 ) * 30 + 4;
 		
@@ -200,9 +200,9 @@ void showMenu ( void )
 	}
 }
 
-char DispTranslate ( char *TranChar )
+uint8_t DispTranslate ( char *TranChar )
 {
- 	char RetChar;
+ 	uint8_t RetChar;
 	
     if ( *TranChar == '0' )
         RetChar = 0x0a;
@@ -320,12 +320,12 @@ void DisplayMsg ( char Message[] )
         showMessage( Message, atoi(MessageRow) );              //puts Proc:, Warn:, etc messages on video top line
 }
 
-void showMessage ( char Message[], int row )       //row = position on video screen, skip row 0
+void showMessage ( char Message[], int16_t row )       //row = position on video screen, skip row 0
 {
-    char endofmsg = 0; 
-    int column;     //position on video screen
-    int index = 0;
-    int DispAddr;
+    uint8_t endofmsg = 0; 
+    int16_t column;     //position on video screen
+    int16_t index = 0;
+    int16_t DispAddr;
 
     //see if external menu is not active and internal menu is not active
 	if ( (gProcImg[OUT_digi_0] & 0x01) || (( Gen_Flags & Gen_Flags_Menu_Active ) && MenuCheck==0))
@@ -399,8 +399,8 @@ void ClearTitler ( void )
 //send characters to titler via SPI
 void DisplayTitler ( void )
 {
-    int i,j;
-	int DispAddr;
+    int16_t i,j;
+	int16_t DispAddr;
 
     //if( VCI_Flag & TCP_PRESENT )
     //TCPDisplayTitler();

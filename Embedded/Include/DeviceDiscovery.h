@@ -1,6 +1,8 @@
 #ifndef DEVICE_DISCOVERY_H
 #define DEVICE_DISCOVERY_H
 
+
+#include "FixedTypes.h"
 #include "ApplicationState.h"
 #include "mco.h"
 

@@ -20,13 +20,14 @@ class MenuEntryTests(unittest.TestCase):
 #include <string.h>
 #include "Subroutines.h"
 #include "Controller.h"
-unsigned int TC0_RCVD_Data;
+uint16_t TC0_RCVD_Data;
 volatile char Gen_Flags;
-signed char CursorDownFlag, CursorUpFlag, SelectFlag;
-char Trigger_DeviceFlag, internal_menu;
+int8_t CursorDownFlag, CursorUpFlag, SelectFlag;
+int8_t Trigger_DeviceFlag;
+uint8_t internal_menu;
 struct MenuStack MenuStackc[MenuStackSize];
-unsigned char StackPointer;
-static unsigned int saved_input;
+uint8_t StackPointer;
+static uint16_t saved_input;
 static unsigned calls;
 static void check_display_boundary(void)
 {
@@ -34,12 +35,12 @@ static void check_display_boundary(void)
     assert(StackPointer == 0);
     for (i = 0; i < 4; ++i) assert(MenuStackc[0].Index[i] == 0);
     assert(MenuStackc[0].CursorPos == 1 && MenuStackc[0].FirstLine == 0);
-    assert((unsigned char)Gen_Flags == (unsigned char)(0x01 | Gen_Flags_Menu_Active));
+    assert((uint8_t)Gen_Flags == (uint8_t)(0x01 | Gen_Flags_Menu_Active));
     /* Input clearing and flag resets occur AFTER rendering, as before. */
     assert(TC0_RCVD_Data == saved_input && internal_menu == 1);
     assert(CursorDownFlag == -1 && CursorUpFlag == 1 && SelectFlag == -1);
 }
-void LoadMenu(unsigned char *index)
+void LoadMenu(uint8_t *index)
 {
     check_display_boundary();
     assert(index == MenuStackc[0].Index && calls++ == 0);
@@ -49,7 +50,7 @@ void btnDisplayTitler(void) { check_display_boundary(); assert(calls++ == 2); }
 ''' + helper + r'''
 int main(void)
 {
-    unsigned input;
+    uint32_t input;
     for (input = 0; input <= 0xFFFF; ++input) {
         struct MenuStack untouched;
         memset(MenuStackc, 0x55, sizeof(MenuStackc));

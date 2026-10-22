@@ -1,6 +1,7 @@
 #ifndef Interrupts_H
 #define Interrupts_H
 
+#include "FixedTypes.h"
 #if defined(BUTTONBOX_GCC)
 #ifndef BUTTONBOX_HOST_SYNTAX
 #define BB_ISR __attribute__((interrupt))
@@ -29,21 +30,21 @@ void CANRxISR(void) BB_ISR;
 
 #endif
 
-#define TC_50us (int)(50/Tbus/TSCR2_PreScale+0.5)
-#define TC_104us (int)(104/Tbus/TSCR2_PreScale+0.5)
-#define TC_100us (int)(100/Tbus/TSCR2_PreScale+0.5)
-#define TC_170us (int)(170/Tbus/TSCR2_PreScale+0.5)
-#define TC_208us (int)(208/Tbus/TSCR2_PreScale+0.5)
-#define TC_250us (int)(250/Tbus/TSCR2_PreScale+0.5)
-#define TC_340us (int)(340/Tbus/TSCR2_PreScale+0.5)
-#define TC_416us (int)(416/Tbus/TSCR2_PreScale+0.5)
-#define TC_500us (int)(500/Tbus/TSCR2_PreScale+0.5)
-#define TC_1200us (int)(1200/Tbus/TSCR2_PreScale+0.5)
-#define TC_1ms (int)(1000/Tbus/TSCR2_PreScale+0.5)
-#define TC_2ms (int)(2000/Tbus/TSCR2_PreScale+0.5)
-#define TC_3ms (int)(3000/Tbus/TSCR2_PreScale+0.5)
-#define TC_25ms (int)(25000/Tbus/TSCR2_PreScale+0.5)
-#define TC_5ms (int)(5000/Tbus/TSCR2_PreScale+0.5)
+#define TC_50us (int16_t)(50/Tbus/TSCR2_PreScale+0.5)
+#define TC_104us (int16_t)(104/Tbus/TSCR2_PreScale+0.5)
+#define TC_100us (int16_t)(100/Tbus/TSCR2_PreScale+0.5)
+#define TC_170us (int16_t)(170/Tbus/TSCR2_PreScale+0.5)
+#define TC_208us (int16_t)(208/Tbus/TSCR2_PreScale+0.5)
+#define TC_250us (int16_t)(250/Tbus/TSCR2_PreScale+0.5)
+#define TC_340us (int16_t)(340/Tbus/TSCR2_PreScale+0.5)
+#define TC_416us (int16_t)(416/Tbus/TSCR2_PreScale+0.5)
+#define TC_500us (int16_t)(500/Tbus/TSCR2_PreScale+0.5)
+#define TC_1200us (int16_t)(1200/Tbus/TSCR2_PreScale+0.5)
+#define TC_1ms (int16_t)(1000/Tbus/TSCR2_PreScale+0.5)
+#define TC_2ms (int16_t)(2000/Tbus/TSCR2_PreScale+0.5)
+#define TC_3ms (int16_t)(3000/Tbus/TSCR2_PreScale+0.5)
+#define TC_25ms (int16_t)(25000/Tbus/TSCR2_PreScale+0.5)
+#define TC_5ms (int16_t)(5000/Tbus/TSCR2_PreScale+0.5)
 
 
 #define TSCR2_PreScale 32
@@ -127,11 +128,12 @@ void CANRxISR(void) BB_ISR;
 #define HW_Watchdog_Time  RTI_One_Sec * 0.5
 
 /* Shared state defined in Interrupts.c. */
-extern volatile char Gen_Flags;
-extern volatile unsigned int Timer1, Timer2, DeBounceTimer;
-extern volatile unsigned int MenuTimer, ToggleTimer, WD_Timer;
-extern volatile int CntrSwTimeOut;
+extern volatile char Gen_Flags; /* Native char, also declared by MCO. */
+extern volatile unsigned int Timer1; /* Native MCO ABI; 16 bits on target. */ /* Legacy MCO ABI. */
+extern volatile uint16_t Timer2, DeBounceTimer;
+extern volatile uint16_t MenuTimer, ToggleTimer, WD_Timer;
+extern volatile int16_t CntrSwTimeOut;
 extern char SIN0Buf[SIN0BufLen], SOUT0Buf[SOUT0BufLen];
-extern volatile int SIN0Bufptr, SOUT0Bufptr;
+extern volatile int16_t SIN0Bufptr, SOUT0Bufptr;
 
 #endif

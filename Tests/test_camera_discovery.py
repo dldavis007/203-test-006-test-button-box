@@ -17,7 +17,7 @@ class CameraDiscoveryTests(unittest.TestCase):
         variables = application[start:end]
         tables = (ROOT/'Embedded/Src/MenuTables.inc').read_text()
         callbacks = sorted(set(re.findall(r'&(\w+)', tables)) - {'findCameras'})
-        stubs = '\n'.join('int '+name+'(void) { return 0; }' for name in callbacks)
+        stubs = '\n'.join('int16_t '+name+'(void) { return 0; }' for name in callbacks)
         # Preserve all module code except the plain interrupt-driven delay used
         # after randomization. Stack-polling waits use the scripted replies below.
         module = (ROOT/'Embedded/Src/CameraDiscovery.c').read_text()
@@ -31,19 +31,19 @@ class CameraDiscoveryTests(unittest.TestCase):
 #include "Interrupts.h"
 #include "mcohw.h"
 
-int cam_list[10], cam_select;
+int16_t cam_list[10], cam_select;
 char extCamTagList[10][11];
 bool vid18_addr, vid18_update;
-volatile char UpdateMenu;
-volatile unsigned int Timer2;
+volatile uint8_t UpdateMenu;
+volatile uint16_t Timer2;
 UNSIGNED8 gProcImg[PROCIMG_SIZE];
 static CAN_MSG shared_message;
-static unsigned int randomizations, scans, polls, failures, watchdog, displayed;
-static unsigned char last_command;
-static int with_cameras, accept_message = 1;
-int CameraMenu(void) { return 0; }
+static uint16_t randomizations, scans, polls, failures, watchdog, displayed;
+static uint8_t last_command;
+static int16_t with_cameras, accept_message = 1;
+int16_t CameraMenu(void) { return 0; }
 void COP_Trig(void) { ++watchdog; }
-void showMessage(char text[], int row)
+void showMessage(char text[], int16_t row)
 {
     assert(row == 1 && !strcmp(text, "Proc:                         "));
     ++displayed;
@@ -90,7 +90,7 @@ UNSIGNED8 MCO_ProcessStack(void)
             bridge = extract(application, name).replace('&gTxMsg', '&shared_message')
             program += '\n' + bridge
         program += r'''
-static void reset(int cameras)
+static void reset(int16_t cameras)
 {
     memcpy(Menuc, defaultMenuc, sizeof Menuc);
     memset(cam_list, 0, sizeof cam_list);
@@ -106,7 +106,7 @@ static void reset(int cameras)
 }
 static void check_mixed_scan(void)
 {
-    unsigned int i;
+    uint16_t i;
     assert(scans == 1 && cam_select == 0);
     assert(cam_list[0] == 0x1234 && cam_list[1] == 0x2345);
     for (i = 2; i < 10; ++i) assert(cam_list[i] == 0);

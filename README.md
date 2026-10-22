@@ -34,6 +34,13 @@ Global definitions retain their existing placement to protect saved-variable
 ordering and RAM layout. MCO, startup/PPAGE and the 1280-byte stack requirement
 remain protected. Known behavioral concerns are recorded separately from cleanup.
 
+## Numeric types
+
+Application numbers use fixed-width types from `FixedTypes.h`. Text remains
+`char`; native MCO/compiler interfaces retain their existing declarations.
+See [the type-migration notes](Documents/FIXED_WIDTH_TYPES.md) for compatibility,
+layout protection and target acceptance checks.
+
 ## Independent function settings
 
 In SETTINGS MENU, select F1 or F2 to toggle that function ON/OFF. Both default
@@ -82,7 +89,9 @@ Tests cover all four enable combinations; F1/F2 navigation output and release;
 function replacement and toggling; OFF-mode key routing and LED cross gating; internal-menu routing;
 normal travel/Slow/Stop; controller Slow preservation; erased and invalid saved strings;
 and all four settings round trips. They run with signed and unsigned plain char.
-Host unsigned int remains host-sized: these are not processor ABI tests.
+Converted application numbers have target widths in host tests; MCO boundary
+objects, integer promotions and pointer/enum layout still follow the host ABI.
+These are not processor ABI tests.
 
 ## VS Code
 

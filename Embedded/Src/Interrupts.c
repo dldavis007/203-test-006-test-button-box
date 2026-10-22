@@ -8,29 +8,29 @@
 #include "Subroutines.h"
 #include <math.h>
 
-static char Seconds = 60;
+static uint8_t Seconds = 60;
 
-static int Tick = RTI_One_Sec;
+static int16_t Tick = RTI_One_Sec;
 
 volatile char Gen_Flags;
 
-volatile unsigned int Timer1;
-volatile unsigned int Timer2;
-volatile int CntrSwTimeOut;
-volatile unsigned int DeBounceTimer;
-volatile unsigned int MenuTimer;
-volatile unsigned int ToggleTimer;
-volatile unsigned int WD_Timer;
+volatile unsigned int Timer1; /* Native MCO ABI; 16 bits on target. */
+volatile uint16_t Timer2;
+volatile int16_t CntrSwTimeOut;
+volatile uint16_t DeBounceTimer;
+volatile uint16_t MenuTimer;
+volatile uint16_t ToggleTimer;
+volatile uint16_t WD_Timer;
 
 char SIN0Buf[SIN0BufLen] = "\0";
-volatile int SIN0Bufptr = 0;
+volatile int16_t SIN0Bufptr = 0;
 char SOUT0Buf[SOUT0BufLen] = "\0";
-volatile int SOUT0Bufptr = 0;
+volatile int16_t SOUT0Bufptr = 0;
 
-static unsigned char TC0_State;
-static unsigned char TC0_BitCounter;
-static unsigned char QBit;
-static unsigned int TC0_Data_Bit;
+static uint8_t TC0_State;
+static uint8_t TC0_BitCounter;
+static uint8_t QBit;
+static uint16_t TC0_Data_Bit;
 
 void DUMMY_ENTRY ( void )
 {
@@ -87,7 +87,7 @@ void TC0_Int_Handler ( void )
 
 void TC3_Int_Handler ( void )
 {
-    static unsigned char Sw_Index;
+    static uint8_t Sw_Index;
     
     TFLG1 = 0x08;	   		//clear interrupt
     TC3 = TCNT + TC_1ms;

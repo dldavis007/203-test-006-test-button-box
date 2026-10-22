@@ -13,40 +13,40 @@
 
 
 /* Button scan, transmitted data and alternate-function selection. */
-unsigned int TC0_RCVD_Data;
+uint16_t TC0_RCVD_Data;
 
-volatile char UpdateMenu;
+volatile uint8_t UpdateMenu;
 
 static CAN_MSG gTxMsg;
 
 /* Retained unused storage: preserve symbol/RAM placement; see ownership notes. */
-unsigned char ExSlowPushed;
-unsigned char SlowPushed;
-unsigned char FastPushed;
+uint8_t ExSlowPushed;
+uint8_t SlowPushed;
+uint8_t FastPushed;
 
-volatile unsigned int ButtonBoxData;
-unsigned int LEDData;
-volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
-unsigned int tempData;
-unsigned int Third_byte;
-char Cntrl_Slow_Flag;
+volatile uint16_t ButtonBoxData;
+uint16_t LEDData;
+volatile uint8_t AlternateFunctionMask = TeleData_F1 | TeleData_F2;
+uint16_t tempData;
+uint16_t Third_byte;
+uint8_t Cntrl_Slow_Flag;
 
 /* Display SPI exchange; the interrupt handler shares these buffers. */
-volatile char SPI0InBuf[2];
-volatile int SPI0InBufptr = 0;
-volatile char SPI0OutBuf[2];
-volatile int SPI0OutBufptr = 0;
+volatile uint8_t SPI0InBuf[2];
+volatile int16_t SPI0InBufptr = 0;
+volatile uint8_t SPI0OutBuf[2];
+volatile int16_t SPI0OutBufptr = 0;
 
-int dispPBJTFlag = 0;
+int16_t dispPBJTFlag = 0;
 
 char DispBuf[DispBufLen];          //used to display keyboard input
-int DispBufptr = 0;                //index for DispBuf[481]
+int16_t DispBufptr = 0;                //index for DispBuf[481]
 
-volatile int ReActivate_Timer;
+volatile int16_t ReActivate_Timer;
 
 /* Startup mode and device-discovery state. */
-char power_on = 1;
-char Ext_Menu_xmitd;
+uint8_t power_on = 1;
+uint8_t Ext_Menu_xmitd;
 
 bool resequenceNodes = false;
 bool controller_mode = false;
@@ -62,32 +62,32 @@ bool AuxDeviceLimitExceeded = false;
 bool AuxDeviceMenuFull = false;
 
 /* Received video messages and display assembly. */
-char VCI_Flag2;     //more flags specific to VCI
-char MsgIDtable[5];
+uint8_t VCI_Flag2;     //more flags specific to VCI
+uint8_t MsgIDtable[5];
 char UpdateDisp;
-char STX_count;            //count <STX>, 0x02, that indicates beginning of tag
-char ETX_flag;             //count <ETX>, 0x03, that indicates end of tag
-char XmitSPI_flag;
-char RcvSPI_flag;
+uint8_t STX_count;            //count <STX>, 0x02, that indicates beginning of tag
+uint8_t ETX_flag;             //count <ETX>, 0x03, that indicates end of tag
+uint8_t XmitSPI_flag;
+uint8_t RcvSPI_flag;
 struct MsgStruct
 {
-	unsigned char Bufptr;
+	uint8_t Bufptr;
 	char Buffer[30];
 };
 
 /* Internal menu and decoded key state. */
-char MenuCheck;
-char internal_menu;
+uint8_t MenuCheck;
+uint8_t internal_menu;
 
-signed char CursorDownFlag;
-signed char CursorUpFlag;
-signed char SelectFlag;
-char Trigger_DeviceFlag;
+int8_t CursorDownFlag;
+int8_t CursorUpFlag;
+int8_t SelectFlag;
+int8_t Trigger_DeviceFlag;
 
 /* Camera addresses and display tags. */
-int cam_list[10];   //each elements holds a 2 byte camera address
+int16_t cam_list[10];   //each elements holds a 2 byte camera address
 char extCamTagList[10][11];
-int cam_select;    //index of cam_list to select camera
+int16_t cam_select;    //index of cam_list to select camera
 
 /* Character-display initialization. */
 bool firstWriteSPI = true;
@@ -112,16 +112,16 @@ char Rev[]		      = Revision;
 
 #include "MenuTables.inc"
 
-unsigned char StackPointer = 0;
+uint8_t StackPointer = 0;
 
 char Menu[12][21];
 
-char VariableFlag = 0;
+uint8_t VariableFlag = 0;
 
 double increment = 1.0;          //used to increment and decrement variables
 double uLimit = 25.0;            //numerical upper limit
 double lLimit = 0.0;             //numerical lower limit
-int nDigits = 2;
+int16_t nDigits = 2;
 
 struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 
@@ -131,14 +131,14 @@ struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 #include "LegacyCanInterface.h"
 
 /* Select active alternate-key modes without changing latched/output bits. */
-unsigned int EnabledFunctionData(unsigned int data)
+uint16_t EnabledFunctionData(uint16_t data)
 {
     if (strcmp(F1Enable, " ON")) data &= ~TeleData_F1;
     if (strcmp(F2Enable, " ON")) data &= ~TeleData_F2;
     return data;
 }
 
-int ATDGetLevel ( char ATD_Num )
+int16_t ATDGetLevel ( uint8_t ATD_Num )
 {
  	ATD0CTL5=ATD0CTL5_Init | ATD_Num;
 	while ( !(ATD0STAT0 & 0x80) );
@@ -368,7 +368,7 @@ void doevents ( void )
 
 	if ( !DeBounceTimer )
 	{
-		static unsigned SwitchUpData;
+		static uint16_t SwitchUpData;
 		ScanButtons(&SwitchUpData);
 	}
 	EncodeButtonCommands();
@@ -382,7 +382,7 @@ void doevents ( void )
 
 	if (ButtonBoxData & TeleData_F2 && ButtonBoxData & TeleData_F3 && !(Gen_Flags & Gen_Flags_Extern_Menu))
 	{   
-		static int i, j, b, br;
+		static int16_t i, j, b, br;
 		static char beforeSp[31], beforeSpRev[31], temp[31], temp2[31];
 		
 		if (!dispPBJTFlag)
@@ -558,9 +558,9 @@ void doevents ( void )
 
 void bldMessages(void)
 {
-    int i;
+    int16_t i;
     char CANBuf[18];
-    static int DispBufptr;
+    static int16_t DispBufptr;
     ETX_flag = 0;
     if ( gProcImg[OUT_digi_1+1] )
 	{

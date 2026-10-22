@@ -1,6 +1,8 @@
 #ifndef Controller_H
 #define Controller_H
 
+
+#include "FixedTypes.h"
 #include "Subroutines.h"
 #include "Interrupts.h"
 
@@ -18,7 +20,7 @@
 #define INTR_OFF()	asm("sei")
 #endif
 
-int ResetProc (void);
+int16_t ResetProc (void);
 void InitPorts ( void );
 void InitInterrupts ( void );
 void InitPLL ( void );
@@ -38,7 +40,7 @@ void COP_Trig(void);
 
 
 /* Watchdog handshake shared with the timer interrupt. */
-extern volatile char wd_flag, wdInit, wdStarted;
+extern volatile uint8_t wd_flag, wdInit, wdStarted;
 /* Startup-owned persistent marker (ImageCraft startup or GCC runtime). */
 extern char _bss_end[20];
 

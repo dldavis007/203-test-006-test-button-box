@@ -16,6 +16,7 @@
 ..\Src\CameraDiscovery.c
 ..\Src\DeviceDiscovery.c
 [Headers]
+..\Include\FixedTypes.h
 ..\Include\LegacyCanInterface.h
 ..\Include\Controller.h
 ..\Include\Command.h

@@ -20,28 +20,29 @@ class DisplayModuleTests(unittest.TestCase):
 #include "mco.h"
 
 /* Supply the module's existing application-owned state without target I/O. */
-volatile char SPI0InBuf[2], SPI0OutBuf[2];
-volatile int SPI0InBufptr, SPI0OutBufptr;
+volatile uint8_t SPI0InBuf[2], SPI0OutBuf[2];
+volatile int16_t SPI0InBufptr, SPI0OutBufptr;
 volatile unsigned int Timer1;
 volatile char Gen_Flags;
 volatile bool legacy_mode;
 bool CharsInMem, firstWriteSPI = true;
-char plusSymbol[54], DispBuf[DispBufLen], MenuCheck, VCI_Flag2;
-int DispBufptr;
+char plusSymbol[54], DispBuf[DispBufLen];
+uint8_t MenuCheck, VCI_Flag2;
+int16_t DispBufptr;
 char MessageRow[4] = "  1", MessageCol[4] = "  1";
 UNSIGNED8 gProcImg[PROCIMG_SIZE];
 UNSIGNED8 MCO_ProcessStack(void) { assert(0); return 0; }
 #include "CharacterFontData.inc"
 
-static unsigned char translate(unsigned int input)
+static uint8_t translate(uint16_t input)
 {
     char character = (char)input;
-    return (unsigned char)DispTranslate(&character);
+    return (uint8_t)DispTranslate(&character);
 }
 int main(void)
 {
-    unsigned int i;
-    static const unsigned char symbols[][2] = {
+    uint16_t i;
+    static const uint8_t symbols[][2] = {
         {' ',0x00}, {'(',0x3f}, {')',0x40}, {'.',0x41}, {'?',0x42},
         {';',0x43}, {':',0x44}, {',',0x45}, {0x27,0x46}, {'/',0x47},
         {0x22,0x48}, {'-',0x49}, {'<',0x4a}, {'>',0x4b}, {'@',0x4c},

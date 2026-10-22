@@ -2,11 +2,11 @@
 #include "mc9s12a128.h"
 #include "Subroutines.h"
 
-volatile unsigned char EEWriteStatus;
+volatile uint8_t EEWriteStatus;
 
 void EEInit ( void )
 {
- 	 ECLKDIV = (char)(OscClk * (5 + Tbus));
+ 	 ECLKDIV = (uint8_t)(OscClk * (5 + Tbus));
 	 INITEE = INITEE_Init;
 }
 
@@ -14,16 +14,16 @@ void EEInit ( void )
 
 
 /* EEPROM bytes must not sign-extend when char is signed under GCC. */
-unsigned int EEPROMWord(unsigned char high, unsigned char low)
+uint16_t EEPROMWord(uint8_t high, uint8_t low)
 {
-    return ((unsigned int)high << 8) | (unsigned int)low;
+    return ((uint16_t)high << 8) | (uint16_t)low;
 }
 
-void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
+void EEWrite ( int16_t ArraySize, char WriteData[], int16_t *WriteAddr )
 {
  	 //Erases and Writes an array of up to 128 char to EEPROM
 	 
-	 int i, j, TmpData = 0;
+	 int16_t i, j, TmpData = 0;
 	 char *tempAddr;
 	 char tempArray[128];
      EEWriteStatus = 0;
@@ -36,12 +36,12 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 //Addr must be divisible by 4 for erase operation
 	 
 	 tempAddr = (char*)WriteAddr;
-     tempAddr = (char*)((int)tempAddr & ~0x03);
+     tempAddr = (char*)((int16_t)tempAddr & ~0x03);
 	 
 	 j = 0;
-	 if ( (int)WriteAddr != (int)tempAddr )
+	 if ( (int16_t)WriteAddr != (int16_t)tempAddr )
 	 {
-	  	for ( j=0;(int)tempAddr != (int)WriteAddr;tempAddr++, j++)
+	  	for ( j=0;(int16_t)tempAddr != (int16_t)WriteAddr;tempAddr++, j++)
 		{
 			tempArray[j] = *tempAddr;
 		}	
@@ -59,7 +59,7 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
      if ( (j & 0x03) )
      {
 	 	tempAddr = (char*)WriteAddr;
-     	tempAddr = (char*)((int)tempAddr & ~0x03);
+     	tempAddr = (char*)((int16_t)tempAddr & ~0x03);
 	  	for ( ;j & 0x3;j++ )
 		{
          	tempArray[j] = *(tempAddr + j);
@@ -70,11 +70,11 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 //Erase EEprom
 	 
 	 tempAddr = (char*)WriteAddr;
-	 WriteAddr = (int*)((int)WriteAddr & ~0x03);
+	 WriteAddr = (int16_t*)((int16_t)WriteAddr & ~0x03);
 
      for (i=0; i<j; i += 4, WriteAddr +=2 )
      {
-		 *(volatile unsigned int *)WriteAddr = (unsigned int)TmpData;
+		 *(volatile uint16_t *)WriteAddr = (uint16_t)TmpData;
 		 ECMD = SecErase;
 		 ESTAT = ESTAT_CBEIF;
 		 if (ESTAT & ESTAT_ERRORS)
@@ -93,13 +93,13 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
 	 //Write to EEPROM
 	 
-	 WriteAddr = (int*)tempAddr;	 
-	 WriteAddr = (int*)((int)WriteAddr & ~0x03);
+	 WriteAddr = (int16_t*)tempAddr;	 
+	 WriteAddr = (int16_t*)((int16_t)WriteAddr & ~0x03);
 
      for (i=0;i<j;i+=2, WriteAddr++)
      {
 	  	 TmpData = EEPROMWord(tempArray[i], tempArray[i+1]);
-		 *(volatile unsigned int *)WriteAddr = (unsigned int)TmpData;
+		 *(volatile uint16_t *)WriteAddr = (uint16_t)TmpData;
 		 ECMD = WordPrg;
 		 ESTAT = ESTAT_CBEIF;
 		 if (ESTAT & ESTAT_ERRORS)
@@ -119,7 +119,7 @@ void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr )
     /* Never report a successful save solely because the command buffer emptied. */
     for (i = 0; i < ArraySize; ++i)
     {
-        if (((volatile unsigned char *)tempAddr)[i] != (unsigned char)WriteData[i])
+        if (((volatile uint8_t *)tempAddr)[i] != (uint8_t)WriteData[i])
         {
             EEWriteStatus = 1;
             return;

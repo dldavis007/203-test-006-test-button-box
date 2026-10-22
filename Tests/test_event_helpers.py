@@ -22,17 +22,17 @@ class EventHelperTests(unittest.TestCase):
 #include "Subroutines.h"
 #include "Interrupts.h"
 #include "LegacyCanInterface.h"
-unsigned int TC0_RCVD_Data;
-volatile unsigned int ToggleTimer;
-int cam_list[10], cam_select;
+uint16_t TC0_RCVD_Data;
+volatile uint16_t ToggleTimer;
+int16_t cam_list[10], cam_select;
 UNSIGNED8 gProcImg[PROCIMG_SIZE];
 static unsigned sends, expected;
 void MCO_TransmitPDO(UNSIGNED8 number)
 {
-    assert(number == 0 && cam_select == (int)expected);
+    assert(number == 0 && cam_select == (int16_t)expected);
     assert(gProcImg[IN_digi_3] == (cam_list[expected] & 0xFF));
     assert(gProcImg[IN_digi_3 + 1] == ((cam_list[expected] >> 8) & 0xFF));
-    assert(ToggleTimer == (unsigned int)(RTI_One_Sec * 0.75));
+    assert(ToggleTimer == (uint16_t)(RTI_One_Sec * 0.75));
     ++sends;
 }
 ''' + helper + r'''
@@ -45,7 +45,7 @@ int main(void)
         for (selected = 0; selected < length; ++selected)
         for (keys = 0; keys < 8; ++keys)
         for (timer = 0; timer < 2; ++timer) {
-            int active = !timer && !(keys & 4) && (keys & 3);
+            int16_t active = !timer && !(keys & 4) && (keys & 3);
             cam_select = selected; sends = 0; ToggleTimer = timer;
             TC0_RCVD_Data = ((keys & 1) ? TeleData_Down : 0)
                            | ((keys & 2) ? TeleData_Up : 0)
@@ -58,7 +58,7 @@ int main(void)
                 else expected = (selected + 1 == length) ? 0 : selected + 1;
             }
             ServiceCameraShortcuts();
-            assert(cam_select == (int)expected && sends == (unsigned)!!active);
+            assert(cam_select == (int16_t)expected && sends == (unsigned)!!active);
             for (i = 0; i < sizeof(gProcImg); ++i)
                 if (!active || (i != IN_digi_3 && i != IN_digi_3 + 1))
                     assert(gProcImg[i] == 0xAA);
@@ -82,11 +82,11 @@ int main(void)
 #include "LegacyCanInterface.h"
 #include "mcohw.h"
 #include "Interrupts.h"
-volatile unsigned int ButtonBoxData;
+volatile uint16_t ButtonBoxData;
 bool controller_mode;
 static CAN_MSG gTxMsg;
 static unsigned step, failures;
-static int fail_send;
+static int16_t fail_send;
 void resetTitler(void)
 {
     assert(step++ == 0 && ButtonBoxData == (0x400 | TeleData_Reset));
@@ -103,7 +103,7 @@ void MCOUSER_FatalError(UNSIGNED16 code)
     assert(fail_send && step++ == 2 && code == 0x8801);
     ++failures; /* Allow return only to check the existing continuation. */
 }
-int ResetProc(void)
+int16_t ResetProc(void)
 {
     assert(controller_mode && step++ == (fail_send ? 3U : 2U));
     return 0;

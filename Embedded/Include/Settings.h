@@ -1,6 +1,8 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+
+#include "FixedTypes.h"
 /* Storage remains defined in Subroutines.c, in the legacy EEPROM sequence. */
 extern char FirstVar[4];
 extern char MessageRow[4], MessageCol[4];
@@ -16,8 +18,8 @@ void Save_Serial_Num(void);
 
 #ifdef BUTTONBOX_GCC
 /* Explicit codec for the existing 28-byte ImageCraft-compatible EEPROM record. */
-void EncodeLegacySettings(unsigned char legacy[28]);
-void DecodeLegacySettings(const unsigned char legacy[28]);
+void EncodeLegacySettings(uint8_t legacy[28]);
+void DecodeLegacySettings(const uint8_t legacy[28]);
 #endif
 
 #endif

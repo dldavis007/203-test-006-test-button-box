@@ -9,7 +9,7 @@
 #include "Interrupts.h"
 #include "Subroutines.h"
 
-unsigned int jmpAddress;
+uint16_t jmpAddress;
 
 void command ( char CmdBuf[] )
 {
@@ -43,7 +43,7 @@ void command ( char CmdBuf[] )
         else if( !( strncmp( ParseBuf, "LOAD", 4 ) ) )
         {
 		 	 char tmpstr[8];
-			 int ByteCnt, i,j;
+			 int16_t ByteCnt, i,j;
 			 char *Address;
 			 
 			 while (1)
@@ -80,7 +80,7 @@ void command ( char CmdBuf[] )
         {
 			 parse( ParseBuf, CmdBuf );
 			 
-			 jmpAddress = (unsigned int)hextoi ( ParseBuf );
+			 jmpAddress = (uint16_t)hextoi ( ParseBuf );
 			 
 #ifdef BUTTONBOX_GCC
              ((void (*)(void))jmpAddress)();
@@ -108,15 +108,15 @@ void command ( char CmdBuf[] )
     
 }
 
-char Checksum ( char *str )
+uint8_t Checksum ( char *str )
 {
  	char tmpstr[64], ParseBuf[5];
-	char cksum = 0; 
+	uint8_t cksum = 0; 
     strcpy (tmpstr, str);
 	while ( tmpstr[0] )
 	{
 	    parse( ParseBuf, tmpstr );
-	    cksum += (unsigned int)hextoi ( ParseBuf );
+	    cksum += (uint16_t)hextoi ( ParseBuf );
 	}
 	return cksum;
 	
@@ -170,15 +170,15 @@ void ltrim (char *c_ptr)
         memmove(c_ptr, first, strlen(first) + 1);
 }
 
-int hextoi(char *string)
+int16_t hextoi(char *string)
 {
-  int number = 0;
-  int index;
+  int16_t number = 0;
+  int16_t index;
  
   for (index = 0; string[index] != '\0'; index++)
     {
       char tmp = string[index];
-      int digit;
+      int16_t digit;
  
       if (tmp >= '0' && tmp <= '9')
         digit = tmp - '0';

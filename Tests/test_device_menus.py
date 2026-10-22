@@ -18,19 +18,19 @@ class DeviceMenuTests(unittest.TestCase):
 #include "mcohw.h"
 
 struct MenuStack MenuStackc[MenuStackSize];
-unsigned char StackPointer;
+uint8_t StackPointer;
 volatile char Gen_Flags;
-volatile int ReActivate_Timer;
+volatile int16_t ReActivate_Timer;
 int Device_Type_Response_ID[20], sub_Device_Type_Response_ID[20];
-int cam_list[10], cam_select;
+int16_t cam_list[10], cam_select;
 UNSIGNED8 gProcImg[PROCIMG_SIZE];
 static CAN_MSG sent;
-static unsigned int pushes, clears, deselects, failures;
+static uint16_t pushes, clears, deselects, failures;
 static UNSIGNED8 accept_message = 1;
 
 UNSIGNED8 MCOHW_PushMessage(CAN_MSG *message)
 {
-    unsigned int i;
+    uint16_t i;
     sent.ID = message->ID;
     sent.LEN = message->LEN;
     /* Only copy transmitted bytes: the firmware leaves unused bytes untouched. */
@@ -59,13 +59,13 @@ static void reset(void)
 }
 static void check_external_state(void)
 {
-    assert((unsigned char)Gen_Flags == (Gen_Flags_Extern_Menu | Gen_Flags_SCI1Xmtng));
-    assert(ReActivate_Timer == (int)ReActivate_Time);
+    assert((uint8_t)Gen_Flags == (Gen_Flags_Extern_Menu | Gen_Flags_SCI1Xmtng));
+    assert(ReActivate_Timer == (int16_t)ReActivate_Time);
     assert(pushes == 1 && clears == 1 && deselects == 0);
 }
 int main(void)
 {
-    unsigned int i;
+    uint16_t i;
     reset();
     MenuStackc[2].CursorPos = 4;
     MenuStackc[2].FirstLine = 5; /* Device entry index 2. */
@@ -103,7 +103,7 @@ int main(void)
     assert(Trigger_Device() == 0);
     assert(sent.ID == 0x265 && sent.LEN == 1 && sent.BUF[0] == 2);
     assert(pushes == 1 && deselects == 1 && clears == 0);
-    assert((unsigned char)Gen_Flags == (Gen_Flags_Menu_Active | Gen_Flags_SCI1Xmtng));
+    assert((uint8_t)Gen_Flags == (Gen_Flags_Menu_Active | Gen_Flags_SCI1Xmtng));
     assert(ReActivate_Timer == 0);
 
     reset();

@@ -1,12 +1,14 @@
 #ifndef Comand_H
 #define Comand_H
 
+
+#include "FixedTypes.h"
 void command ( char CmdBuf[] );
-char Checksum ( char *str );
+uint8_t Checksum ( char *str );
 void parse(char *pbuf, char *str);
 void ucase (char *str);
 void ltrim (char *c_ptr);
-int hextoi(char *string);
+int16_t hextoi(char *string);
 
 //#define CmdBufLen 64
 

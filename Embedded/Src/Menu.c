@@ -11,7 +11,7 @@
 
 void setDefaultMenu(void)
 {
-    int i;
+    int16_t i;
 	
 	for (i = 0; i < MenuSize; i++)
 	{
@@ -23,12 +23,12 @@ void setDefaultMenu(void)
 	VariableFlag = 0;    
 }
 
-int NullFunction ( void )
+int16_t NullFunction ( void )
 {
     return 0;
 }
 
-int setSerial ( void )
+int16_t setSerial ( void )
 {
 
     if ( VariableFlag >= 5 )
@@ -61,7 +61,7 @@ int setSerial ( void )
     return 0;
 }
 
-int ToggleF1Enable(void)
+int16_t ToggleF1Enable(void)
 {
     if (!strcmp(F1Enable, " ON")) strcpy(F1Enable, "OFF");
     else strcpy(F1Enable, " ON");
@@ -72,7 +72,7 @@ int ToggleF1Enable(void)
     return 0;
 }
 
-int ToggleF2Enable(void)
+int16_t ToggleF2Enable(void)
 {
     if (!strcmp(F2Enable, " ON")) strcpy(F2Enable, "OFF");
     else strcpy(F2Enable, " ON");
@@ -83,7 +83,7 @@ int ToggleF2Enable(void)
     return 0;
 }
 
-int Var1to13Funct ( void )
+int16_t Var1to13Funct ( void )
 {
     if ( VariableFlag )
     {
@@ -105,7 +105,7 @@ int Var1to13Funct ( void )
     return 0;
 }
 
-int Var1to30Funct ( void )
+int16_t Var1to30Funct ( void )
 {
     if ( VariableFlag )
     {
@@ -127,7 +127,7 @@ int Var1to30Funct ( void )
     return 0;
 }
 
-int ExitMenu ( void )
+int16_t ExitMenu ( void )
 {
     DeSelect ();
     return 0;
@@ -165,8 +165,8 @@ void CursorDown( void )
 
 void IncVariable ( void )
 {
-    int k;
-    int varIndex;       //index of variable
+    int16_t k;
+    int16_t varIndex;       //index of variable
     double j = 0;
     char *vPtr2 = NULL;        //will also point to variable to be decremented
 
@@ -231,8 +231,8 @@ void IncVariable ( void )
 
 void DecVariable ( void )
 {
-    int k;
-    int varIndex;       //index of variable
+    int16_t k;
+    int16_t varIndex;       //index of variable
     double j = 0;
     char *vPtr2 = NULL;        //will also point to variable to be decremented
 
@@ -308,23 +308,23 @@ void DecVariable ( void )
 //argument format, selects the format of the value
 ******************************************/
 
-void dispVariable(char* vPtr, double *value, char format)
+void dispVariable(char* vPtr, double *value, uint8_t format)
 {
     switch( format ) {
         case 10:
-            sprintf ( vPtr, "%1d", (int)*value );
+            sprintf ( vPtr, "%1d", (int16_t)*value );
             break;
         case 20:
-            sprintf ( vPtr, "%2d", (int)*value );
+            sprintf ( vPtr, "%2d", (int16_t)*value );
             break;
         case 30:
-            sprintf ( vPtr, "%3d", (int)*value );
+            sprintf ( vPtr, "%3d", (int16_t)*value );
             break;
         case 31:
             sprintf ( vPtr, "%#3.1f", *value );
             break;
         case 40:
-            sprintf ( vPtr, "%4d", (int)*value );
+            sprintf ( vPtr, "%4d", (int16_t)*value );
             break;
         case 41:
             sprintf ( vPtr, "%#4.1f", *value );
@@ -333,7 +333,7 @@ void dispVariable(char* vPtr, double *value, char format)
             sprintf ( vPtr, "%#4.2f", *value );
             break;
         case 50:
-            sprintf ( vPtr, "%5d", (int)*value );
+            sprintf ( vPtr, "%5d", (int16_t)*value );
             break;
         case 52:
             sprintf ( vPtr, "%#5.2f", *value );
@@ -351,7 +351,7 @@ void dispVariable(char* vPtr, double *value, char format)
 
 void Select ( void )
 {
-     int k;
+     int16_t k;
      
      //Save current menu pointers
      MenuStackc[StackPointer+1].Index[0]=MenuStackc[StackPointer].Index[1];
@@ -415,9 +415,9 @@ void DeSelect ( void )
 	 VariableFlag = 0;
 }
 
-void LoadMenu ( unsigned char Index[] )
+void LoadMenu ( uint8_t Index[] )
 {
-    int i, j, k;
+    int16_t i, j, k;
 
     //find menu
     for ( k=0;k<MenuSize;k++ )
@@ -532,7 +532,7 @@ void InsertCursor ( void )
 
 void btnDisplayTitler ( void )
 {
-	int i, j, k;
+	int16_t i, j, k;
 	
 	for ( i=0;i<=8;i++ )
 	{
@@ -550,7 +550,7 @@ void btnDisplayTitler ( void )
 	showMenu ();
 }
 
-int RestoreDefaults ( void )
+int16_t RestoreDefaults ( void )
 {
     strcpy(F1Enable, " ON");
     strcpy(F2Enable, " ON");

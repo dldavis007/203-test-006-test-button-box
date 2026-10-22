@@ -18,7 +18,7 @@ for data_name in ('MenuTables.inc', 'KeypadMatrix.inc'):
 
 def function(name, source=None):
     s = source if source is not None else (SRC / "Subroutines.c").read_text()
-    match = re.search(r'^(?:static )?(?:unsigned int|void|int) ' + name + r'\([^;]*?\)\s*\{', s, re.M)
+    match = re.search(r'^(?:static )?(?:uint16_t|int16_t|uint8_t|void|int) ' + name + r'\([^;]*?\)\s*\{', s, re.M)
     assert match, name
     start = match.start()
     pos = match.end()
@@ -39,13 +39,13 @@ condition = 'if ( (~PTT & Keypad_Matrix[Sw_Index].SW_Port_Data[0]) || (~PORTB & 
 assert button_functions.count(condition) == 1
 button_functions = button_functions.replace(condition, 'if (pressed & (1UL << Sw_Index))')
 button_functions = button_functions.replace('while (Timer1) { /* wait for interrupt */ }', '/* test clock */')
-scan = scan.replace('unsigned int MaskBit = 0x8000;', '')
+scan = scan.replace('uint16_t MaskBit = 0x8000;', '')
 matrix = (SRC / 'KeypadMatrix.inc').read_text()
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
                    if line.startswith('#define TeleData_') or line.startswith('#define Gen_Flags_'))
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
 callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
-menu_stubs = '\n'.join('int ' + name + '(void) { return 0; }' for name in callbacks)
+menu_stubs = '\n'.join('int16_t ' + name + '(void) { return 0; }' for name in callbacks)
 helpers = function('EnabledFunctionData') + '\n' + '\n'.join(
     function(n, (SRC/'Menu.c').read_text()) for n in ['ToggleF1Enable', 'ToggleF2Enable'])
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
@@ -59,31 +59,32 @@ program = r'''
 #define RTI_One_Sec 1000
 #define DeBounceTime 10
 ''' + macros + r'''
-volatile unsigned int ButtonBoxData;
-unsigned int TC0_RCVD_Data, tempData, Third_byte;
-volatile unsigned char AlternateFunctionMask = TeleData_F1 | TeleData_F2;
-unsigned int DeBounceTimer, Timer1;
-volatile unsigned int Timer2;
+volatile uint16_t ButtonBoxData;
+uint16_t TC0_RCVD_Data, tempData, Third_byte;
+volatile uint8_t AlternateFunctionMask = TeleData_F1 | TeleData_F2;
+uint16_t DeBounceTimer, Timer1;
+volatile uint16_t Timer2;
 /* Codec/mode tests must not invoke physical EEPROM writes. */
-void EEWrite(int length, char data[], int *address)
+void EEWrite(int16_t length, char data[], int16_t *address)
 {
     (void)length; (void)data; (void)address;
     assert(0);
 }
-int CntrSwTimeOut = -1;
-unsigned char PORTB, PORTA;
-char Cntrl_Slow_Flag, MenuCheck, Gen_Flags, internal_menu;
-unsigned char StackPointer;
+int16_t CntrSwTimeOut = -1;
+uint8_t PORTB, PORTA;
+uint8_t Cntrl_Slow_Flag, MenuCheck, internal_menu;
+char Gen_Flags;
+uint8_t StackPointer;
 bool controller_mode;
-unsigned char gProcImg[PROCIMG_SIZE];
+uint8_t gProcImg[PROCIMG_SIZE];
 ''' + menu + menu_stubs + r'''
 
 struct MenuStack MenuStackc[MenuStackSize];
-void LoadMenu(unsigned char index[]) { (void)index; }
+void LoadMenu(uint8_t index[]) { (void)index; }
 void InsertCursor(void) {}
 void btnDisplayTitler(void) {}
 void DeSelect(void) { Gen_Flags &= ~Gen_Flags_Menu_Active; }
-''' + helpers + '\nint navigation_led(int Sw_Index) { return ' + led_condition + '; }\n' + matrix + '\nstatic unsigned long pressed;\n' + button_functions + '\nvoid scan(unsigned long samples) {\npressed = samples;\n' + scan + r'''
+''' + helpers + '\nint navigation_led(int16_t Sw_Index) { return ' + led_condition + '; }\n' + matrix + '\nstatic unsigned long pressed;\n' + button_functions + '\nvoid scan(unsigned long samples) {\npressed = samples;\n' + scan + r'''
 }
 void tick(unsigned long pressed)
 {
@@ -107,11 +108,11 @@ void clear(void)
 #define KEY(i) (1UL << (i))
 int main(void)
 {
-    unsigned int mode;
-    unsigned char legacy[28], flags;
-    int f1, f2, key;
-    const int nav_keys[5] = {4, 16, 9, 11, 10};
-    const unsigned int nav_bits[5] = {4, 8, 1, 2, 16};
+    uint16_t mode;
+    uint8_t legacy[28], flags;
+    int16_t f1, f2, key;
+    const int16_t nav_keys[5] = {4, 16, 9, 11, 10};
+    const uint16_t nav_bits[5] = {4, 8, 1, 2, 16};
     assert(!strcmp(defaultMenuc[1].Entry[3], " F1                 "));
     assert(!strcmp(defaultMenuc[1].Entry[4], " F2                 "));
     assert(defaultMenuc[1].VarPntr[2] == F1Enable);
@@ -136,10 +137,10 @@ int main(void)
         strcpy(F1Enable, f1 ? " ON" : "OFF");
         strcpy(F2Enable, f2 ? " ON" : "OFF");
         for (raw = 0; raw <= 0xffffUL; ++raw) {
-            unsigned int data = (unsigned int)raw;
-            unsigned int old_slow =
+            uint16_t data = (uint16_t)raw;
+            uint16_t old_slow =
                 ((EnabledFunctionData(data) & (TeleData_F1 | TeleData_F2)) ? 0 : TeleData_Slow);
-            unsigned int old_latched = TeleData_F1 | TeleData_F2 | TeleData_F3 |
+            uint16_t old_latched = TeleData_F1 | TeleData_F2 | TeleData_F3 |
                 TeleData_Rev | TeleData_Fwd | TeleData_ExSlow | old_slow | TeleData_Fast;
             assert(SlowToggleMask(data) == old_slow);
             assert(LatchedButtonMask(data) == old_latched);
@@ -234,9 +235,9 @@ int main(void)
         assert(!navigation_led(1)); /* F1 LED remains in the ordinary latch path. */
         EncodeLegacySettings(legacy);
         { /* Round-trip through the actual EEPROM word packing. */
-            int n;
+            int16_t n;
             for (n = 0; n < 28; n += 2) {
-                unsigned int word = EEPROMWord(legacy[n], legacy[n + 1]);
+                uint16_t word = EEPROMWord(legacy[n], legacy[n + 1]);
                 legacy[n] = word >> 8; legacy[n + 1] = word & 255;
             }
         }

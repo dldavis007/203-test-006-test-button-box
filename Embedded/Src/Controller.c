@@ -8,7 +8,7 @@
 #include "Subroutines.h"
 #include "mco.h"
 
-volatile char wd_flag = 0, wdInit = 0, wdStarted = 0;
+volatile uint8_t wd_flag = 0, wdInit = 0, wdStarted = 0;
 
 void main (void)
 {
@@ -143,7 +143,7 @@ void InitPLL ( void )
 
 void InitSCI ( void )
 {
-	SCI0BD = (unsigned int)(BusClk / 16 / .0012);
+	SCI0BD = (uint16_t)(BusClk / 16 / .0012);
 			   
 	SCI0CR2 = SCI0CR2_TE | SCI0CR2_RE;
 	
@@ -240,7 +240,7 @@ void InitCANopen ( void )
   	//while ( !(CANCTL0 & 0x10) );
 }
 
-int ResetProc (void)
+int16_t ResetProc (void)
 {
     COPCTL = 0x01;				//enable COP 
 	while (1);					//wait for reset

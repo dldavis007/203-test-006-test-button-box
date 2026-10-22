@@ -1,6 +1,8 @@
 #ifndef INTERNAL_MENU_H
 #define INTERNAL_MENU_H
 
+
+#include "FixedTypes.h"
 #include "ApplicationState.h"
 
 #define MenuSize 11
@@ -13,16 +15,16 @@
 extern const struct MenuStruct defaultMenuc[MenuSize];
 extern const struct MenuStack defaultMenuStackc[MenuStackSize];
 extern struct MenuStack MenuStackc[MenuStackSize];
-extern unsigned char StackPointer;
+extern uint8_t StackPointer;
 extern char Menu[12][21];
-extern char VariableFlag;
+extern uint8_t VariableFlag;
 extern double increment, uLimit, lLimit;
-extern int nDigits;
+extern int16_t nDigits;
 
 /* Initialization, navigation, rendering and variable editing. */
 void setDefaultMenu(void);
-void LoadMenu(unsigned char Index[]);
-int ExitMenu(void);
+void LoadMenu(uint8_t Index[]);
+int16_t ExitMenu(void);
 void CursorUp(void);
 void CursorDown(void);
 void Select(void);
@@ -30,16 +32,16 @@ void DeSelect(void);
 void InsertCursor(void);
 void IncVariable(void);
 void DecVariable(void);
-void dispVariable(char* vPtr, double *value, char format);
+void dispVariable(char* vPtr, double *value, uint8_t format);
 void btnDisplayTitler(void);
 
 /* Internal menu callbacks. */
-int NullFunction(void);
-int setSerial(void);
-int RestoreDefaults(void);
-int ToggleF1Enable(void);
-int ToggleF2Enable(void);
-int Var1to13Funct(void);
-int Var1to30Funct(void);
+int16_t NullFunction(void);
+int16_t setSerial(void);
+int16_t RestoreDefaults(void);
+int16_t ToggleF1Enable(void);
+int16_t ToggleF2Enable(void);
+int16_t Var1to13Funct(void);
+int16_t Var1to30Funct(void);
 
 #endif

@@ -109,3 +109,11 @@ own declarations/definitions remain untouched. The undefined, unused
 VarSerNumFunct prototype is removed. No variable definition has moved in the
 final batch, including the nine unused globals above. Scope is complete pending
 combined target acceptance; storage removal and behavioral defects are separate.
+
+## Fixed-width numeric declarations
+
+The subsequent type migration changes application numeric spellings and explicit
+byte signedness without moving definitions. Native declarations shared directly
+with the unchanged MCO stack and compiler-owned ABI hooks are deliberate
+exceptions. See FIXED_WIDTH_TYPES.md for the mapping, preservation checks and
+pending target verification. Trigger_DeviceFlag now explicitly holds signed -1.

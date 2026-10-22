@@ -18,7 +18,7 @@ class DeviceDiscoveryTests(unittest.TestCase):
         variables = application[start:end]
         tables = (ROOT/'Embedded/Src/MenuTables.inc').read_text()
         callbacks = sorted(set(re.findall(r'&(\w+)', tables)))
-        stubs = '\n'.join('int '+name+'(void) { return 0; }' for name in callbacks)
+        stubs = '\n'.join('int16_t '+name+'(void) { return 0; }' for name in callbacks)
         module = (ROOT/'Embedded/Src/DeviceDiscovery.c').read_text()
         wait = 'while (Timer1) { /* wait for interrupt */ }'
         self.assertGreater(module.count(wait), 0)
@@ -38,11 +38,11 @@ int sub_Device_Type_Response_ID[20];
 bool resequenceNodes, AuxDeviceLimitExceeded, AuxDeviceMenuFull;
 volatile unsigned int Timer1;
 static CAN_MSG shared_message, sent[128];
-static unsigned int sends, initial_requests, detail_requests, restores, watchdog;
-static unsigned int failures, polls;
-static int mode, duplicate_pending, fail_next;
-int ExternalMenu(void) { return 0; }
-int ExternalSubMenu(void) { return 0; }
+static uint16_t sends, initial_requests, detail_requests, restores, watchdog;
+static uint16_t failures, polls;
+static int16_t mode, duplicate_pending, fail_next;
+int16_t ExternalMenu(void) { return 0; }
+int16_t ExternalSubMenu(void) { return 0; }
 void COP_Trig(void)
 {
     assert(++watchdog < 1000);
@@ -57,7 +57,7 @@ void MCOUSER_FatalError(UNSIGNED16 code)
 }
 UNSIGNED8 MCOHW_PushMessage(CAN_MSG *message)
 {
-    unsigned int i;
+    uint16_t i;
     assert(message == &shared_message && sends < 128);
     sent[sends].ID = message->ID;
     sent[sends].LEN = message->LEN;
@@ -71,8 +71,8 @@ void SDO_Init_Upload(int id, int index, char subindex)
 {
     assert(index == 0x2100);
     if (subindex == 0) {
-        if (initial_requests < 112) assert(id == 0x610 + (int)initial_requests);
-        else assert(mode == 2 && id == 0x661 + (int)(initial_requests-112));
+        if (initial_requests < 112) assert(id == 0x610 + (int16_t)initial_requests);
+        else assert(mode == 2 && id == 0x661 + (int16_t)(initial_requests-112));
         ++initial_requests;
         if (duplicate_pending && id == 0x661) {
             Device_Type_Response_ID[0] = 0x5E3;
@@ -82,7 +82,7 @@ void SDO_Init_Upload(int id, int index, char subindex)
     } else {
         assert(mode != 0 && detail_requests < 8);
         assert(subindex == (char)(detail_requests % 4 + 1));
-        assert(id == (mode == 2 ? 0x661 : 0x621) + (int)(detail_requests/4));
+        assert(id == (mode == 2 ? 0x661 : 0x621) + (int16_t)(detail_requests/4));
         ++detail_requests;
     }
 }
@@ -92,14 +92,14 @@ void SDO_Init_Upload(int id, int index, char subindex)
         for name in ['ext_menu', 'Scan']:
             program += '\n' + extract(application, name).replace('&gTxMsg', '&shared_message')
         program += r'''
-static void label(unsigned int slot, const char *name, int auxiliary)
+static void label(uint16_t slot, const char *name, int16_t auxiliary)
 {
     memset(Device_Menus[slot], ' ', 15);
     memcpy(Device_Menus[slot], name, strlen(name));
     Device_Menus[slot][15] = auxiliary ? (char)0xff : 0x32;
     Device_Menus[slot][16] = 0;
 }
-static void reset(int scenario)
+static void reset(int16_t scenario)
 {
     memcpy(Menuc, defaultMenuc, sizeof Menuc);
     memset(Device_Type_Response_ID, 0, sizeof Device_Type_Response_ID);
@@ -120,7 +120,7 @@ static void reset(int scenario)
         label(1, "AUX UNIT", 1);
     }
 }
-static void check_populated(int expected_main, int expected_aux)
+static void check_populated(int16_t expected_main, int16_t expected_aux)
 {
     assert(restores == 1 && detail_requests == 8);
     assert(Device_Type_Response_ID[0] == expected_main && Device_Type_Response_ID[1] == 0);
@@ -136,12 +136,12 @@ static void check_populated(int expected_main, int expected_aux)
 }
 int main(void)
 {
-    unsigned int i;
+    uint16_t i;
     reset(0);
     ext_menu();
     assert(sends == 127 && initial_requests == 0);
     for (i = 0; i < sends; ++i) {
-        assert(sent[i].ID == 0x201+i);
+        assert(sent[i].ID == 0x201U+i);
         assert(sent[i].LEN == 1 && sent[i].BUF[0] == 1);
     }
     reset(0); fail_next = 1;
@@ -161,7 +161,7 @@ int main(void)
     /* Ignore a single IN58 reply before, between or after ordinary units.
        Initial discovery still queries it; no menu-detail requests follow. */
     for (i = 0; i < 3; ++i) {
-        unsigned int slot, ordinary = 0;
+        uint16_t slot, ordinary = 0;
         reset(1);
         for (slot = 0; slot < 3; ++slot)
             Device_Type_Response_ID[slot] = slot == i ? 0x5BE : 0x5A1 + ordinary++;

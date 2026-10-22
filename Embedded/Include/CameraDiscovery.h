@@ -1,6 +1,8 @@
 #ifndef CAMERA_DISCOVERY_H
 #define CAMERA_DISCOVERY_H
 
+
+#include "FixedTypes.h"
 #include "ApplicationState.h"
 #include "mco.h"
 
@@ -10,8 +12,8 @@ extern bool vid18_addr, vid18_update;
 
 void scan_cameras(void);
 void addressCamera(void);
-int findCameras(void);
-int duplicate_add(void);
+int16_t findCameras(void);
+int16_t duplicate_add(void);
 
 /* Bridges receive Subroutines.c's existing static CAN buffer by address. */
 void ScanCameraAddresses(CAN_MSG *message);

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def extract(source, name):
-    match = re.search(r'^(?:static )?(?:void|int|char|unsigned int|UNSIGNED8) ' + name + r'\s*\([^;]*?\)\s*\{', source, re.M)
+    match = re.search(r'^(?:static )?(?:void|int|char|uint16_t|int16_t|uint8_t|int8_t|UNSIGNED8) ' + name + r'\s*\([^;]*?\)\s*\{', source, re.M)
     start, pos, depth = match.start(), match.end(), 1
     while depth:
         depth += (source[pos] == '{') - (source[pos] == '}')
@@ -22,7 +22,7 @@ def run_c(program):
     with tempfile.TemporaryDirectory() as directory:
         source = Path(directory)/'test.c'
         binary = Path(directory)/('test.exe' if os.name == 'nt' else 'test')
-        source.write_text(program)
+        source.write_text('#include "' + str(ROOT/'Embedded/Include/FixedTypes.h') + '"\n' + program)
         sanitizer = [] if os.name == 'nt' else ['-fsanitize=undefined', '-fno-sanitize-recover=all']
         for mode in ['-fsigned-char', '-funsigned-char']:
             subprocess.run([os.environ.get('CC', 'gcc'), '-std=gnu89', '-Wall', '-Wextra',
@@ -55,10 +55,10 @@ int main(void) {
         source = (ROOT/'Embedded/Src/Flash.c').read_text()
         run_c('#include <assert.h>\n' + extract(source, 'FlashWord') + r'''
 int main(void) {
-    unsigned int high, low;
+    uint32_t high, low;
     for (high = 0; high < 256; ++high)
         for (low = 0; low < 256; ++low) {
-            unsigned int word = FlashWord((char)high, (char)low);
+            uint16_t word = FlashWord((char)high, (char)low);
             assert(word == high * 256 + low);
         }
     return 0;
@@ -71,16 +71,16 @@ int main(void) {
         run_c(r'''
 #include <assert.h>
 #include <string.h>
-typedef unsigned char UNSIGNED8;
+typedef uint8_t UNSIGNED8;
 typedef unsigned long UNSIGNED32;
 typedef struct { UNSIGNED32 ID; UNSIGNED8 LEN; UNSIGNED8 BUF[8]; } CAN_MSG;
-unsigned char CANRFLG, CANRIER, CANRXIDR0, CANRXIDR1, CANRXDLR;
-unsigned char registers[8];
+uint8_t CANRFLG, CANRIER, CANRXIDR0, CANRXIDR1, CANRXDLR;
+uint8_t registers[8];
 #define CANRXDSR0 registers[0]
 ''' + extract(driver, 'MCOHW_PullMessage') + extract(interrupt, 'CANRxISR') + r'''
 int main(void) {
     struct { unsigned long before; CAN_MSG message; unsigned long after; } guarded;
-    int length, index;
+    int16_t length, index;
     memset(&guarded, 0, sizeof guarded);
     guarded.before = 0x12345678; guarded.after = 0x87654321;
     CANRFLG = 0;
@@ -112,11 +112,12 @@ int main(void) {
 #define OFF_ON 9
 struct MenuStruct Menuc[MenuSize];
 struct MenuStack MenuStackc[MenuStackSize];
-unsigned char StackPointer;
-char VariableFlag, SerialNum[6] = "12345";
+uint8_t StackPointer;
+uint8_t VariableFlag;
+char SerialNum[6] = "12345";
 double increment = 1, lLimit = 1, uLimit = 13;
-int nDigits = 30, renders;
-void LoadMenu(unsigned char index[]) { (void)index; }
+int16_t nDigits = 30, renders;
+void LoadMenu(uint8_t index[]) { (void)index; }
 void btnDisplayTitler(void) { ++renders; }
 ''' + helpers + r'''
 int main(void) {
@@ -155,15 +156,15 @@ int main(void) {
 #define TC_1ms 1
 #define TeleData_Rev 0x8000
 #define TeleData_Fwd 0x4000
-struct Matrix { unsigned int BB_Data; unsigned char LED_Port_Data[3]; };
+struct Matrix { uint16_t BB_Data; uint8_t LED_Port_Data[3]; };
 struct Matrix Keypad_Matrix[18];
-unsigned int ButtonBoxData = 0xffff, TC3, TCNT;
-unsigned char TFLG1, PTP, PTT, PTJ, AlternateFunctionMask = 0xc0;
-int legacy_mode;
+uint16_t ButtonBoxData = 0xffff, TC3, TCNT;
+uint8_t TFLG1, PTP, PTT, PTJ, AlternateFunctionMask = 0xc0;
+int16_t legacy_mode;
 void MCOHW_TimerISR(void) {}
 ''' + handler + r'''
 int main(void) {
-    int i;
+    int16_t i;
     for (i = 0; i < 18; ++i) Keypad_Matrix[i].BB_Data = 1;
     for (i = 0; i < 1000; ++i) TC3_Int_Handler();
     return 0;

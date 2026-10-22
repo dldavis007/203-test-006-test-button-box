@@ -23,25 +23,26 @@ class MenuModuleTests(unittest.TestCase):
 
 volatile char Gen_Flags;
 char DispBuf[DispBufLen];
-unsigned char StackPointer;
-char Menu[12][21], VariableFlag;
+uint8_t StackPointer;
+char Menu[12][21];
+uint8_t VariableFlag;
 double increment = 1.0, uLimit = 25.0, lLimit = 0.0;
-int nDigits = 2;
-static int rendered, cleared, saved, serial_saved, normalized, resets, watchdog;
+int16_t nDigits = 2;
+static int16_t rendered, cleared, saved, serial_saved, normalized, resets, watchdog;
 void showMenu(void) { ++rendered; }
 void ClearTitler(void) { ++cleared; }
 void COP_Trig(void) { ++watchdog; }
 void Save_Variables(void) { ++saved; }
 void Save_Serial_Num(void) { ++serial_saved; }
 void NormalizeFunctionSettings(void) { ++normalized; }
-int ResetProc(void) { ++resets; return 0; }
-int findCameras(void) { return 0; }
+int16_t ResetProc(void) { ++resets; return 0; }
+int16_t findCameras(void) { return 0; }
 ''' + variables + r'''
 #include "MenuTables.inc"
 
 int main(void)
 {
-    int count;
+    int16_t count;
     setDefaultMenu();
     assert(StackPointer == 0 && VariableFlag == 0);
     assert(MenuStackc[0].CursorPos == 1 && MenuStackc[0].FirstLine == 0);
@@ -113,7 +114,7 @@ int main(void)
     count = normalized;
     RestoreDefaults();
     assert(!strcmp(F1Enable, " ON") && !strcmp(F2Enable, " ON"));
-    assert((unsigned char)FirstVar[0] == 0xff && normalized == count+1);
+    assert((uint8_t)FirstVar[0] == 0xff && normalized == count+1);
     assert(saved == 2 && resets == 1);
     return 0;
 }

@@ -2,9 +2,11 @@
 #define EEProm_H
 
 
-extern volatile unsigned char EEWriteStatus; /* 0=verified; 0x30=hardware errors; 1=verify failed */
+
+#include "FixedTypes.h"
+extern volatile uint8_t EEWriteStatus; /* 0=verified; 0x30=hardware errors; 1=verify failed */
 void EEInit ( void );
-void EEWrite ( int ArraySize, char WriteData[], int *WriteAddr );
+void EEWrite ( int16_t ArraySize, char WriteData[], int16_t *WriteAddr );
 
 #define ESTAT_CBEIF 0x80
 #define ESTAT_CCIF 0x40

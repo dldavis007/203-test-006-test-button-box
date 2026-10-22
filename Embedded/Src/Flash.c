@@ -7,10 +7,10 @@
 
 void FlashInit ( void )
 {
- 	 FCLKDIV = (char)(OscClk * (5 + Tbus));
+ 	 FCLKDIV = (uint8_t)(OscClk * (5 + Tbus));
 }
 
-char FlashCmd[] = {0x7b,0x01,0x06,0xc6,0x80,0x7b,0x01,0x05,
+uint8_t FlashCmd[] = {0x7b,0x01,0x06,0xc6,0x80,0x7b,0x01,0x05,
 	 			   0x1f,0x01,0x05,0x40,0xfb,0x3d};
 //FlashCmd   7B0106         STAB    0106
 //       	 C680           LDAB    #80
@@ -30,21 +30,21 @@ char FlashCmd[] = {0x7b,0x01,0x06,0xc6,0x80,0x7b,0x01,0x05,
 
 #ifdef BUTTONBOX_GCC
 /* Called normally (JSR/RTS); this assembly wrapper calls the existing RAM code. */
-extern void BBFlashCommand(unsigned char command);
+extern void BBFlashCommand(uint8_t command);
 #endif
 
 /* Preserve both byte values when plain char is signed. */
-unsigned int FlashWord(unsigned char high, unsigned char low)
+uint16_t FlashWord(uint8_t high, uint8_t low)
 {
-    return ((unsigned int)high << 8) | (unsigned int)low;
+    return ((uint16_t)high << 8) | (uint16_t)low;
 }
 
-void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
+void FlashWrite ( int16_t ArraySize, char WriteData[], int16_t *WriteAddr )
 {
  	 //Erases and Writes an array of up to 512 char to Flash
 	 
-	 int i, j;
-     unsigned int TmpData = 0;
+	 int16_t i, j;
+     uint16_t TmpData = 0;
 	 char *tempAddr;
 	 char tempArray[1024];
 
@@ -59,12 +59,12 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 //Addr must be divisible by 512 for erase operation
 	 
 	 tempAddr = (char*)WriteAddr;
-     tempAddr = (char*)((int)tempAddr & ~0x1ff);
+     tempAddr = (char*)((int16_t)tempAddr & ~0x1ff);
 	 
 	 j = 0;
-	 if ( (int)WriteAddr != (int)tempAddr )
+	 if ( (int16_t)WriteAddr != (int16_t)tempAddr )
 	 {
-	  	for ( j=0;(int)tempAddr != (int)WriteAddr;tempAddr++, j++)
+	  	for ( j=0;(int16_t)tempAddr != (int16_t)WriteAddr;tempAddr++, j++)
 		{
 			tempArray[j] = *tempAddr;
 		}	
@@ -82,7 +82,7 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
      if ( (j & 0x1ff) )
      {
 	 	tempAddr = (char*)WriteAddr;
-     	tempAddr = (char*)((int)tempAddr & ~0x1ff);
+     	tempAddr = (char*)((int16_t)tempAddr & ~0x1ff);
 	  	for ( ;j & 0x1ff;j++ )
 		{
          	tempArray[j] = *(tempAddr + j);
@@ -93,11 +93,11 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 	 //Erase Flash
 	 
 	 tempAddr = (char*)WriteAddr;
-	 WriteAddr = (int*)((int)WriteAddr & ~0x1ff);
+	 WriteAddr = (int16_t*)((int16_t)WriteAddr & ~0x1ff);
 
      for (i=0; i<j; i += 512, WriteAddr +=256 )
      {
-		 *(volatile unsigned int *)WriteAddr = TmpData;
+		 *(volatile uint16_t *)WriteAddr = TmpData;
 #ifdef BUTTONBOX_GCC
         BBFlashCommand(0x40);
 #else
@@ -112,13 +112,13 @@ void FlashWrite ( int ArraySize, char WriteData[], int *WriteAddr )
 
 	 //Write to Flash
 	 
-	 WriteAddr = (int*)tempAddr;	 
-	 WriteAddr = (int*)((int)WriteAddr & ~0x1ff);
+	 WriteAddr = (int16_t*)tempAddr;	 
+	 WriteAddr = (int16_t*)((int16_t)WriteAddr & ~0x1ff);
 
      for (i=0;i<j;i+=2, WriteAddr++)
      {
 	  	 TmpData = FlashWord(tempArray[i], tempArray[i+1]);
-		 *(volatile unsigned int *)WriteAddr = TmpData;
+		 *(volatile uint16_t *)WriteAddr = TmpData;
 #ifdef BUTTONBOX_GCC
         BBFlashCommand(0x20);
 #else

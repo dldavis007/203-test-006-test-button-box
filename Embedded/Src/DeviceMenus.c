@@ -8,9 +8,9 @@
 #include "mco.h"
 #include "LegacyCanInterface.h"
 
-int ExternalMenu ( void )
+int16_t ExternalMenu ( void )
 {
-    int i;
+    int16_t i;
 	CAN_MSG gTxMsg;
 
 	i = MenuStackc[StackPointer].CursorPos + MenuStackc[StackPointer].FirstLine - 7;
@@ -38,9 +38,9 @@ int ExternalMenu ( void )
 	return 0;
 }
 
-int ExternalSubMenu ( void )
+int16_t ExternalSubMenu ( void )
 {
-    int i;
+    int16_t i;
 	CAN_MSG gTxMsg;
 
 	i = MenuStackc[StackPointer].CursorPos + MenuStackc[StackPointer].FirstLine - 1;
@@ -67,7 +67,7 @@ int ExternalSubMenu ( void )
 	return 0;
 }
 
-int CameraMenu ( void )
+int16_t CameraMenu ( void )
 {
     CAN_MSG gTxMsg;
 
@@ -98,9 +98,9 @@ int CameraMenu ( void )
 	return 0;
 }
 
-int Trigger_Device ( void )
+int16_t Trigger_Device ( void )
 {
-    int i;
+    int16_t i;
 	CAN_MSG gTxMsg;
 
     if ( MenuStackc[StackPointer].CursorPos+MenuStackc[StackPointer].FirstLine >=1 )

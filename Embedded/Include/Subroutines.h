@@ -1,6 +1,8 @@
 #ifndef Subroutines_H
 #define Subroutines_H
 
+
+#include "FixedTypes.h"
 #include "ApplicationState.h"
 #include "HardwareConfig.h"
 #include "Settings.h"
@@ -18,7 +20,7 @@
 void doevents(void);
 
 /* Analog input. */
-int ATDGetLevel(char ATD_Num);
+int16_t ATDGetLevel(uint8_t ATD_Num);
 
 /* Application message assembly and menu rendering. */
 void bldMessages(void);

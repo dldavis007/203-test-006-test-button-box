@@ -8,25 +8,25 @@
 
 /* Slow toggles in ordinary mode and acts as a momentary navigation key
    while an enabled F1/F2 mode is selected. Recompute from current scan data. */
-static unsigned int SlowToggleMask(unsigned int data)
+static uint16_t SlowToggleMask(uint16_t data)
 {
     return (EnabledFunctionData(data) & (TeleData_F1 | TeleData_F2))
         ? 0 : TeleData_Slow;
 }
 
 /* Function bits keep latching even when their alternate mode is disabled. */
-static unsigned int LatchedButtonMask(unsigned int data)
+static uint16_t LatchedButtonMask(uint16_t data)
 {
     return TeleData_F1 | TeleData_F2 | TeleData_F3 | TeleData_Rev |
            TeleData_Fwd | TeleData_ExSlow | SlowToggleMask(data) | TeleData_Fast;
 }
 
 /* Called only when the existing debounce gate in doevents has expired. */
-void ScanButtons(unsigned int *releasedSwitches)
+void ScanButtons(uint16_t *releasedSwitches)
 {
-	unsigned int SwitchData; 
-	unsigned char Sw_Index;
-	char StopFlag=0;
+	uint16_t SwitchData; 
+	uint8_t Sw_Index;
+	uint8_t StopFlag=0;
 	
 	DeBounceTimer = DeBounceTime;
 	

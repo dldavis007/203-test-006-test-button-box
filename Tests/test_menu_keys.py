@@ -18,21 +18,22 @@ class MenuKeyTests(unittest.TestCase):
 #include <assert.h>
 #include "Subroutines.h"
 #include "Interrupts.h"
-unsigned int TC0_RCVD_Data;
-signed char CursorDownFlag, CursorUpFlag, SelectFlag;
-char Trigger_DeviceFlag, VariableFlag;
-volatile char UpdateMenu;
-volatile unsigned int MenuTimer;
+uint16_t TC0_RCVD_Data;
+int8_t CursorDownFlag, CursorUpFlag, SelectFlag;
+int8_t Trigger_DeviceFlag;
+uint8_t VariableFlag;
+volatile uint8_t UpdateMenu;
+volatile uint16_t MenuTimer;
 struct MenuStack MenuStackc[MenuStackSize];
-unsigned char StackPointer;
+uint8_t StackPointer;
 static char calls[16];
 static unsigned count;
 static void record(char value) { assert(count < sizeof(calls)); calls[count++] = value; }
 void CursorDown(void) { record('D'); }
 void CursorUp(void) { record('U'); }
 void Select(void) { record('S'); }
-int Trigger_Device(void) { record('T'); return 0; }
-void LoadMenu(unsigned char *index) { assert(index == MenuStackc[StackPointer].Index); record('L'); }
+int16_t Trigger_Device(void) { record('T'); return 0; }
+void LoadMenu(uint8_t *index) { assert(index == MenuStackc[StackPointer].Index); record('L'); }
 void InsertCursor(void) { record('I'); }
 void btnDisplayTitler(void) { record('B'); }
 ''' + helper + r'''
@@ -54,7 +55,7 @@ int main(void)
         assert(Trigger_DeviceFlag == !!(mask & 8));
         MenuTimer = 0;
         ServiceInternalMenuKeys();
-        assert(count == 3U + (unsigned int)(!!(mask & 1) + !!(mask & 2) + !!(mask & 4) + !!(mask & 8)));
+        assert(count == 3U + (uint16_t)(!!(mask & 1) + !!(mask & 2) + !!(mask & 4) + !!(mask & 8)));
         count = 0;
         if (mask & 1) assert(calls[count++] == 'D');
         if (mask & 2) assert(calls[count++] == 'U');
@@ -62,15 +63,16 @@ int main(void)
         if (mask & 8) assert(calls[count++] == 'T');
         assert(calls[count++] == 'L' && calls[count++] == 'I' && calls[count++] == 'B');
         assert(UpdateMenu == 0);
-        assert(MenuTimer == (unsigned int)((mask & 4) ? MenuTime * 2 : MenuTime));
+        assert(MenuTimer == (uint16_t)((mask & 4) ? MenuTime * 2 : MenuTime));
         /* Existing nonzero flags repeat when the menu timer expires. */
         count = 0; MenuTimer = 0;
         ServiceInternalMenuKeys();
-        assert(count == (unsigned int)(!!(mask & 1) + !!(mask & 2) + !!(mask & 4) + !!(mask & 8)));
+        assert(count == (uint16_t)(!!(mask & 1) + !!(mask & 2) + !!(mask & 4) + !!(mask & 8)));
         /* Releasing signed navigation flags rearms them before the next tick. */
         TC0_RCVD_Data = 0; MenuTimer = 1;
         ServiceInternalMenuKeys();
         assert(CursorDownFlag == 0 && CursorUpFlag == 0 && SelectFlag == 0);
+        assert(Trigger_DeviceFlag == 0);
     }
     CursorDownFlag = CursorUpFlag = SelectFlag = Trigger_DeviceFlag = 0;
     MenuTimer = 0; UpdateMenu = 1; VariableFlag = 1; count = 0;

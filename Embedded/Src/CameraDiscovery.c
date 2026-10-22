@@ -11,7 +11,7 @@
 //request addresses from camera(s)
 void ScanCameraAddresses(CAN_MSG *message)
 {
-    unsigned int k, i, j;
+    uint16_t k, i, j;
     char tempstr[21];
 
     //send transmit address command 0x02 to RPDO4
@@ -136,9 +136,9 @@ void RandomizeCameraAddresses(CAN_MSG *message)
     while (Timer2) { /* wait for interrupt */ }       //allow time for to create addresses 
 }
 
-int findCameras(void)
+int16_t findCameras(void)
 {
-    int i;
+    int16_t i;
 
 	if (!vid18_update)
         addressCamera();
@@ -168,9 +168,9 @@ int findCameras(void)
 }
 
 //used to check for duplicate camera addresses
-int duplicate_add(void)
+int16_t duplicate_add(void)
 {
-    int i, j;
+    int16_t i, j;
     
     for(i = 0; i<10; i++)
     {
