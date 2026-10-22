@@ -93,7 +93,7 @@ void ScanDevices(CAN_MSG *message)
 			 }	
 		
 	    }
-	 	else if ( i + 1 < 20 && Device_Type_Response_ID[i] != 0 && Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1])
+	 	else if ( i + 1 < 20 && Device_Type_Response_ID[i] != 0 && (Device_Type_Response_ID[i] == Device_Type_Response_ID[i+1] || Device_Type_Response_ID[i] == 0x5BE)) //Ignore IN58 Inclinometer 0x5BE
 		{
 		    for(j=i; j<19; j++) {                   //move Type Responses up (remove duplicates, they should be consecutive)
 			    Device_Type_Response_ID[j] = Device_Type_Response_ID[j+1];

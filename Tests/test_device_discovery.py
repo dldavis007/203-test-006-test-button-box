@@ -158,6 +158,18 @@ int main(void)
     check_populated(0x5A1, 0x5A2);
     assert(initial_requests == 112 && sends == 0 && !resequenceNodes);
 
+    /* Ignore a single IN58 reply before, between or after ordinary units.
+       Initial discovery still queries it; no menu-detail requests follow. */
+    for (i = 0; i < 3; ++i) {
+        unsigned int slot, ordinary = 0;
+        reset(1);
+        for (slot = 0; slot < 3; ++slot)
+            Device_Type_Response_ID[slot] = slot == i ? 0x5BE : 0x5A1 + ordinary++;
+        Scan();
+        check_populated(0x5A1, 0x5A2);
+        assert(initial_requests == 112 && sends == 0 && !resequenceNodes);
+    }
+
     reset(2);
     Scan();
     check_populated(0x5E1, 0x5E2);
