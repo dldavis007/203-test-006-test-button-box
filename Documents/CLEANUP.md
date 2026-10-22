@@ -2,11 +2,11 @@
 
 ## Current baseline and scope
 
-The owner confirmed the ButtonInput extraction at 3be12c8 working after the
-ImageCraft project reloaded its new source list. That is the baseline for
-factoring duplicated button latch masks. Working ImageCraft settings remain
-those synchronized at 7915b16. Keep changes separately testable. The Node-ID-zero
-startup regression and recovery are documented in STARTUP_NODE_ZERO.md.
+The current baseline is 8860562, the owner's restored relative ImageCraft
+paths with a blank build-folder setting. Both compiler configurations use the
+shared source. This pass extracts camera discovery while preserving the static
+CAN buffer and existing entry points. The Node-ID-zero startup regression and
+recovery are documented in STARTUP_NODE_ZERO.md.
 
 The MCO integration is protected from general cleanup. mco.c, mcohw.c, user.c,
 mco.h, mcohw.h, nodecfg.h and procimg.h match hardware-verified 65ced39, except
@@ -412,6 +412,49 @@ project source list is written back on exit and can overwrite a freshly pulled
 ButtonBox.src. Reopen Embedded/ImageCraft/BUTTONBOX.prj after the pull. If an
 update was pulled while the IDE was open, preserve the updated source list
 before closing and restore it afterward, then reopen the project.
+
+## Camera discovery extraction
+
+CameraDiscovery.c owns the camera address scan, address randomization,
+findCameras and duplicate_add. The existing scan_cameras and addressCamera
+entry points remain as small wrappers in Subroutines.c, passing its original
+static gTxMsg to ScanCameraAddresses and RandomizeCameraAddresses. The buffer
+keeps its storage, linkage and initialization, and is still shared with device
+discovery/reset commands. The moved scan/randomization bodies differ only in
+their names/parameter and field access through that pointer. findCameras and
+duplicate_add are copied unchanged. All camera arrays, flags and indices stay
+in Subroutines.c at their original definition locations. New externs/prototypes
+are in CameraDiscovery.h. Device Scan/menuSort/ext_menu and camera-selection
+shortcuts in doevents remain for later cleanup.
+
+GCC and ImageCraft source lists include CameraDiscovery.c. The owner's 8860562
+ImageCraft project options remain byte-identical: relative paths, blank build
+folder and outputs beside Embedded/ImageCraft. Close ImageCraft before pulling
+this change, then reopen the project so its source list includes the module.
+
+All 25 host unit tests, both F1/F2 regression char modes and strict application
+syntax checks pass. The new test uses actual discovery code, real menu templates
+and wrapper bodies with scripted stack replies. It covers ordinary SD and HD
+addresses, HD tag assembly, camera menu callbacks/EXIT, normal randomization,
+HD refresh skipping randomization, empty discovery, duplicate addresses and
+transmit failure notifications. Only the interrupt-only randomization delay is
+replaced in the host copy; production waits are unchanged. Live CAN traffic,
+reply timing and target integer/pointer widths require target verification.
+
+Host data/BSS section order, sizes, initialized bytes and symbolic pointer
+relocations match 8860562; the new module allocates no mutable global/static
+storage. MCO, EEPROM definitions/codecs, startup, interrupts, existing modules,
+constant tables, working project options, linker settings and the 1280-byte
+stack requirement are unchanged. Additional function calls can affect target
+code placement and stack use, so GCC/NoICE and ImageCraft builds and hardware
+checks are pending. Exercise startup discovery, FIND CAMERAS, SD/HD tags,
+camera selection and camera menus, plus ordinary F1/F2 and saved settings.
+
+Existing discovery edge cases are deliberately not repaired in this extraction:
+the unused-address clear loop stops before index 9, the maximum camera count
+can exceed available menu rows once FIND/EXIT/header are included, and tag
+trimming uses overlapping strncpy. The new fixtures cover normal mixed-camera
+and freshly empty scans, not those boundary cases. Review fixes separately.
 
 ## Structure
 

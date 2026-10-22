@@ -12,7 +12,7 @@ SOURCE = ROOT / 'Embedded/Src'
 INCLUDE = ROOT / 'Embedded/Include'
 STATIC_PAGE = json.loads((ROOT/'Embedded/Linker/target.json').read_text())['static_ppage']
 BUILD = ROOT / 'build' / '9s12'
-SOURCES = ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines', 'Settings', 'Display', 'Menu', 'DeviceMenus', 'ButtonInput']
+SOURCES = ['Controller', 'Flash', 'Command', 'EEProm', 'mco', 'user', 'mcohw', 'Interrupts', 'Subroutines', 'Settings', 'Display', 'Menu', 'DeviceMenus', 'ButtonInput', 'CameraDiscovery']
 
 
 def run(args, **kwargs):

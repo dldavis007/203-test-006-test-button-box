@@ -4,7 +4,7 @@ This review accompanies the housekeeping pass after 61e4613. It identifies
 ownership before extracting functions into modules. It does not change any
 variable definition, qualifier, initializer, linkage, array dimension or order.
 The initial housekeeping pass retained identical optimized host assembly.
-The Settings.c, Display.c, Menu.c, DeviceMenus.c and ButtonInput.c splits are separate compilation-unit changes that
+The Settings.c, Display.c, Menu.c, DeviceMenus.c, ButtonInput.c and CameraDiscovery.c splits are separate compilation-unit changes that
 require target memory checks; their moved bodies and existing storage remain intact.
 
 ## Current owners and intended boundaries
@@ -21,7 +21,7 @@ require target memory checks; their moved bodies and existing storage remain int
 | MenuTables.inc, included by Subroutines.c | defaultMenuc, Menuc, defaultMenuStackc, MenuStackc | Menu templates/runtime arrays. The include preserves their translation unit and definition order. Menuc is shared through ApplicationState.h. |
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Menu.c owns navigation/editing functions; storage stays in Subroutines.c. Menu.h exposes the required declarations. |
 | Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | ButtonInput.c owns scan/encoding functions; storage stays here, declared in ButtonInput.h. Menu/camera handling remains in doevents. |
-| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | Discovery and camera shortcuts remain in Subroutines.c. DeviceMenus.c owns four external-menu/trigger commands; camera-state declarations are in DeviceMenus.h. |
+| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | CameraDiscovery.c owns camera discovery; wrappers pass the existing static CAN buffer from Subroutines.c. Camera shortcuts and device discovery remain here. DeviceMenus.c owns four external-menu/trigger commands; shared declarations are in the relevant module headers. |
 | Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
 | runtime.c, or ImageCraft startup | _bss_end[20] | Persistent startup marker. Preserve its GCC .noinit placement and existing startup ownership. |
@@ -80,6 +80,11 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
 7. Duplicate latch-mask expressions are factored into private SlowToggleMask
    and LatchedButtonMask helpers, with no new state or cached scan snapshot.
    Exhaustive host comparisons pass; target/hardware verification is pending.
+8. Camera discovery is extracted to CameraDiscovery.c. Existing public scan
+   wrappers pass the shared static CAN buffer by pointer; all state stays in
+   Subroutines.c. Host checks pass; GCC/ImageCraft and hardware checks are pending.
+9. Device Scan/menuSort/ext_menu and the remaining doevents responsibilities
+   remain candidates for separate, hardware-tested changes.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and

@@ -8,6 +8,7 @@
 #include "Menu.h"
 #include "DeviceMenus.h"
 #include "ButtonInput.h"
+#include "CameraDiscovery.h"
 
 #define Revision "3.05"
 #define _SCI
@@ -21,10 +22,6 @@ int VarSerNumFunct(void);
 /* Device discovery, camera selection and external menus. */
 void Scan(void);
 void menuSort(void);
-void scan_cameras(void);
-void addressCamera(void);
-int findCameras(void);
-int duplicate_add(void);
 void ext_menu(void);
 
 /* Analog input. */
