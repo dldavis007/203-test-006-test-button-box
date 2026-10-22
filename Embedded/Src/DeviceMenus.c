@@ -6,10 +6,7 @@
 #include "Interrupts.h"
 #include "mcohw.h"
 #include "mco.h"
-
-/* Application access to the unchanged legacy MCO integration. */
-extern int Device_Type_Response_ID[];
-extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
+#include "LegacyCanInterface.h"
 
 int ExternalMenu ( void )
 {

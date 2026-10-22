@@ -4,8 +4,7 @@
 #include "Interrupts.h"
 #include "mc9s12a128.h"
 #include "mco.h"
-
-extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
+#include "LegacyCanInterface.h"
 
 /* Slow toggles in ordinary mode and acts as a momentary navigation key
    while an enabled F1/F2 mode is selected. Recompute from current scan data. */

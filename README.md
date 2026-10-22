@@ -1,9 +1,9 @@
 # 203-TEST-006 Button Box
 
 The Rev 3.05 application is in `Embedded/Src` with headers in `Embedded/Include`.
-`dev` retains the hardware-tested baseline at `775691e`; `cleanup` contains the
-folder reorganization and separately committed corrections. `main` retains the
-imported baseline.
+The cleanup work is on `cleanup-preserve-mco`; `main` retains the imported
+baseline. Structural cleanup is complete pending the combined target build and
+hardware checks in [Documents/CLEANUP.md](Documents/CLEANUP.md).
 
 ## Project layout
 
@@ -17,6 +17,22 @@ imported baseline.
 | `Tests` | Host regressions and build-tool checks |
 | `Documents` | Build instructions, cleanup notes and original reference text |
 | `build/9s12` | Generated output, excluded from Git |
+
+## Application modules
+
+| Module | Responsibility |
+| --- | --- |
+| `Subroutines.c` | Existing state, event coordinator, menu-key/entry and camera/reset helpers, video-message assembly |
+| `Settings.c` | Saved settings, defaults and EEPROM codec |
+| `Display.c` | Titler SPI transport and rendering |
+| `Menu.c` / `DeviceMenus.c` | Internal navigation/editing and connected-unit commands |
+| `ButtonInput.c` | Keypad scan, latching and outgoing button encoding |
+| `CameraDiscovery.c` / `DeviceDiscovery.c` | Camera/unit scans and menu population |
+| `LegacyCanInterface.h` | Application declarations for unchanged legacy CAN state |
+
+Global definitions retain their existing placement to protect saved-variable
+ordering and RAM layout. MCO, startup/PPAGE and the 1280-byte stack requirement
+remain protected. Known behavioral concerns are recorded separately from cleanup.
 
 ## Independent function settings
 
@@ -49,7 +65,15 @@ compiler executable). From PowerShell:
 .\run_regression.bat
 ```
 
-Or run `python Tests/run_regression.py`. The runner extracts the actual scan/encoder functions from ButtonInput.c and
+Run the complete host checks with:
+
+```powershell
+python -m unittest discover -s Tests
+python Tests/run_regression.py
+python Tests/check_gcc_syntax.py
+```
+
+The runner extracts the actual scan/encoder functions from ButtonInput.c and
 their debounce call site from Subroutines.c, injects physical key samples, and
 compiles/runs assertions. It also tests the actual function-settings codec.
 No PC_SIDE application or interactive simulation is included.

@@ -11,8 +11,6 @@
 #include "mco.h"
 #include "EEProm.h"
 
-/* Application access to the legacy MCO integration; keep stack files unchanged. */
-extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
 
 /* Button scan, transmitted data and alternate-function selection. */
 unsigned int TC0_RCVD_Data;
@@ -21,6 +19,7 @@ volatile char UpdateMenu;
 
 static CAN_MSG gTxMsg;
 
+/* Retained unused storage: preserve symbol/RAM placement; see ownership notes. */
 unsigned char ExSlowPushed;
 unsigned char SlowPushed;
 unsigned char FastPushed;
@@ -54,7 +53,7 @@ bool controller_mode = false;
 volatile bool legacy_mode = false;
 bool vid18_addr = false;
 bool vid18_update = false;
-bool F3pressed = false;
+bool F3pressed = false; /* Retained storage after removal of inert F3 branches. */
 
 char deviceSubMenu[20][17];
 int sub_Device_Type_Response_ID[20];
@@ -129,7 +128,7 @@ struct MsgStruct Messages[4];      //Proc:, Icam:, Warn:, Emsg:, messages
 /* Button matrix and LED wiring. */
 
 #include "KeypadMatrix.inc"
-
+#include "LegacyCanInterface.h"
 
 /* Select active alternate-key modes without changing latched/output bits. */
 unsigned int EnabledFunctionData(unsigned int data)
@@ -253,6 +252,66 @@ static void EnterInternalMenu(void)
 	internal_menu = 0;
 }
 
+/* Called only with no active menu or enabled alternate-key mode. */
+static void ServiceCameraShortcuts(void)
+{
+	if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Down) && !(TC0_RCVD_Data & TeleData_Select))
+	{
+		ToggleTimer = RTI_One_Sec * 0.75;						
+		
+		if(cam_select <= 0)
+		{
+			cam_select = 9;         //wrap around and check for camera present
+			while(!cam_list[cam_select])    --cam_select;   //decrement until camera is present
+		}
+		else
+		{
+			--cam_select;    //index of cam_list to select next camera
+		}
+
+		gProcImg[IN_digi_3] = cam_list[cam_select];           //lsb 
+		gProcImg[IN_digi_3 + 1] = cam_list[cam_select]>>8;    //msb
+		MCO_TransmitPDO(0);
+	}
+	else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Up) && !(TC0_RCVD_Data & TeleData_Select))
+	{
+		ToggleTimer = RTI_One_Sec * 0.75;
+		
+		if(cam_select >= 9 || !cam_list[cam_select + 1])
+		{
+			cam_select = 0;         //wrap around and check for camera present
+		}
+		else
+		{
+			++cam_select;    //index of cam_list to select next camera
+		}
+		
+		gProcImg[IN_digi_3] = cam_list[cam_select];           //lsb 
+		gProcImg[IN_digi_3 + 1] = cam_list[cam_select] >> 8;    //msb
+		MCO_TransmitPDO(0);
+	}
+}
+
+/* Keep local display reset, CAN broadcast and processor reset in order. */
+static void HandleResetButton(void)
+{
+    ButtonBoxData = 0x400 | TeleData_Reset;   //Clear all latched buttons
+    resetTitler();
+
+    if (controller_mode)
+    {
+        gTxMsg.ID = 0x00;     //send reset over CAN
+        gTxMsg.LEN = 2;
+        gTxMsg.BUF[0] = 0x81;
+        gTxMsg.BUF[1] = 0x00;
+        if (!MCOHW_PushMessage(&gTxMsg))
+        {   // failed to transmit
+            MCOUSER_FatalError(0x8801);
+        }
+        ResetProc();
+    }
+}
+
 void doevents ( void )
 {
 
@@ -277,40 +336,9 @@ void doevents ( void )
 				{
 					EnterInternalMenu();
 				}
-				else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Down) && !(TC0_RCVD_Data & TeleData_Select))
+				else
 				{
-					ToggleTimer = RTI_One_Sec * 0.75;						
-					
-					if(cam_select <= 0)
-					{
-						cam_select = 9;         //wrap around and check for camera present
-						while(!cam_list[cam_select])    --cam_select;   //decrement until camera is present
-					}
-					else
-					{
-						--cam_select;    //index of cam_list to select next camera
-					}
-
-					gProcImg[IN_digi_3] = cam_list[cam_select];           //lsb 
-					gProcImg[IN_digi_3 + 1] = cam_list[cam_select]>>8;    //msb
-					MCO_TransmitPDO(0);
-				}
-				else if (!ToggleTimer && (TC0_RCVD_Data & TeleData_Up) && !(TC0_RCVD_Data & TeleData_Select))
-				{
-					ToggleTimer = RTI_One_Sec * 0.75;
-					
-					if(cam_select >= 9 || !cam_list[cam_select + 1])
-					{
-						cam_select = 0;         //wrap around and check for camera present
-					}
-					else
-					{
-						++cam_select;    //index of cam_list to select next camera
-					}
-					
-					gProcImg[IN_digi_3] = cam_list[cam_select];           //lsb 
-					gProcImg[IN_digi_3 + 1] = cam_list[cam_select] >> 8;    //msb
-					MCO_TransmitPDO(0);
+					ServiceCameraShortcuts();
 				}
 			}
 
@@ -333,7 +361,6 @@ void doevents ( void )
 
 	if ( Gen_Flags & Gen_Flags_SIN0Rcvd )
 	{
-		//Display ( SIN0Buf );
 		command ( SIN0Buf );
 		SIN0Bufptr = 0;
 		Gen_Flags &= ~Gen_Flags_SIN0Rcvd;
@@ -348,33 +375,11 @@ void doevents ( void )
 	
 	if (ButtonBoxData & TeleData_Reset) //Reset
 	{
-		ButtonBoxData = 0x400 | TeleData_Reset;   //Clear all latched buttons
-		resetTitler();
-		
-		if (controller_mode)
-		{
-			gTxMsg.ID = 0x00;     //send reset over CAN
-        	gTxMsg.LEN = 2;              		    
-        	gTxMsg.BUF[0] = 0x81;              		
-            gTxMsg.BUF[1] = 0x00;
-            if (!MCOHW_PushMessage(&gTxMsg))
-        	{   // failed to transmit
-            	MCOUSER_FatalError(0x8801);
-            }
-			ResetProc();  
-		}
+		HandleResetButton();
 	}
 	
-	if (ButtonBoxData & TeleData_F3 && !F3pressed) //F3
-	{
-	    //F3pressed = true;
-	}
-	
-	if (ButtonBoxData & TeleData_F2) //F2
-	{
-	    //F3pressed = false;
-	}
-	
+	/* Preserve the existing F2+F3 display animation. */
+
 	if (ButtonBoxData & TeleData_F2 && ButtonBoxData & TeleData_F3 && !(Gen_Flags & Gen_Flags_Extern_Menu))
 	{   
 		static int i, j, b, br;
@@ -491,12 +496,11 @@ void doevents ( void )
 		Alarm_Port &= ~Alarm_Bit;
 	}
 	
-	//if the 2-Wire system is working, start updating the 2-Wire Stack
-	if ( !legacy_mode )//!(Gen_Flags & Gen_Flags_No2Wire) )
+	/* Service CAN while the legacy two-wire mode is inactive. */
+	if ( !legacy_mode )
 	{
 		//Operate on CANopen protocol stack
 		MCO_ProcessStack();
-		//End MicroCanOpen Stack
 	}   
 	
 	//if the 2-Wire system is working, start updating the 2-Wire Stack

@@ -5,11 +5,7 @@
 #include "Controller.h"
 #include "Interrupts.h"
 #include "mcohw.h"
-
-/* Application access to the unchanged legacy MCO integration. */
-extern int Device_Type_Response_ID[];
-extern int Device_Type_Response_ID_ptr;
-extern char Device_Menus[20][17];
+#include "LegacyCanInterface.h"
 
 void ActivateDeviceMenus(CAN_MSG *message)
 {   //Activates Menus on all devices connected

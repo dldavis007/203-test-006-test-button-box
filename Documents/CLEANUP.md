@@ -2,11 +2,13 @@
 
 ## Current baseline and scope
 
-The current baseline is bdc732a, the camera-discovery extraction. The owner
-reported operation after reloading the ImageCraft firmware; an apparent stop
-around ReadCharMem was not reproduced after that reload and its cause remains
-unconfirmed. This pass extracts device discovery while preserving the static
-CAN buffer and existing public entry points. The owner's relative ImageCraft
+The structural cleanup is complete pending the owner's combined target build
+and hardware acceptance. The last explicitly hardware-confirmed step is
+f3f1752 (active internal-menu keys). The internal-menu entry extraction in
+3d955a2 and this final batch are to be checked together, as requested.
+The final batch isolates camera shortcuts and reset handling, consolidates
+application declarations for the legacy CAN integration, and removes inert
+branches and an undefined callback prototype. The owner's relative ImageCraft
 paths and blank build-folder setting remain intact. The Node-ID-zero startup
 regression and recovery are documented in STARTUP_NODE_ZERO.md.
 
@@ -537,6 +539,60 @@ MCO and the 1280-byte stack requirement remain unchanged. Target builds and
 hardware checks are pending: menu entry/exit, initial cursor position, no stray
 selection on entry, camera shortcuts, F1/F2 gating and saved settings.
 
+## Final structural cleanup batch
+
+ServiceCameraShortcuts() owns the existing Up/Down camera shortcut conditions,
+repeat timer, wrap behavior, selected-address process-image update and PDO send.
+It is called only in the original no-menu/no-enabled-F1/F2 branch, after the
+pending-menu-entry check. HandleResetButton() is called under the original reset
+button guard, after encoding. Local button clearing and display reset still
+precede the controller-only NMT reset broadcast and ResetProc(). The shared
+static CAN buffer and all state remain at their original locations.
+
+LegacyCanInterface.h now holds repeated application declarations for the
+process image and device discovery arrays. The six application consumers include
+it directly; no core MCO source/header or data definition changes. The response-ID
+array stays unsized in this interface, preserving the old declarations without
+hiding the documented 12-versus-20 capacity concern. ImageCraft's header list
+includes the new file; its compiler options and source list are unchanged.
+
+Removed the nonexistent VarSerNumFunct prototype and two inert F2/F3 branches
+containing only commented assignments. The F2+F3 display animation remains.
+Nine unreferenced globals are deliberately retained to preserve layout and
+possible debugger symbols; they are listed in VARIABLE_OWNERSHIP.md. No remaining
+structural pass is planned before acceptance. Startup mode detection, hardware
+sequencing and video-message assembly remain in the application coordinator;
+further splitting them is optional, rather than required cleanup.
+
+All 30 host tests, both F1/F2 regression char modes and strict application syntax
+checks pass. New tests cover camera lists of one through ten entries, direction
+priority, wrap, timer/select gating, transmitted address bytes, and reset ordering
+in controller and non-controller modes, including failed transmission. Extracted
+camera/reset executable statements match the prior source. All six touched C
+modules retain host data/BSS order, sizes, initialized bytes and symbolic pointer
+relocations. The five declaration-only modules retain identical optimized host
+assembly. Startup, interrupts, settings code, constant tables, linker/build tools,
+EEPROM declaration order and the minimum 1280-byte stack reserve are unchanged.
+These checks do not establish target code size or stack use; the target build
+must pass its existing memory validator.
+
+### Combined acceptance checklist
+
+- Save/close ImageCraft before pulling; rebuild GCC/NoICE and ImageCraft from
+  the same revision, loading the matching firmware/debug output for each.
+- Confirm cold startup, controller/legacy modes and normal video/menu display.
+- Enter the internal menu: initial cursor, no unintended selection, navigation,
+  held-key repeats, variable editing, device triggers and exit behavior.
+- Check both camera shortcut directions, first/last-camera wrapping, held-key
+  delay, select-key suppression and discovery/menu selection.
+- Check all four F1/F2 enable combinations: transmitted bits/own LEDs remain
+  active when OFF; alternate navigation and cross LEDs apply only when ON.
+- Change settings, exit the menu and power-cycle to confirm EEPROM persistence.
+- Check travel/stop and controller Slow behavior, reset button and post-reset
+  startup, discovery and normal control. On an isolated bench, controller reset
+  broadcasts the existing reset-all NMT command to connected units.
+- Confirm final target memory validation, including the 1280-byte stack reserve.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.
@@ -570,13 +626,17 @@ menu navigation and saved settings after restart. The target build must still
 pass its original memory validation. Build ImageCraft before claiming that
 compiler path is verified.
 
-## Deferred work
+## Deferred behavioral work (outside cleanup)
 
-Consider smaller application modules only after this declaration pass is
-confirmed. Preserve definition order and memory placement when extracting code;
-line count alone is not justification to split a module.
-
-The legacy MCO scan-ID capacity/lookup and SDO sentinel concerns are recorded
-for separate review in STARTUP_NODE_ZERO.md. They are not silently repaired in
-this cleanup. Likewise, changing the recursive fatal-error recovery policy is
-a separate behavioral change.
+- Legacy MCO discovery response-ID array capacity and unchecked lookup/append;
+  SDO sentinel concerns and recursive fatal-error recovery (STARTUP_NODE_ZERO.md).
+- Camera list/menu capacity, the unused final camera slot not cleared by the
+  old loop, overlapping tag copies, and shortcut behavior with an empty list.
+- Primary device-menu capacity when many units respond.
+- Proprietary CNT-031 discovery/resequence CAN identifiers and commands, and
+  intentional Node-ID-zero behavior. Any standards migration needs coordinated
+  firmware changes and compatibility review, not a cleanup edit.
+- Trigger_DeviceFlag is plain char; unsigned-char builds do not treat its -1
+  comparison like signed navigation flags. The legacy type is preserved here.
+- Removal of retained unreferenced storage or the F2+F3 display animation, if
+  desired, requires a separate reviewed change and target validation.

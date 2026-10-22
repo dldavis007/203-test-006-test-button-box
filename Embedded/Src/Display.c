@@ -8,9 +8,7 @@
 #include "Interrupts.h"
 #include "Settings.h"
 #include "mco.h"
-
-/* The process image remains owned by the unmodified legacy MCO integration. */
-extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
+#include "LegacyCanInterface.h"
 
 void Xmit_Rcv_SPI ( void )
 {   

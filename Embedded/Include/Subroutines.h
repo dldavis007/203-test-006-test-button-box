@@ -17,9 +17,6 @@
 /* Application loop. */
 void doevents(void);
 
-/* Legacy menu callback declaration. */
-int VarSerNumFunct(void);
-
 /* Analog input. */
 int ATDGetLevel(char ATD_Num);
 

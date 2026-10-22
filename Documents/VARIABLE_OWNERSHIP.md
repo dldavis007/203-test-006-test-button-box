@@ -21,8 +21,8 @@ require target memory checks; their moved bodies and existing storage remain int
 | Subroutines.c | FirstVar, MessageRow, MessageCol, SerialNum, F1Enable, F2Enable, NullVar | Protected saved-variable sequence. Settings.c owns persistence/normalization; Settings.h exposes declarations. Menu tables hold pointers into the same arrays. |
 | MenuTables.inc, included by Subroutines.c | defaultMenuc, Menuc, defaultMenuStackc, MenuStackc | Menu templates/runtime arrays. The include preserves their translation unit and definition order. Menuc is shared through ApplicationState.h. |
 | Subroutines.c | StackPointer, Menu, VariableFlag, CursorDownFlag, CursorUpFlag, SelectFlag, increment, uLimit, lLimit, nDigits | Menu.c owns navigation/editing functions; storage stays in Subroutines.c. Menu.h exposes the required declarations. |
-| Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | ButtonInput.c owns scan/encoding functions; storage stays here, declared in ButtonInput.h. Menu/camera handling remains in doevents. |
-| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | CameraDiscovery.c owns camera discovery; wrappers pass the existing static CAN buffer from Subroutines.c. Camera shortcuts remain here; DeviceDiscovery.c owns device discovery and sorting, with wrappers passing the same static buffer. DeviceMenus.c owns four external-menu/trigger commands; shared declarations are in the relevant module headers. |
+| Subroutines.c | TC0_RCVD_Data, tempData, Third_byte, Cntrl_Slow_Flag, MenuCheck, internal_menu, Trigger_DeviceFlag | ButtonInput.c owns scan/encoding functions; storage stays here, declared in ButtonInput.h. Menu/camera/reset helpers remain private to Subroutines.c, called by doevents. |
+| Subroutines.c | cam_list, extCamTagList, cam_select, vid18_addr, vid18_update, F3pressed, deviceSubMenu, auxiliary-limit flags | CameraDiscovery.c owns camera discovery; wrappers pass the existing static CAN buffer from Subroutines.c. Camera shortcut handling remains here as a private helper; DeviceDiscovery.c owns device discovery and sorting, with wrappers passing the same static buffer. DeviceMenus.c owns four external-menu/trigger commands; shared declarations are in the relevant module headers. |
 | Subroutines.c | firstWriteSPI, goLow, plusSymbol, DispBuf/DispBufptr, message buffers/flags, MsgIDtable | Display.c now owns SPI/rendering functions; storage and bldMessages remain in Subroutines.c. The assembler retains its separate local static cursor. |
 | EEProm.c | EEWriteStatus | EEPROM write/readback result exposed for diagnostics; preserve the debugger-visible symbol. |
 | runtime.c, or ImageCraft startup | _bss_end[20] | Persistent startup marker. Preserve its GCC .noinit placement and existing startup ownership. |
@@ -34,7 +34,7 @@ pointers, and moving definitions can affect linker packing and legacy saves.
 
 ## Unreferenced-storage candidates
 
-These eight Subroutines.c globals have no identifier references beyond their
+These nine Subroutines.c globals have no identifier references beyond their
 definitions in the current Embedded .c/.h/.inc/.S source tree:
 
 - ExSlowPushed
@@ -45,6 +45,7 @@ definitions in the current Embedded .c/.h/.inc/.S source tree:
 - STX_count
 - XmitSPI_flag
 - RcvSPI_flag
+- F3pressed (after removing two inert commented-out branches)
 
 Their definitions are retained. A source reference search does not establish
 whether external debugger workflows or legacy tooling expect their symbols.
@@ -80,17 +81,31 @@ Subroutines.c. Their actual definitions and all MCO files are untouched.
    storage moves. The owner confirmed the 3be12c8 pass working.
 7. Duplicate latch-mask expressions are factored into private SlowToggleMask
    and LatchedButtonMask helpers, with no new state or cached scan snapshot.
-   Exhaustive host comparisons pass; target/hardware verification is pending.
+   Exhaustive host comparisons pass; subsequent hardware operation was reported by the owner.
 8. Camera discovery is extracted to CameraDiscovery.c. Existing public scan
    wrappers pass the shared static CAN buffer by pointer; all state stays in
    Subroutines.c. The owner reported operation after reloading ImageCraft firmware.
 9. Device discovery is extracted to DeviceDiscovery.c. Scan/ext_menu wrappers
    retain the existing public API and shared buffer; menuSort moves unchanged.
-   Host checks pass; target GCC/ImageCraft and hardware checks are pending.
-10. Remaining doevents responsibilities are candidates for separate, hardware-tested
-    changes. Review retained unused declarations and unusual behavior separately.
+   Host checks pass; the owner confirmed this extraction working in hardware.
+10. Active internal-menu keys are isolated in a private helper at f3f1752,
+    confirmed working by the owner. Internal-menu entry follows at 3d955a2.
+11. Camera shortcuts and reset handling are private helpers in the final batch.
+    Repeated application externs for legacy CAN state are centralized in
+    LegacyCanInterface.h without changing stack headers or definitions.
+    Combined hardware acceptance of menu entry and the final batch is pending.
 
 For each real compilation-unit extraction, update both compiler project paths
 as needed, run host regressions and a target build, compare memory use and
 confirm hardware behavior. Identical host assembly alone does not establish
 that the 9S12 compiler/linker produced an equivalent image.
+
+## Final declaration review
+
+The remaining shared declarations are grouped by module responsibility. The
+application-only LegacyCanInterface.h replaces repeated source-local externs
+for gProcImg, Device_Type_Response_ID, its cursor and Device_Menus. The stack's
+own declarations/definitions remain untouched. The undefined, unused
+VarSerNumFunct prototype is removed. No variable definition has moved in the
+final batch, including the nine unused globals above. Scope is complete pending
+combined target acceptance; storage removal and behavioral defects are separate.

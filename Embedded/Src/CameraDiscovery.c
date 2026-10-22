@@ -6,8 +6,7 @@
 #include "Controller.h"
 #include "Interrupts.h"
 #include "mcohw.h"
-
-extern UNSIGNED8 gProcImg[PROCIMG_SIZE];
+#include "LegacyCanInterface.h"
 
 //request addresses from camera(s)
 void ScanCameraAddresses(CAN_MSG *message)

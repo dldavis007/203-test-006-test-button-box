@@ -13,7 +13,7 @@ class MenuEntryTests(unittest.TestCase):
         events = extract(source, 'doevents')
         # The original controller/function-mode/request guard remains at the call site.
         self.assertIn('if ( controller_mode && !(EnabledFunctionData(TC0_RCVD_Data) & (TeleData_F1 | TeleData_F2)) )', events)
-        self.assertIn('if (internal_menu)\n\t\t\t\t{\n\t\t\t\t\tEnterInternalMenu();\n\t\t\t\t}\n\t\t\t\telse if (!ToggleTimer', events)
+        self.assertIn('if (internal_menu)\n\t\t\t\t{\n\t\t\t\t\tEnterInternalMenu();\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tServiceCameraShortcuts();', events)
         self.assertEqual(events.count('EnterInternalMenu();'), 1)
         program = r'''
 #include <assert.h>
