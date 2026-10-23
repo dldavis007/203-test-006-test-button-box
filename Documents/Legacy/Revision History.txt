@@ -221,7 +221,7 @@ Revision 3.05
 	
 Revision 3.06   10-23-26
 
-    - Added independent F1 CAM FUNC and F2 ALT FUNC ON/OFF settings, saved with the existing EEPROM menu variables.
+    - Added independent F1 CAM MODE and F2 CTRL MODE ON/OFF settings, saved with the existing EEPROM menu variables.
     - F1/F2 settings use the standard editor: Select enters editing, Up/Down changes the value, and Select returns to the entry label.
     - Turning a function OFF disables alternate navigation and the cross-pattern LEDs while preserving its latched message bit and own button LED.
     - Removed the unused battery feature, battery status entries and battery-only CAN registrations.

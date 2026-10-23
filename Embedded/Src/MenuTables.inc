@@ -10,7 +10,7 @@ const struct MenuStruct defaultMenuc[MenuSize] = {
     },
     {
         {0, 0, 0, 1},
-        {"    SETTINGS MENU   ", " MESSAGE ROW        ", " MESSAGE COL        ", " F1 CAM FUNC        ", " F2 ALT FUNC        ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
+        {"    SETTINGS MENU   ", " MESSAGE ROW        ", " MESSAGE COL        ", " F1 CAM MODE        ", " F2 CTRL MODE       ", " EXIT               ", "                    ", "                    ", "                    ", "                    ", "                    ", "                    "},
         {15, 15, 15, 15, 0, 0, 0, 0, 0, 0, 0},
         {MessageRow, MessageCol, F1Enable, F2Enable, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar, NullVar},
         {&Var1to13Funct, &Var1to30Funct, &VarOffOnFunct, &VarOffOnFunct, &ExitMenu, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction, &NullFunction}

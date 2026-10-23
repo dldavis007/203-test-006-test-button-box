@@ -594,7 +594,7 @@ must pass its existing memory validator.
 
 ## Consistent F1/F2 setting editor
 
-F1 CAM FUNC and F2 ALT FUNC replace the short F1/F2 labels. Both values stay
+F1 CAM MODE and F2 CTRL MODE replace the short F1/F2 labels. Both values stay
 three characters wide at column 15, aligned with MESSAGE ROW/COL. Their shared
 VarOffOnFunct callback follows the existing Var1to30Funct edit flow: Select enters
 VariableFlag mode with OFF_ON formatting, Up/Down changes the selected value,

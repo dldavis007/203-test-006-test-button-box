@@ -43,7 +43,7 @@ layout protection and target acceptance checks.
 
 ## Independent function settings
 
-In SETTINGS MENU, F1 CAM FUNC and F2 ALT FUNC use the normal variable editor.
+In SETTINGS MENU, F1 CAM MODE and F2 CTRL MODE use the normal variable editor.
 Press Select to move the cursor before the value, use Up/Down to change ON/OFF,
 then press Select again to return to the entry label. Select itself does not
 change the value. Both default ON. Exit the internal menu to save, as with the

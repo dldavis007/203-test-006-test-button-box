@@ -83,7 +83,7 @@ int main(void)
         MenuStackc[1].FirstLine = 0;
         LoadMenu(MenuStackc[1].Index); InsertCursor();
         assert(Menu[count][0] == '>' && Menu[count][14] == ' ');
-        assert(!strncmp(&Menu[count][1], count == 3 ? "F1 CAM FUNC" : "F2 ALT FUNC", 11));
+        assert(!strncmp(&Menu[count][1], count == 3 ? "F1 CAM MODE" : "F2 CTRL MODE", count == 3 ? 11 : 12));
         assert(!strncmp(&Menu[count][15], " ON", 3));
         Select();
         assert(VariableFlag == 1 && nDigits == OFF_ON);

@@ -112,8 +112,8 @@ int main(void)
     int16_t f1, f2, key;
     const int16_t nav_keys[5] = {4, 16, 9, 11, 10};
     const uint16_t nav_bits[5] = {4, 8, 1, 2, 16};
-    assert(!strcmp(defaultMenuc[1].Entry[3], " F1 CAM FUNC        "));
-    assert(!strcmp(defaultMenuc[1].Entry[4], " F2 ALT FUNC        "));
+    assert(!strcmp(defaultMenuc[1].Entry[3], " F1 CAM MODE        "));
+    assert(!strcmp(defaultMenuc[1].Entry[4], " F2 CTRL MODE       "));
     assert(defaultMenuc[1].VarPntr[2] == F1Enable);
     assert(defaultMenuc[1].VarPntr[3] == F2Enable);
     assert(defaultMenuc[1].FunctPtr[2] == VarOffOnFunct);
