@@ -520,7 +520,7 @@ void doevents ( void )
 			gProcImg[IN_digi_2] = 0;
 	        ButtonBoxData |= TeleData_RotCCW;  //set the CCW bit back here so that the light comes on the RotateCCW button
             /* Extra startup settling time before the initial unit scan. */
-            Timer1 = RTI_One_Sec * 0.5;
+            Timer1 = RTI_One_Sec * 0.75;
             while (Timer1)
             {
                 COP_Trig();
