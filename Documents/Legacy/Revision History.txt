@@ -219,6 +219,19 @@ Revision 3.05
 	
 	
 	
+Revision 3.06   10-23-26
+
+    - Added independent F1 CAM FUNC and F2 ALT FUNC ON/OFF settings, saved with the existing EEPROM menu variables.
+    - F1/F2 settings use the standard editor: Select enters editing, Up/Down changes the value, and Select returns to the entry label.
+    - Turning a function OFF disables alternate navigation and the cross-pattern LEDs while preserving its latched message bit and own button LED.
+    - Removed the unused battery feature, battery status entries and battery-only CAN registrations.
+    - Excluded the IN58 inclinometer response (0x5BE) from device-menu scan results.
+    - Added GNU68HC12 GCC build support and NoICE load/debug scripts, including startup/PPAGE setup and memory validation with a 1280-byte stack reserve.
+    - Reorganized application sources into settings, display, menu, button-input and discovery modules; retained the saved-variable order and existing CAN behavior.
+    - Converted application numeric declarations to fixed-width types with GCC/ImageCraft compatibility checks; retained native types at protected compiler/MCO interfaces.
+    - Made the device-trigger release flag explicitly signed so its -1 state works with ImageCraft's unsigned plain char.
+    - Updated the ImageCraft project/source list and added host regression tests and build/cleanup documentation.
+
 To work on:
 
 Some messages ("Holiday") do not stay on the monitor.

@@ -13,7 +13,7 @@
 #include "CameraDiscovery.h"
 #include "DeviceDiscovery.h"
 
-#define Revision "3.05"
+#define Revision "3.06"
 #define _SCI
 
 /* Application loop. */

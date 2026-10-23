@@ -1,6 +1,6 @@
 # 203-TEST-006 Button Box
 
-The Rev 3.05 application is in `Embedded/Src` with headers in `Embedded/Include`.
+The Rev 3.06 application is in `Embedded/Src` with headers in `Embedded/Include`.
 The cleanup work is on `cleanup-preserve-mco`; `main` retains the imported
 baseline. Structural cleanup is complete pending the combined target build and
 hardware checks in [Documents/CLEANUP.md](Documents/CLEANUP.md).
