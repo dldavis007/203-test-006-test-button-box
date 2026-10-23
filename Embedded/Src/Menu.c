@@ -61,24 +61,24 @@ int16_t setSerial ( void )
     return 0;
 }
 
-int16_t ToggleF1Enable(void)
+/* Shared ON/OFF editor; the selected row supplies its variable pointer. */
+int16_t VarOffOnFunct(void)
 {
-    if (!strcmp(F1Enable, " ON")) strcpy(F1Enable, "OFF");
-    else strcpy(F1Enable, " ON");
-    NormalizeFunctionSettings();
-    LoadMenu(MenuStackc[StackPointer].Index);
-    InsertCursor();
-    btnDisplayTitler();
-    return 0;
-}
-
-int16_t ToggleF2Enable(void)
-{
-    if (!strcmp(F2Enable, " ON")) strcpy(F2Enable, "OFF");
-    else strcpy(F2Enable, " ON");
-    NormalizeFunctionSettings();
-    LoadMenu(MenuStackc[StackPointer].Index);
-    InsertCursor();
+    if (VariableFlag)
+    {
+        VariableFlag = 0;
+        LoadMenu(MenuStackc[StackPointer].Index);
+        InsertCursor();
+    }
+    else
+    {
+        VariableFlag = 1;
+        increment = 1.0;
+        lLimit = 0.0;
+        uLimit = 1.0;
+        nDigits = OFF_ON;
+        LoadMenu(MenuStackc[StackPointer].Index);
+    }
     btnDisplayTitler();
     return 0;
 }
@@ -225,6 +225,8 @@ void IncVariable ( void )
     if (vPtr2 == NULL)
         return;
     dispVariable(vPtr2, &j, nDigits);
+    if (nDigits == OFF_ON && (vPtr2 == F1Enable || vPtr2 == F2Enable))
+        NormalizeFunctionSettings(); /* Apply alternate-key/LED selection immediately. */
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();
 }
@@ -296,6 +298,8 @@ void DecVariable ( void )
     if (vPtr2 == NULL)
         return;
     dispVariable(vPtr2, &j, nDigits);
+    if (nDigits == OFF_ON && (vPtr2 == F1Enable || vPtr2 == F2Enable))
+        NormalizeFunctionSettings(); /* Apply alternate-key/LED selection immediately. */
     LoadMenu ( MenuStackc[StackPointer].Index );
     btnDisplayTitler ();
 }

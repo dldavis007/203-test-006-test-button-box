@@ -113,6 +113,8 @@ int main(void) {
 struct MenuStruct Menuc[MenuSize];
 struct MenuStack MenuStackc[MenuStackSize];
 uint8_t StackPointer;
+char F1Enable[4] = " ON", F2Enable[4] = " ON";
+void NormalizeFunctionSettings(void) {}
 uint8_t VariableFlag;
 char SerialNum[6] = "12345";
 double increment = 1, lLimit = 1, uLimit = 13;

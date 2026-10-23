@@ -39,8 +39,7 @@ void btnDisplayTitler(void);
 int16_t NullFunction(void);
 int16_t setSerial(void);
 int16_t RestoreDefaults(void);
-int16_t ToggleF1Enable(void);
-int16_t ToggleF2Enable(void);
+int16_t VarOffOnFunct(void);
 int16_t Var1to13Funct(void);
 int16_t Var1to30Funct(void);
 

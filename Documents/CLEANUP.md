@@ -592,6 +592,27 @@ must pass its existing memory validator.
   broadcasts the existing reset-all NMT command to connected units.
 - Confirm final target memory validation, including the 1280-byte stack reserve.
 
+## Consistent F1/F2 setting editor
+
+F1 CAM FUNC and F2 ALT FUNC replace the short F1/F2 labels. Both values stay
+three characters wide at column 15, aligned with MESSAGE ROW/COL. Their shared
+VarOffOnFunct callback follows the existing Var1to30Funct edit flow: Select enters
+VariableFlag mode with OFF_ON formatting, Up/Down changes the selected value,
+and Select exits editing and restores the label cursor without changing the
+value. IncVariable/DecVariable apply NormalizeFunctionSettings after changing
+these function settings so the alternate-key LED mask stays current. Ordinary
+numeric editing is unchanged. Full menu exit retains the existing EEPROM save.
+
+All 32 host tests, both F1/F2 regression char modes and strict application syntax
+checks pass. The actual menu-module test checks both rows, labels, value-column
+cursor placement, Select without mutation, both edit directions, repeated Select,
+independent values, live LED masks, unchanged latched/transmitted button state,
+and the existing save-on-full-exit boundary. No state definitions or EEPROM
+layout, MCO, startup, memory limits or ImageCraft project options change. Target
+GCC/ImageCraft and hardware verification are pending. Check both rows through
+Select/Up/Down/Select, subsequent row navigation, existing numeric settings,
+F1/F2 LEDs/control and persistence after exiting and power-cycling.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.

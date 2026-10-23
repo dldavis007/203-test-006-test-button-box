@@ -43,8 +43,11 @@ layout protection and target acceptance checks.
 
 ## Independent function settings
 
-In SETTINGS MENU, select F1 or F2 to toggle that function ON/OFF. Both default
-ON. Exit the internal menu to save, as with the existing settings. The labels
+In SETTINGS MENU, F1 CAM FUNC and F2 ALT FUNC use the normal variable editor.
+Press Select to move the cursor before the value, use Up/Down to change ON/OFF,
+then press Select again to return to the entry label. Select itself does not
+change the value. Both default ON. Exit the internal menu to save, as with the
+existing settings. The labels
 identify function keys; descriptions of camera-menu and positioning modes remain
 with the controlled equipment.
 

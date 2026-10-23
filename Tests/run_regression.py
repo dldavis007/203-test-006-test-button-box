@@ -44,10 +44,9 @@ matrix = (SRC / 'KeypadMatrix.inc').read_text()
 macros = '\n'.join(line for line in (INC/'Interrupts.h').read_text().splitlines()
                    if line.startswith('#define TeleData_') or line.startswith('#define Gen_Flags_'))
 menu = s[s.index('char FirstVar[]'):s.index('struct MenuStruct Menuc[MenuSize];')]
-callbacks = sorted(set(re.findall(r'&(\w+)', menu)) - {'ToggleF1Enable', 'ToggleF2Enable'})
+callbacks = sorted(set(re.findall(r'&(\w+)', menu)))
 menu_stubs = '\n'.join('int16_t ' + name + '(void) { return 0; }' for name in callbacks)
-helpers = function('EnabledFunctionData') + '\n' + '\n'.join(
-    function(n, (SRC/'Menu.c').read_text()) for n in ['ToggleF1Enable', 'ToggleF2Enable'])
+helpers = function('EnabledFunctionData')
 helpers += '\n' + function('EEPROMWord', (SRC/'EEProm.c').read_text())
 led_condition = re.search(r'if \((\(ButtonBoxData & AlternateFunctionMask\).*?)\)\n', (SRC/'Interrupts.c').read_text()).group(1)
 program = r'''
@@ -113,12 +112,12 @@ int main(void)
     int16_t f1, f2, key;
     const int16_t nav_keys[5] = {4, 16, 9, 11, 10};
     const uint16_t nav_bits[5] = {4, 8, 1, 2, 16};
-    assert(!strcmp(defaultMenuc[1].Entry[3], " F1                 "));
-    assert(!strcmp(defaultMenuc[1].Entry[4], " F2                 "));
+    assert(!strcmp(defaultMenuc[1].Entry[3], " F1 CAM FUNC        "));
+    assert(!strcmp(defaultMenuc[1].Entry[4], " F2 ALT FUNC        "));
     assert(defaultMenuc[1].VarPntr[2] == F1Enable);
     assert(defaultMenuc[1].VarPntr[3] == F2Enable);
-    assert(defaultMenuc[1].FunctPtr[2] == ToggleF1Enable);
-    assert(defaultMenuc[1].FunctPtr[3] == ToggleF2Enable);
+    assert(defaultMenuc[1].FunctPtr[2] == VarOffOnFunct);
+    assert(defaultMenuc[1].FunctPtr[3] == VarOffOnFunct);
     assert(defaultMenuc[1].FunctPtr[4] == ExitMenu);
     strcpy(MessageRow, " 12"); strcpy(MessageCol, " 23"); strcpy(SerialNum, "12345");
     EncodeLegacySettings(legacy);
@@ -155,13 +154,6 @@ int main(void)
     scan(0);
     assert(Third_byte == 4 && (tempData & TeleData_F1));
     assert(!(tempData & TeleData_Down) && DeBounceTimer == 1);
-    clear(); ButtonBoxData = TC0_RCVD_Data = TeleData_F1 | TeleData_F2;
-    ToggleF1Enable();
-    assert(!strcmp(F1Enable, "OFF") && !strcmp(F2Enable, " ON"));
-    assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
-    ToggleF2Enable(); assert(ButtonBoxData == (TeleData_F1 | TeleData_F2) && TC0_RCVD_Data == ButtonBoxData);
-    ToggleF1Enable(); ToggleF2Enable();
-    assert(!strcmp(F1Enable, " ON") && !strcmp(F2Enable, " ON"));
     for (f1 = 0; f1 <= 1; ++f1) for (f2 = 0; f2 <= 1; ++f2) {
         clear();
         strcpy(F1Enable, f1 ? " ON" : "OFF");
