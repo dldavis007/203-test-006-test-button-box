@@ -15,12 +15,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00001100 */
         {                       0x00,       0x0C },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00011000    00000000    00000000 */
         {                       0x18,       0x00,       0x00 }
-        /* Message mask bits:    0000000000011000 */
     },
 
     /* [01] F1 */
@@ -31,12 +29,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00001010 */
         {                       0x00,       0x0A },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00001000    00000000    01000000 */
         {                       0x08,       0x00,       0x40 }
-        /* Message mask bits:    0000000000001000 */
     },
 
     /* [02] Reverse */
@@ -47,12 +43,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00001001 */
         {                       0x00,       0x09 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00001000    00000000    10000000 */
         {                       0x08,       0x00,       0x80 }
-        /* Message mask bits:    0000000000001000 */
     },
 
     /* [03] Extra slow */
@@ -63,12 +57,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         01000000    00001000 */
         {                       0x40,       0x08 },
-        /* Message mask bits:    0000000001000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00001001    00000000    00000000 */
         {                       0x09,       0x00,       0x00 }
-        /* Message mask bits:    0000000000001001 */
     },
 
     /* [04] Down */
@@ -79,12 +71,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00100000    00001000 */
         {                       0x20,       0x08 },
-        /* Message mask bits:    0000000000100000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00001000    00000010    00000000 */
         {                       0x08,       0x02,       0x00 }
-        /* Message mask bits:    0000000000001000 */
     },
 
     /* [05] Select */
@@ -95,12 +85,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00010000    00001000 */
         {                       0x10,       0x08 },
-        /* Message mask bits:    0000000000010000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00001000    00000100    00000000 */
         {                       0x08,       0x04,       0x00 }
-        /* Message mask bits:    0000000000001000 */
     },
 
     /* [06] Option / data */
@@ -111,12 +99,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00100100 */
         {                       0x00,       0x24 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00010100    00000000    00000000 */
         {                       0x14,       0x00,       0x00 }
-        /* Message mask bits:    0000000000010100 */
     },
 
     /* [07] F2 */
@@ -127,12 +113,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00100010 */
         {                       0x00,       0x22 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000100    00000000    01000000 */
         {                       0x04,       0x00,       0x40 }
-        /* Message mask bits:    0000000000000100 */
     },
 
     /* [08] Stop */
@@ -143,12 +127,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00100001 */
         {                       0x00,       0x21 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000100    00000000    10000000 */
         {                       0x04,       0x00,       0x80 }
-        /* Message mask bits:    0000000000000100 */
     },
 
     /* [09] Slow */
@@ -159,12 +141,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         01000000    00100000 */
         {                       0x40,       0x20 },
-        /* Message mask bits:    0000000001000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000101    00000000    00000000 */
         {                       0x05,       0x00,       0x00 }
-        /* Message mask bits:    0000000000000101 */
     },
 
     /* [10] Menu (Down + Up) */
@@ -175,12 +155,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00100000    00100000 */
         {                       0x20,       0x20 },
-        /* Message mask bits:    0000000000100000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000100    00000010    00000000 */
         {                       0x04,       0x02,       0x00 }
-        /* Message mask bits:    0000000000000100 */
     },
 
     /* [11] Rotate clockwise */
@@ -191,12 +169,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00010000    00100000 */
         {                       0x10,       0x20 },
-        /* Message mask bits:    0000000000010000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000100    00000100    00000000 */
         {                       0x04,       0x04,       0x00 }
-        /* Message mask bits:    0000000000000100 */
     },
 
     /* [12] Reset */
@@ -207,12 +183,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00010100 */
         {                       0x00,       0x14 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00010010    00000000    00000000 */
         {                       0x12,       0x00,       0x00 }
-        /* Message mask bits:    0000000000010010 */
     },
 
     /* [13] F3 */
@@ -223,12 +197,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00010010 */
         {                       0x00,       0x12 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000010    00000000    01000000 */
         {                       0x02,       0x00,       0x40 }
-        /* Message mask bits:    0000000000000010 */
     },
 
     /* [14] Forward */
@@ -239,12 +211,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00000000    00010001 */
         {                       0x00,       0x11 },
-        /* Message mask bits:    0000000000000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000010    00000000    10000000 */
         {                       0x02,       0x00,       0x80 }
-        /* Message mask bits:    0000000000000010 */
     },
 
     /* [15] Fast */
@@ -255,12 +225,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         01000000    00010000 */
         {                       0x40,       0x10 },
-        /* Message mask bits:    0000000001000000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000011    00000000    00000000 */
         {                       0x03,       0x00,       0x00 }
-        /* Message mask bits:    0000000000000011 */
     },
 
     /* [16] Up */
@@ -271,12 +239,10 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00100000    00010000 */
         {                       0x20,       0x10 },
-        /* Message mask bits:    0000000000100000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000010    00000010    00000000 */
         {                       0x02,       0x02,       0x00 }
-        /* Message mask bits:    0000000000000010 */
     },
 
     /* [17] Rotate counterclockwise */
@@ -287,11 +253,9 @@ const struct MatrixTbl Keypad_Matrix[18] = {
         /* Switch inputs:        Port T      Port B */
         /* Binary masks:         00010000    00010000 */
         {                       0x10,       0x10 },
-        /* Message mask bits:    0000000000010000 */
 
         /* LED outputs:          Port P      Port T      Port J */
         /* Binary masks:         00000010    00000100    00000000 */
         {                       0x02,       0x04,       0x00 }
-        /* Message mask bits:    0000000000000010 */
     }
 };
