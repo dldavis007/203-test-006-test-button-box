@@ -613,6 +613,24 @@ GCC/ImageCraft and hardware verification are pending. Check both rows through
 Select/Up/Down/Select, subsequent row navigation, existing numeric settings,
 F1/F2 LEDs/control and persistence after exiting and power-cycling.
 
+## Readable initializer tables
+
+KeypadMatrix.inc now has a named block per button, telemetry-bit description,
+16-bit message-mask preview, and labeled T/B switch and P/T/J LED fields with
+binary comments. Constants remain hexadecimal for GCC 3.3.6 compatibility.
+MenuTables.inc lists each text row, value column, variable and action separately,
+with matching row labels. CharacterFontData.inc groups all 19 glyphs by name,
+character address and byte offset; each 3-byte row has an adjacent 12-pixel
+preview using the MAX7456 data-sheet Figure 11 encoding. A legend distinguishes
+white, black and transparent pixels and notes internal-sync gray behavior.
+
+All three initializer token streams match the previous source exactly, including
+strings, numeric constants, references and order. Optimized host Subroutines.c
+assembly, including its initialized table data, is identical. All 32 host tests,
+both F1/F2 regressions and application syntax checks pass. This is a comments and
+formatting change; no table contents, firmware revision, storage layout, compiler
+options or runtime behavior change.
+
 ## Structure
 
 - Embedded/Src: firmware sources, startup and GCC support.
