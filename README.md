@@ -163,3 +163,9 @@ documents remain under Documents/Legacy. Use fresh build artifacts for debugging
 
 See [Documents/GCC_NOICE.md](Documents/GCC_NOICE.md) for memory layout and bench
 checks, and [Documents/CLEANUP.md](Documents/CLEANUP.md) for cleanup scope.
+
+## Hardware software verification
+
+See [the revision 3.06 software test procedure](Documents/SOFTWARE_TEST_PROCEDURE.md)
+for the complete source-informed bench checklist, separate GCC/ImageCraft result
+records, equipment requirements and controlled engineering tests for known limits.
